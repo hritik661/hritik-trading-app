@@ -950,7 +950,13 @@
   }
 
   function connectWebSocket() {
-    const wsUrl = window.location.protocol === 'https:' ? 'wss://' : 'ws://' + window.location.host;
+    let wsUrl;
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      wsUrl = 'ws://localhost:3000'; // For local testing
+    } else {
+      wsUrl = 'wss://' + window.location.host; // For Render (e.g., wss://hritik-trading-app.onrender.com)
+    }
+    console.log('Connecting to WebSocket at:', wsUrl); // Debug log
     ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
