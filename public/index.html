@@ -1,0 +1,1721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title> Hritik Indian Stock Market Live</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
+  <script src="https://cdn.jsdelivr.net/npm/luxon"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+    }
+  
+    body {
+      --bg-primary: linear-gradient(135deg, #F7F9FC, #EDEFF2);
+      --bg-secondary: rgba(255, 255, 255, 0.95);
+      --text-primary: #1A2B49;
+      --text-secondary: #64748B;
+      --border-color: rgba(200, 210, 220, 0.5);
+      --accent-color: #3B82F6;
+      --accent-hover: #2563EB;
+      --card-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(245, 247, 250, 0.98));
+      --shadow-color: rgba(59, 130, 246, 0.15);
+      --negative: #EF4444;
+      --positive: #10B981;
+      --chart-bg: linear-gradient(145deg, #F9FAFB, #F1F5F9);
+      --chart-grid: rgba(200, 210, 220, 0.4);
+      --candlestick-up: linear-gradient(145deg, #34D399, #10B981);
+      --candlestick-down: linear-gradient(145deg, #F87171, #EF4444);
+      --candlestick-border-up: #059669;
+      --candlestick-border-down: #DC2626;
+      --candlestick-wick-up: #059669;
+      --candlestick-wick-down: #DC2626;
+      background: var(--bg-primary);
+      min-height: 100vh;
+      padding: 32px;
+      overflow-x: hidden;
+    }
+  
+    body.dark {
+      --bg-primary: linear-gradient(135deg, #111827, #1F2A44);
+      --bg-secondary: #1F2A44;
+      --text-primary: #F3F4F6;
+      --text-secondary: #9CA3AF;
+      --border-color: #374151;
+      --accent-color: #00E5D8;
+      --accent-hover: #00C7BB;
+      --card-bg: linear-gradient(145deg, #1F2A44, #374151);
+      --shadow-color: rgba(0, 0, 0, 0.7);
+      --negative: #FF6B6B;
+      --positive: #4ADE80;
+      --chart-bg: linear-gradient(145deg, #1F2A44, #111827);
+      --chart-grid: rgba(55, 65, 81, 0.3);
+      --candlestick-up: linear-gradient(145deg, #4ADE80, #22C55E);
+      --candlestick-down: linear-gradient(145deg, #FF6B6B, #EF4444);
+      --candlestick-border-up: #16A34A;
+      --candlestick-border-down: #DC2626;
+      --candlestick-wick-up: #16A34A;
+      --candlestick-wick-down: #DC2626;
+    }
+  
+    body.midnight {
+      --bg-primary: linear-gradient(135deg, #0A0F2A, #141B3D);
+      --bg-secondary: #1A2344;
+      --text-primary: #E2E8F0;
+      --text-secondary: #A0AECB;
+      --border-color: #2D3748;
+      --accent-color: #6366F1;
+      --accent-hover: #4F46E5;
+      --card-bg: linear-gradient(145deg, #1A2344, #2D3748);
+      --shadow-color: rgba(99, 102, 241, 0.2);
+      --negative: #F87171;
+      --positive: #34D399;
+      --chart-bg: linear-gradient(145deg, #141B3D, #0A0F2A);
+      --chart-grid: rgba(45, 55, 72, 0.5);
+      --candlestick-up: linear-gradient(145deg, #6EE7B7, #34D399);
+      --candlestick-down: linear-gradient(145deg, #FCA5A5, #F87171);
+      --candlestick-border-up: #10B981;
+      --candlestick-border-down: #EF4444;
+      --candlestick-wick-up: #10B981;
+      --candlestick-wick-down: #EF4444;
+    }
+  
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: var(--card-bg);
+      border-radius: 20px;
+      box-shadow: 0 8px 24px var(--shadow-color), 0 2px 6px rgba(0, 0, 0, 0.05);
+      margin-bottom: 32px;
+      backdrop-filter: blur(12px);
+      animation: slideDown 0.6s ease-out;
+    }
+  
+    .logo {
+      font-size: 30px;
+      font-weight: 800;
+      background: linear-gradient(90deg, var(--accent-color), #60A5FA);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
+  
+    .header-date {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      flex: 1;
+      text-align: center;
+      letter-spacing: 0.5px;
+    }
+  
+    .theme-toggle {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: none;
+      background: var(--bg-secondary);
+      cursor: pointer;
+      box-shadow: 0 4px 12px var(--shadow-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.3s ease, background 0.3s ease;
+    }
+  
+    .theme-toggle:hover {
+      transform: scale(1.1);
+      background: var(--accent-hover);
+      box-shadow: 0 6px 16px var(--shadow-color);
+    }
+  
+    .theme-toggle img {
+      width: 24px;
+      height: 24px;
+    }
+  
+    .search-bar {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 32px;
+    }
+  
+    .search-bar form {
+      display: flex;
+      gap: 16px;
+      width: 100%;
+      max-width: 600px;
+    }
+  
+    #searchInput {
+      flex: 1;
+      padding: 14px 24px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 40px;
+      font-size: 16px;
+      color: var(--text-primary);
+      outline: none;
+      box-shadow: 0 4px 12px var(--shadow-color);
+      backdrop-filter: blur(8px);
+    }
+  
+    #searchInput:focus {
+      border-color: var(--accent-color);
+      box-shadow: 0 6px 16px var(--shadow-color);
+    }
+  
+    .search-bar button {
+      padding: 14px 28px;
+      background: var(--accent-color);
+      color: #fff;
+      border: none;
+      border-radius: 40px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px var(--shadow-color);
+      transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+    }
+  
+    .search-bar button:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px var(--shadow-color);
+    }
+  
+    .search-bar button:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px var(--shadow-color);
+    }
+  
+    #searchResult {
+      margin: 32px auto;
+      width: 90%;
+      max-width: 600px;
+      padding: 20px 24px;
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      box-shadow: 0 6px 20px var(--shadow-color);
+      border: 1px solid var(--border-color);
+      display: none;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      backdrop-filter: blur(8px);
+    }
+  
+    #searchResult.show {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+  
+    #searchResult:not(.show) {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  
+    #searchResult.error {
+      color: var(--negative);
+    }
+  
+    #searchResult h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+  
+    #searchResult p {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+  
+    .indices-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+  
+    .index-button {
+      padding: 12px 28px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 40px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px var(--shadow-color);
+      transition: all 0.3s ease;
+      backdrop-filter: blur(8px);
+    }
+  
+    .index-button.active {
+      background: var(--accent-color);
+      color: #fff;
+      border-color: var(--accent-color);
+      box-shadow: 0 6px 16px var(--shadow-color);
+    }
+  
+    .index-button:hover {
+      background: var(--accent-color);
+      color: #fff;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px var(--shadow-color);
+    }
+  
+    .index-button:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px var(--shadow-color);
+    }
+  
+    .content-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 40px;
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+  
+    .chart-section {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+  
+    #chartContainer {
+      background: var(--chart-bg);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 0 8px 24px var(--shadow-color), inset 0 0 12px rgba(0, 0, 0, 0.03);
+      height: 500px;
+      border: 1px solid var(--border-color);
+      position: relative;
+      display: none;
+      backdrop-filter: blur(12px);
+      animation: fadeInUp 0.6s ease-out;
+    }
+  
+    #chartContainer.show {
+      display: block;
+    }
+  
+    #toggleChartType {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      padding: 10px 28px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 40px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px var(--shadow-color);
+      transition: all 0.3s ease;
+      backdrop-filter: blur(8px);
+    }
+  
+    #toggleChartType:hover {
+      background: var(--accent-color);
+      color: #fff;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px var(--shadow-color);
+    }
+  
+    #toggleChartType:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px var(--shadow-color);
+    }
+  
+    #priceInfo {
+      padding: 16px 20px;
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      box-shadow: 0 6px 20px var(--shadow-color);
+      border: 1px solid var(--border-color);
+      transition: transform 0.3s ease;
+      backdrop-filter: blur(8px);
+    }
+  
+    #priceInfo:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px var(--shadow-color);
+    }
+  
+    #priceInfo p {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--positive);
+      line-height: 1.5;
+    }
+  
+    #priceInfo p.unavailable {
+      color: var(--negative);
+    }
+  
+    #tradePanel {
+      padding: 16px 20px;
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      box-shadow: 0 6px 20px var(--shadow-color);
+      border: 1px solid var(--border-color);
+      display: none;
+      transition: transform 0.3s ease;
+      backdrop-filter: blur(8px);
+    }
+  
+    #tradePanel.show {
+      display: block;
+    }
+  
+    #tradePanel:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px var(--shadow-color);
+    }
+  
+    .trade-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 8px;
+    }
+  
+    .trade-tab {
+      flex: 1;
+      padding: 6px 0;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+  
+    .trade-tab.active {
+      color: var(--positive);
+      border-bottom: 2px solid var(--positive);
+    }
+  
+    .trade-tab.sell.active {
+      color: var(--negative);
+      border-bottom: 2px solid var(--negative);
+    }
+  
+    .trade-options {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+  
+    .trade-option {
+      flex: 1;
+      padding: 8px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+  
+    .trade-option.active {
+      background: var(--positive);
+      color: #fff;
+      border-color: var(--positive);
+      box-shadow: 0 4px 12px var(--shadow-color);
+    }
+  
+    .trade-option:hover {
+      background: var(--accent-color);
+      color: #fff;
+      border-color: var(--accent-color);
+    }
+  
+    .trade-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+  
+    .trade-inputs select,
+    .trade-inputs input {
+      padding: 10px 14px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      font-size: 14px;
+      color: var(--text-primary);
+      outline: none;
+      box-shadow: 0 2px 6px var(--shadow-color);
+    }
+  
+    .trade-inputs select:focus,
+    .trade-inputs input:focus {
+      border-color: var(--accent-color);
+      box-shadow: 0 4px 12px var(--shadow-color);
+    }
+  
+    .trade-info {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+  
+    .trade-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+    }
+  
+    .trade-footer .negative {
+      color: var(--negative);
+    }
+  
+    .trade-button {
+      width: 100%;
+      padding: 12px;
+      background: var(--positive);
+      color: #fff;
+      border: none;
+      border-radius: 24px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+      box-shadow: 0 4px 12px var(--shadow-color);
+    }
+  
+    .trade-button.sell {
+      background: var(--negative);
+    }
+  
+    .trade-button:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px var(--shadow-color);
+    }
+  
+    .trade-button:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px var(--shadow-color);
+    }
+  
+    #errorMessage {
+      text-align: center;
+      padding: 14px;
+      color: var(--negative);
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      box-shadow: 0 6px 20px var(--shadow-color);
+      margin-top: 24px;
+      display: none;
+      animation: fadeIn 0.5s ease-out;
+      backdrop-filter: blur(8px);
+    }
+  
+    #errorMessage.show {
+      display: block;
+    }
+  
+    .price-dashboard {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 0 8px 24px var(--shadow-color);
+      max-height: 540px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent-color) var(--border-color);
+      backdrop-filter: blur(12px);
+      animation: fadeInUp 0.6s ease-out 0.2s both;
+    }
+  
+    .price-dashboard::-webkit-scrollbar {
+      width: 10px;
+    }
+  
+    .price-dashboard::-webkit-scrollbar-track {
+      background: var(--border-color);
+      border-radius: 5px;
+    }
+  
+    .price-dashboard::-webkit-scrollbar-thumb {
+      background: var(--accent-color);
+      border-radius: 5px;
+    }
+  
+    .price-dashboard::-webkit-scrollbar-thumb:hover {
+      background: var(--accent-hover);
+    }
+  
+    .dashboard-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 20px;
+      position: sticky;
+      top: 0;
+      background: var(--card-bg);
+      z-index: 1;
+      padding: 8px 0;
+    }
+  
+    .price-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px var(--shadow-color);
+      border: 1px solid var(--border-color);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      animation: fadeInUp 0.6s ease-out both;
+      backdrop-filter: blur(8px);
+    }
+  
+    .price-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px var(--shadow-color);
+    }
+  
+    .price-card .asset-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+  
+    .price-card .last-close {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+  
+    .price-card .current-price {
+      font-size: 16px;
+      font-weight: 600;
+      transition: transform 0.2s ease;
+    }
+  
+    .price-card .current-price.available {
+      color: var(--positive);
+    }
+  
+    .price-card .current-price.unavailable {
+      color: var(--negative);
+    }
+  
+    .price-card:hover .current-price {
+      transform: scale(1.05);
+    }
+  
+    .price-card .positive {
+      color: var(--positive);
+    }
+  
+    .price-card .negative {
+      color: var(--negative);
+    }
+  
+    .top-stocks {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 28px;
+      margin-bottom: 40px;
+      box-shadow: 0 8px 24px var(--shadow-color);
+      backdrop-filter: blur(12px);
+      animation: fadeInUp 0.6s ease-out 0.1s both;
+    }
+  
+    .top-stocks-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+  
+    .top-stocks-container {
+      display: flex;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      gap: 20px;
+      padding-bottom: 12px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent-color) var(--border-color);
+    }
+  
+    .top-stocks-container::-webkit-scrollbar {
+      height: 10px;
+    }
+  
+    .top-stocks-container::-webkit-scrollbar-track {
+      background: var(--border-color);
+      border-radius: 5px;
+    }
+  
+    .top-stocks-container::-webkit-scrollbar-thumb {
+      background: var(--accent-color);
+      border-radius: 5px;
+    }
+  
+    .top-stocks-container::-webkit-scrollbar-thumb:hover {
+      background: var(--accent-hover);
+    }
+  
+    .top-stock-card {
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      padding: 20px;
+      min-width: 240px;
+      flex-shrink: 0;
+      transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+      box-shadow: 0 4px 12px var(--shadow-color);
+      cursor: pointer;
+      animation: fadeInUp 0.6s ease-out both;
+      backdrop-filter: blur(8px);
+    }
+  
+    .top-stock-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 10px 24px var(--shadow-color);
+      background: var(--accent-color);
+      color: #fff;
+    }
+  
+    .top-stock-card:hover .stock-name,
+    .top-stock-card:hover .stock-price,
+    .top-stock-card:hover .stock-change {
+      color: #fff;
+    }
+  
+    .stock-info {
+      display: flex;
+      flex-direction: column;
+    }
+  
+    .stock-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+  
+    .stock-price {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--positive);
+      margin-bottom: 8px;
+    }
+  
+    .stock-change {
+      font-size: 13px;
+      font-weight: 500;
+    }
+  
+    .stock-change.positive {
+      color: var(--positive);
+    }
+  
+    .stock-change.negative {
+      color: var(--negative);
+    }
+  
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  
+    @media (max-width: 1024px) {
+      .content-grid { grid-template-columns: 1fr; }
+      #chartContainer { height: 450px; }
+      .price-dashboard { max-height: 500px; }
+    }
+  
+    @media (max-width: 768px) {
+      body { padding: 24px; }
+      .header { flex-direction: column; padding: 16px; gap: 12px; }
+      .header-date { margin: 12px 0; font-size: 14px; }
+      .logo { font-size: 26px; }
+      #chartContainer { height: 400px; }
+      .price-dashboard { max-height: 460px; }
+      .search-bar form { flex-direction: column; max-width: 360px; gap: 12px; }
+      .search-bar button { padding: 12px; }
+      .price-card { padding: 14px 20px; }
+      .top-stocks { padding: 20px; }
+      .top-stocks-title { font-size: 20px; }
+      .top-stock-card { padding: 16px; min-width: 220px; }
+      .index-button { padding: 10px 24px; font-size: 14px; }
+    }
+  
+    @media (max-width: 480px) {
+      body { padding: 16px; }
+      .header { padding: 12px; }
+      .logo { font-size: 22px; }
+      .header-date { font-size: 13px; }
+      .theme-toggle { width: 44px; height: 44px; }
+      #chartContainer { height: 360px; }
+      .price-dashboard { max-height: 420px; }
+      .price-card { padding: 12px 16px; }
+      .top-stocks { padding: 16px; }
+      .top-stocks-title { font-size: 18px; }
+      .top-stock-card { padding: 12px; min-width: 200px; }
+      .index-button { padding: 8px 20px; font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1 class="logo">Hritik Indian Stock Market Live</h1>
+    <div class="header-date">
+      Live Market Data • <span id="currentDate"></span>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Switch Theme" aria-label="Toggle Theme">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path id="lightIcon" d="M12 17C14.7614 17 17 14.7614 17 12C17 9.23858 14.7614 7 12 7C9.23858 7 7 9.23858 7 12C7 14.7614 9.23858 17 12 17Z M12 1V3M12 21V23M4.22 4.22L5.64 5.64M18.36 18.36L19.78 19.78M1 12H3M21 12H23M4.22 19.78L5.64 18.36M18.36 5.64L19.78 4.22" stroke="#1F2A44" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path id="darkIcon" d="M21 12.79C20.8427 14.4922 20.2039 16.1144 19.1582 17.4668C18.1126 18.8192 16.7035 19.8458 15.0957 20.4265C13.4879 21.0073 11.7479 21.1181 10.0795 20.7461C8.41111 20.3741 6.88058 19.5345 5.67453 18.3285C4.46847 17.1224 3.62885 15.5919 3.25689 13.9235C2.88493 12.2551 2.99571 10.5151 3.57648 8.9073C4.15725 7.29952 5.18387 5.89039 6.53618 4.84474C7.88849 3.79908 9.51071 3.16029 11.213 3.00303C10.2555 4.1482 9.75149 5.59284 9.79786 7.06901C9.84423 8.54517 10.4382 9.95479 11.4743 11.0358C12.5103 12.1168 13.9241 12.7832 15.4036 12.9052C16.8831 13.0272 18.3608 12.6954 19.597 11.897C20.137 12.1643 20.6073 12.4531 21 12.79Z" stroke="#F3F4F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style="display: none;"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="search-bar">
+    <form onsubmit="manualSearch(); return false;">
+      <input type="text" id="searchInput" placeholder="Search stocks (e.g., TATA MOTOR)" aria-label="Search stocks">
+      <button type="submit" aria-label="Search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        Search
+      </button>
+    </form>
+  </div>
+
+  <div id="searchResult" role="alert"></div>
+
+  <div class="top-stocks">
+    <h2 class="top-stocks-title">Most Traded Stocks</h2>
+    <div class="top-stocks-container" id="topStocksContainer"></div>
+  </div>
+
+  <div class="indices-buttons">
+    <button class="index-button active" onclick="toggleHistoricalData('^NSEI', 'NIFTY 50')" aria-label="NIFTY 50">NIFTY 50</button>
+    <button class="index-button" onclick="toggleHistoricalData('^BSESN', 'SENSEX')" aria-label="SENSEX">SENSEX</button>
+    <button class="index-button" onclick="toggleHistoricalData('^NSEBANK', 'BANK NIFTY')" aria-label="BANK NIFTY">BANK NIFTY</button>
+    <button class="index-button" onclick="toggleHistoricalData('^NSEMDCP50', 'NIFTY MIDCAP 50')" aria-label="NIFTY MIDCAP 50">NIFTY MIDCAP 50</button>
+    <button class="index-button" onclick="toggleBitcoinData('BTCUSDT', 'Bitcoin (BTC/USDT)')" aria-label="Bitcoin (BTC/USDT)">BTC/USDT</button>
+    
+  </div>
+
+  <div class="content-grid">
+    <div class="chart-section">
+      <div id="chartContainer">
+        <button id="toggleChartType" onclick="toggleChartType()" aria-label="Switch Chart Type">Switch to Candlestick</button>
+        <canvas id="stockChart" aria-label="Stock Chart"></canvas>
+      </div>
+      <div id="priceInfo"></div>
+      <div id="tradePanel">
+        <div class="trade-tabs">
+          <div class="trade-tab buy active" onclick="switchTradeTab('buy')">BUY</div>
+          <div class="trade-tab sell" onclick="switchTradeTab('sell')">SELL</div>
+        </div>
+        <div class="trade-options">
+          <div class="trade-option active" onclick="selectTradeOption(this, 'Delivery')">Delivery</div>
+          <div class="trade-option" onclick="selectTradeOption(this, 'Intraday')">Intraday</div>
+          <div class="trade-option" onclick="selectTradeOption(this, 'MTF')">MTF</div>
+        </div>
+        <div class="trade-inputs">
+          <select id="quantitySelect" onchange="updateTradeInfo()">
+            <option value="">Qty</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="5">5</option>
+            <option value="10">10</option>
+          </select>
+          <select id="orderTypeSelect" onchange="updateTradeInfo()">
+            <option value="Limit">Price Limit</option>
+            <option value="Market">Market</option>
+          </select>
+          <input type="number" id="priceInput" placeholder="Price" oninput="updateTradeInfo()">
+        </div>
+        <div class="trade-info" id="tradeInfo"></div>
+        <div class="trade-footer">
+          <span id="balanceInfo">Balance: <span class="negative">₹-42</span></span>
+          <span id="approxReq">Approx req.: ₹0</span>
+        </div>
+        <button class="trade-button buy" id="tradeButton" onclick="executeTradeFromPanel()">BUY</button>
+      </div>
+    </div>
+
+    <div class="price-dashboard">
+      <h2 class="dashboard-title">Market Overview</h2>
+      <div id="stockCards"></div>
+    </div>
+  </div>
+
+  <div id="errorMessage" role="alert"></div>
+<script>
+  let ws; // WebSocket for local server (Indian stock data)
+  let binanceWs; // WebSocket for Binance (Bitcoin data)
+  const stockCards = document.getElementById('stockCards');
+  const topStocksContainer = document.getElementById('topStocksContainer');
+  const searchResult = document.getElementById('searchResult');
+  const errorMessage = document.getElementById('errorMessage');
+  const searchInput = document.getElementById('searchInput');
+  const chartContainer = document.getElementById('chartContainer');
+  const toggleChartTypeButton = document.getElementById('toggleChartType');
+  const priceInfo = document.getElementById('priceInfo');
+  const tradePanel = document.getElementById('tradePanel');
+  let stockChart;
+  let currentChartType = 'line';
+  let currentData = null;
+  let currentSymbol = null;
+  let activeSymbol = null;
+  let isIndex = true;
+  let tradeAction = 'buy';
+  let userBalance = -42;
+  let currentTheme = 'light';
+
+  document.getElementById('currentDate').textContent = new Date().toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+
+  function toggleTheme() {
+    if (currentTheme === 'light') {
+      document.body.classList.remove('light');
+      document.body.classList.add('dark');
+      currentTheme = 'dark';
+    } else if (currentTheme === 'dark') {
+      document.body.classList.remove('dark');
+      document.body.classList.add('midnight');
+      currentTheme = 'midnight';
+    } else {
+      document.body.classList.remove('midnight');
+      document.body.classList.add('light');
+      currentTheme = 'light';
+    }
+    const lightIcon = document.getElementById('lightIcon');
+    const darkIcon = document.getElementById('darkIcon');
+    if (currentTheme === 'dark' || currentTheme === 'midnight') {
+      lightIcon.style.display = 'none';
+      darkIcon.style.display = 'block';
+    } else {
+      lightIcon.style.display = 'block';
+      darkIcon.style.display = 'none';
+    }
+    if (currentData && activeSymbol === currentData.symbol) {
+      renderChart(currentData.name, currentData.historicalData, currentData.currentPrice);
+    }
+  }
+
+  function isMarketOpen() {
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istTime = new Date(now.getTime() + istOffset);
+    const marketOpen = new Date(istTime);
+    marketOpen.setHours(9, 15, 0, 0);
+    const marketClose = new Date(istTime);
+    marketClose.setHours(15, 30, 0, 0);
+    return istTime >= marketOpen && istTime <= marketClose;
+  }
+
+  function connectWebSocket() {
+    const wsUrl = window.location.protocol === 'https:' ? 'wss://' : 'ws://' + window.location.host;
+    ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      console.log('Local WebSocket connected');
+      const mockHistoricalData = {
+        historicalData: {
+          symbol: '^NSEI',
+          name: 'NIFTY 50',
+          currentPrice: 23598.95,
+          data: Array.from({ length: 60 }, (_, i) => {
+            const date = new Date();
+            date.setMinutes(date.getMinutes() - (60 - i));
+            const basePrice = 23600 + Math.random() * 100 - 50;
+            return {
+              date: date.toISOString(),
+              open: basePrice,
+              high: basePrice + Math.random() * 20,
+              low: basePrice - Math.random() * 20,
+              close: basePrice + Math.random() * 10 - 5
+            };
+          })
+        }
+      };
+      ws.onmessage({ data: JSON.stringify(mockHistoricalData) });
+      toggleHistoricalData('^NSEI', 'NIFTY 50');
+
+      if (isMarketOpen()) {
+        setInterval(() => {
+          if (currentSymbol && isMarketOpen() && currentSymbol !== 'BTCUSDT') {
+            const lastPrice = currentData?.currentPrice || 23598.95;
+            const newPrice = lastPrice + (Math.random() * 10 - 5);
+            ws.onmessage({ data: JSON.stringify({ 
+              priceUpdate: { symbol: currentSymbol, price: newPrice, date: new Date().toISOString() }
+            }) });
+          }
+        }, 5000);
+      }
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('Received local data:', data);
+
+        if (data.indices) {
+          updateIndices(data.indices);
+          if (activeSymbol && isIndex && activeSymbol !== 'BTCUSDT') {
+            const activeIndex = data.indices.find(index => index.symbol === activeSymbol);
+            if (activeIndex) {
+              ws.send(JSON.stringify({ historical: activeSymbol, name: activeIndex.name }));
+            }
+          }
+        }
+
+        if (data.stocks) {
+          updateTopStocks(data.stocks);
+          if (activeSymbol && !isIndex) {
+            const activeStock = data.stocks.find(stock => stock.symbol === activeSymbol);
+            if (activeStock) {
+              ws.send(JSON.stringify({ search: activeSymbol }));
+            }
+          }
+        }
+
+        if ('searchResult' in data) {
+          updateSearchResult(data.searchResult);
+        }
+
+        if ('historicalData' in data && data.historicalData.symbol === currentSymbol) {
+          currentData = {
+            symbol: data.historicalData.symbol,
+            name: data.historicalData.name,
+            historicalData: data.historicalData.data,
+            currentPrice: data.historicalData.currentPrice
+          };
+          if (activeSymbol === currentSymbol) {
+            renderChart(currentData.name, currentData.historicalData, currentData.currentPrice);
+            updateActiveButton(currentSymbol);
+          }
+        }
+
+        if ('priceUpdate' in data && data.priceUpdate.symbol === currentSymbol && isMarketOpen() && currentChartType === 'candlestick') {
+          const lastCandle = currentData.historicalData[currentData.historicalData.length - 1];
+          const newCandle = {
+            date: data.priceUpdate.date,
+            open: lastCandle.close,
+            high: Math.max(lastCandle.close, data.priceUpdate.price),
+            low: Math.min(lastCandle.close, data.priceUpdate.price),
+            close: data.priceUpdate.price
+          };
+          currentData.historicalData.push(newCandle);
+          currentData.currentPrice = data.priceUpdate.price;
+          if (currentData.historicalData.length > 60) {
+            currentData.historicalData.shift();
+          }
+          renderChart(currentData.name, currentData.historicalData, currentData.currentPrice);
+        }
+
+        if (data.error) {
+          showError(`Error: ${data.error}`);
+        }
+      } catch (err) {
+        console.error('Error parsing local WebSocket message:', err);
+        showError('Client-side error: Failed to process data');
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('Local WebSocket error:', error);
+      showError('Local WebSocket connection error');
+    };
+
+    ws.onclose = () => {
+      console.log('Local WebSocket closed');
+      showError('Local WebSocket connection closed. Reconnecting...');
+      setTimeout(connectWebSocket, 2000);
+    };
+  }
+
+  function connectBinanceWebSocket() {
+    binanceWs = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@kline_1m');
+
+    binanceWs.onopen = () => {
+      console.log('Binance WebSocket connected');
+    };
+
+    binanceWs.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      const kline = data.k;
+      if (!kline) return;
+
+      const historicalData = currentData && currentData.symbol === 'BTCUSDT' ? currentData.historicalData : [];
+      const newCandle = {
+        date: new Date(kline.t).toISOString(),
+        open: parseFloat(kline.o),
+        high: parseFloat(kline.h),
+        low: parseFloat(kline.l),
+        close: parseFloat(kline.c)
+      };
+
+      if (historicalData.length === 0 || new Date(historicalData[historicalData.length - 1].date).getTime() < kline.t) {
+        historicalData.push(newCandle);
+        if (historicalData.length > 60) {
+          historicalData.shift();
+        }
+      }
+
+      if (currentSymbol === 'BTCUSDT') {
+        currentData = {
+          symbol: 'BTCUSDT',
+          name: 'Bitcoin (BTC/USDT)',
+          historicalData: historicalData,
+          currentPrice: parseFloat(kline.c)
+        };
+        if (activeSymbol === 'BTCUSDT') {
+          renderChart(currentData.name, currentData.historicalData, currentData.currentPrice);
+          updateBitcoinPriceCard(currentData.currentPrice);
+        }
+      }
+    };
+
+    binanceWs.onerror = (error) => {
+      console.error('Binance WebSocket error:', error);
+      showError('Binance WebSocket connection error');
+    };
+
+    binanceWs.onclose = () => {
+      console.log('Binance WebSocket closed');
+      showError('Binance WebSocket connection closed. Reconnecting...');
+      setTimeout(connectBinanceWebSocket, 2000);
+    };
+  }
+
+  connectWebSocket();
+  connectBinanceWebSocket();
+
+  function showError(message) {
+    errorMessage.textContent = message;
+    errorMessage.classList.add('show');
+    setTimeout(() => errorMessage.classList.remove('show'), 5000);
+  }
+
+  function updateActiveButton(symbol) {
+    const buttons = document.querySelectorAll('.index-button');
+    buttons.forEach(button => {
+      button.classList.remove('active');
+      if (symbol && button.getAttribute('onclick').includes(`'${symbol}'`)) {
+        button.classList.add('active');
+      }
+    });
+  }
+
+  function updateIndices(indices) {
+    if (!Array.isArray(indices)) indices = [];
+
+    const desiredIndices = [
+      { symbol: '^NSEI', name: 'NIFTY 50' },
+      { symbol: '^BSESN', name: 'SENSEX' },
+      { symbol: '^NSEBANK', name: 'BANK NIFTY' },
+      { symbol: '^NSEMDCP50', name: 'NIFTY MIDCAP 50' },
+      { symbol: 'BTCUSDT', name: 'Bitcoin (BTC/USDT)', price: 60000, lastClose: 59000, percentChange: 1.69 } // Offline Bitcoin profile
+    ];
+
+    desiredIndices.forEach((desiredIndex, idx) => {
+      const index = indices.find(i => i.symbol === desiredIndex.symbol) || {
+        symbol: desiredIndex.symbol,
+        name: desiredIndex.name,
+        price: desiredIndex.price || null,
+        lastClose: desiredIndex.lastClose || null,
+        percentChange: desiredIndex.percentChange || null
+      };
+
+      const isBitcoin = index.symbol === 'BTCUSDT';
+      const price = index.price && !isNaN(index.price) ? 
+        (isBitcoin ? `$${Number(index.price).toLocaleString('en-US', { maximumFractionDigits: 2 })}` : `₹${Number(index.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
+      const lastClose = index.lastClose && !isNaN(index.lastClose) ? 
+        (isBitcoin ? `$${Number(index.lastClose).toLocaleString('en-US', { maximumFractionDigits: 2 })}` : `₹${Number(index.lastClose).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
+      const percentChange = index.percentChange && !isNaN(index.percentChange) ? `${index.percentChange >= 0 ? '+' : ''}${Number(index.percentChange).toFixed(2)}%` : 'N/A';
+
+      let card = document.getElementById(`index-${index.symbol}`);
+      if (!card) {
+        card = document.createElement('div');
+        card.id = `index-${index.symbol}`;
+        card.className = 'price-card';
+        card.style.animationDelay = `${0.3 + (idx * 0.05)}s`;
+        card.innerHTML = `
+          <div>
+            <h3 class="asset-name">${index.name}</h3>
+            <p class="last-close">Last Close: ${lastClose}</p>
+          </div>
+          <div class="price-display">
+            <p class="current-price ${price === 'N/A' ? 'unavailable' : 'available'}">Price: ${price}</p>
+            <p class="stock-change ${percentChange === 'N/A' ? '' : (index.percentChange >= 0 ? 'positive' : 'negative')}">${percentChange}</p>
+          </div>
+        `;
+        card.onclick = () => isBitcoin ? toggleBitcoinData(index.symbol, index.name) : toggleHistoricalData(index.symbol, index.name);
+        stockCards.appendChild(card);
+      } else {
+        const priceEl = card.querySelector('.current-price');
+        const changeEl = card.querySelector('.stock-change');
+        if (priceEl.textContent !== `Price: ${price}`) {
+          priceEl.textContent = `Price: ${price}`;
+          priceEl.className = `current-price ${price === 'N/A' ? 'unavailable' : 'available'}`;
+        }
+        if (changeEl.textContent !== percentChange) {
+          changeEl.textContent = percentChange;
+          changeEl.className = `stock-change ${percentChange === 'N/A' ? '' : (index.percentChange >= 0 ? 'positive' : 'negative')}`;
+        }
+      }
+    });
+  }
+
+  function updateBitcoinPriceCard(currentPrice) {
+    const symbol = 'BTCUSDT';
+    const name = 'Bitcoin (BTC/USDT)';
+    const price = currentPrice ? `$${Number(currentPrice).toLocaleString('en-US', { maximumFractionDigits: 2 })}` : 'N/A';
+    const lastClose = currentData && currentData.historicalData.length > 1 ? `$${Number(currentData.historicalData[currentData.historicalData.length - 2].close).toLocaleString('en-US', { maximumFractionDigits: 2 })}` : 'N/A';
+    const percentChange = currentPrice && currentData && currentData.historicalData.length > 1 ? 
+      ((currentPrice - currentData.historicalData[currentData.historicalData.length - 2].close) / currentData.historicalData[currentData.historicalData.length - 2].close * 100).toFixed(2) : 'N/A';
+
+    let card = document.getElementById(`index-${symbol}`);
+    if (card) {
+      const priceEl = card.querySelector('.current-price');
+      const changeEl = card.querySelector('.stock-change');
+      priceEl.textContent = `Price: ${price}`;
+      priceEl.className = `current-price ${price === 'N/A' ? 'unavailable' : 'available'}`;
+      changeEl.textContent = percentChange === 'N/A' ? 'N/A' : `${percentChange >= 0 ? '+' : ''}${percentChange}%`;
+      changeEl.className = `stock-change ${percentChange === 'N/A' ? '' : (percentChange >= 0 ? 'positive' : 'negative')}`;
+    }
+  }
+
+  function updateTopStocks(stocks) {
+    if (!Array.isArray(stocks)) return;
+
+    stocks.forEach((stock, idx) => {
+      if (!stock || !stock.symbol || !stock.name) return;
+
+      const price = stock.price && !isNaN(stock.price) ? `₹${Number(stock.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'N/A';
+      const lastClose = stock.lastClose && !isNaN(stock.lastClose) ? `₹${Number(stock.lastClose).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'N/A';
+      const percentChange = stock.percentChange && !isNaN(stock.percentChange) ? `${stock.percentChange >= 0 ? '+' : ''}${Number(stock.percentChange).toFixed(2)}%` : 'N/A';
+
+      let card = document.getElementById(`stock-${stock.symbol}`);
+      if (!card) {
+        card = document.createElement('div');
+        card.id = `stock-${stock.symbol}`;
+        card.className = 'top-stock-card';
+        card.style.animationDelay = `${0.2 + (idx * 0.05)}s`;
+        card.innerHTML = `
+          <div class="stock-info">
+            <h3 class="stock-name">${stock.name}</h3>
+            <p class="stock-price">Price: ${price}</p>
+            <p class="stock-change ${percentChange === 'N/A' ? '' : (stock.percentChange >= 0 ? 'positive' : 'negative')}">${percentChange}</p>
+          </div>
+        `;
+        card.onclick = () => {
+          searchInput.value = stock.symbol;
+          manualSearch();
+        };
+        topStocksContainer.appendChild(card);
+      } else {
+        const priceEl = card.querySelector('.stock-price');
+        const changeEl = card.querySelector('.stock-change');
+        if (priceEl.textContent !== `Price: ${price}`) {
+          priceEl.textContent = `Price: ${price}`;
+        }
+        if (changeEl.textContent !== percentChange) {
+          changeEl.textContent = percentChange;
+          changeEl.className = `stock-change ${percentChange === 'N/A' ? '' : (stock.percentChange >= 0 ? 'positive' : 'negative')}`;
+        }
+      }
+    });
+  }
+
+  function updateSearchResult(result) {
+    if (result === null) {
+      searchResult.classList.remove('show');
+      if (activeSymbol === null) {
+        chartContainer.classList.remove('show');
+        tradePanel.classList.remove('show');
+        if (stockChart) stockChart.destroy();
+        priceInfo.innerHTML = '';
+      }
+    } else if (result.error) {
+      searchResult.innerHTML = `<p>${result.error}</p>`;
+      searchResult.classList.add('error', 'show');
+    } else {
+      const price = result.price && !isNaN(result.price) ? `₹${Number(result.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'N/A';
+      searchResult.innerHTML = `
+        <h3>Search Result</h3>
+        <p><strong>${result.name || 'Unknown'}</strong></p>
+        <p>Price: ${price}</p>
+      `;
+      searchResult.classList.remove('error');
+      searchResult.classList.add('show');
+
+      if (result.historicalData) {
+        currentSymbol = result.symbol;
+        activeSymbol = currentSymbol;
+        isIndex = false;
+        currentData = {
+          symbol: result.symbol,
+          name: result.name || 'Unknown',
+          historicalData: result.historicalData,
+          currentPrice: result.price
+        };
+        renderChart(currentData.name, currentData.historicalData, currentData.currentPrice);
+        updateActiveButton(null);
+        tradePanel.classList.add('show');
+        updateTradeInfo();
+      }
+    }
+  }
+
+  function toggleHistoricalData(symbol, name) {
+    if (activeSymbol === symbol) {
+      activeSymbol = null;
+      chartContainer.classList.remove('show');
+      tradePanel.classList.remove('show');
+      if (stockChart) stockChart.destroy();
+      priceInfo.innerHTML = '';
+      currentSymbol = null;
+      currentData = null;
+      updateActiveButton(null);
+    } else {
+      activeSymbol = symbol;
+      currentSymbol = symbol;
+      isIndex = true;
+      ws.send(JSON.stringify({ historical: symbol, name }));
+      tradePanel.classList.remove('show');
+    }
+  }
+
+  function toggleBitcoinData(symbol, name) {
+    if (activeSymbol === symbol) {
+      activeSymbol = null;
+      chartContainer.classList.remove('show');
+      tradePanel.classList.remove('show');
+      if (stockChart) stockChart.destroy();
+      priceInfo.innerHTML = '';
+      currentSymbol = null;
+      currentData = null;
+      updateActiveButton(null);
+    } else {
+      activeSymbol = symbol;
+      currentSymbol = symbol;
+      isIndex = true;
+      if (!currentData || currentData.symbol !== 'BTCUSDT') {
+        currentData = {
+          symbol: 'BTCUSDT',
+          name: 'Bitcoin (BTC/USDT)',
+          historicalData: [],
+          currentPrice: null
+        };
+      }
+      renderChart(currentData.name, currentData.historicalData, currentData.currentPrice);
+      updateActiveButton(symbol);
+      tradePanel.classList.remove('show');
+    }
+  }
+
+  function renderChart(name, historicalData, currentPrice) {
+    if (stockChart) stockChart.destroy();
+    chartContainer.classList.add('show');
+    const ctx = document.getElementById('stockChart').getContext('2d');
+
+    const lastClosingPrice = historicalData.length > 0 ? historicalData[historicalData.length - 1].close : 'N/A';
+    const isBitcoin = name === 'Bitcoin (BTC/USDT)';
+    const formattedCurrentPrice = currentPrice && !isNaN(currentPrice) ? 
+      (isBitcoin ? `$${Number(currentPrice).toLocaleString('en-US', { maximumFractionDigits: 2 })}` : `₹${Number(currentPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
+    const formattedLastClose = lastClosingPrice && !isNaN(lastClosingPrice) ? 
+      (isBitcoin ? `$${Number(lastClosingPrice).toLocaleString('en-US', { maximumFractionDigits: 2 })}` : `₹${Number(lastClosingPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
+
+    priceInfo.innerHTML = `
+      <p class="${formattedCurrentPrice === 'N/A' ? 'unavailable' : 'available'}">Price: ${formattedCurrentPrice}</p>
+      <p class="last-close">Last Close: ${formattedLastClose}</p>
+    `;
+
+    const themes = {
+      light: {
+        backgroundColor: '#FFFFFF',
+        titleColor: '#1F2A44',
+        bodyColor: '#1F2A44',
+        borderColor: '#DDE2E8',
+        textColor: '#6B7280',
+        gridColor: 'rgba(221, 226, 232, 0.5)',
+        candlestickUp: '#22C55E',
+        candlestickDown: '#F43F5E',
+        candlestickBorderUp: '#1A8E47',
+        candlestickBorderDown: '#B52C3F',
+        lineColor: '#5B5FFF',
+        lineFill: 'rgba(91, 95, 255, 0.3)',
+        shadowColor: 'rgba(0, 0, 0, 0.25)',
+        currentPriceLine: '#F97316'
+      },
+      dark: {
+        backgroundColor: '#1F2A44',
+        titleColor: '#F3F4F6',
+        bodyColor: '#F3F4F6',
+        borderColor: '#374151',
+        textColor: '#9CA3AF',
+        gridColor: 'rgba(55, 65, 81, 0.5)',
+        candlestickUp: '#4ADE80',
+        candlestickDown: '#FF6B6B',
+        candlestickBorderUp: '#2C8A4B',
+        candlestickBorderDown: '#B52C3F',
+        lineColor: '#00E5D8',
+        lineFill: 'rgba(0, 229, 216, 0.3)',
+        shadowColor: 'rgba(0, 0, 0, 0.6)',
+        currentPriceLine: '#FF6B6B'
+      },
+      midnight: {
+        backgroundColor: '#1A2344',
+        titleColor: '#E2E8F0',
+        bodyColor: '#E2E8F0',
+        borderColor: '#2D3748',
+        textColor: '#A0AECB',
+        gridColor: 'rgba(45, 55, 72, 0.5)',
+        candlestickUp: '#34D399',
+        candlestickDown: '#F87171',
+        candlestickBorderUp: '#2A9F73',
+        candlestickBorderDown: '#C34E4E',
+        lineColor: '#6366F1',
+        lineFill: 'rgba(99, 102, 241, 0.3)',
+        shadowColor: 'rgba(0, 0, 0, 0.7)',
+        currentPriceLine: '#F59E0B'
+      }
+    };
+
+    const theme = themes[currentTheme];
+    ctx.canvas.style.background = currentTheme === 'light' ? 'linear-gradient(145deg, #FFFFFF, #FAFCFE)' : currentTheme === 'dark' ? 'linear-gradient(145deg, #1F2A44, #374151)' : 'linear-gradient(145deg, #1A2344, #2D3748)';
+
+    if (currentChartType === 'line') {
+      const prices = historicalData.map(d => d.close);
+      const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+      gradient.addColorStop(0, theme.lineFill);
+      gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+      stockChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: Array(historicalData.length).fill(''),
+          datasets: [{
+            label: `${name} - Price`,
+            data: prices,
+            borderColor: theme.lineColor,
+            borderWidth: 2.5,
+            fill: true,
+            backgroundColor: gradient,
+            pointRadius: 4,
+            pointHoverRadius: 8,
+            pointBackgroundColor: theme.lineColor,
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 1200, easing: 'easeOutQuart' },
+          plugins: {
+            legend: { display: false },
+            title: {
+              display: true,
+              text: name,
+              color: theme.titleColor,
+              font: { size: 22, family: "'Inter', sans-serif", weight: "700" },
+              padding: { top: 12, bottom: 24 }
+            },
+            tooltip: {
+              backgroundColor: theme.backgroundColor,
+              titleColor: theme.titleColor,
+              bodyColor: theme.bodyColor,
+              borderColor: theme.borderColor,
+              borderWidth: 1,
+              padding: 12,
+              cornerRadius: 10,
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+              callbacks: {
+                label: (context) => `Price: ${isBitcoin ? '$' : '₹'}${context.parsed.y.toLocaleString(isBitcoin ? 'en-US' : 'en-IN', { maximumFractionDigits: 2 })}`
+              }
+            }
+          },
+          scales: {
+            x: { display: false },
+            y: {
+              title: { display: true, text: `Price (${isBitcoin ? '$' : '₹'})`, color: theme.textColor, font: { size: 14 } },
+              ticks: {
+                color: theme.textColor,
+                callback: (value) => `${isBitcoin ? '$' : '₹'}${value.toLocaleString(isBitcoin ? 'en-US' : 'en-IN', { maximumFractionDigits: 2 })}`
+              },
+              grid: { color: theme.gridColor, borderDash: [6, 6] }
+            }
+          }
+        }
+      });
+    } else {
+      const candlestickData = historicalData.map(d => ({
+        x: new Date(d.date).getTime(),
+        o: d.open,
+        h: d.high,
+        l: d.low,
+        c: d.close
+      }));
+
+      stockChart = new Chart(ctx, {
+        type: 'candlestick',
+        data: {
+          datasets: [{
+            label: `${name} - Candlestick`,
+            data: candlestickData,
+            color: {
+              up: theme.candlestickUp,
+              down: theme.candlestickDown,
+              unchanged: theme.textColor
+            },
+            borderColor: {
+              up: theme.candlestickBorderUp,
+              down: theme.candlestickBorderDown,
+              unchanged: theme.borderColor
+            },
+            barThickness: 12,
+            barPercentage: 0.98,
+            categoryPercentage: 0.98,
+            wickThickness: 0.8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 500, easing: 'easeOutQuart' },
+          plugins: {
+            legend: { display: false },
+            title: {
+              display: true,
+              text: name,
+              color: theme.titleColor,
+              font: { size: 22, family: "'Inter', sans-serif", weight: "700" },
+              padding: { top: 12, bottom: 24 }
+            },
+            tooltip: {
+              backgroundColor: theme.backgroundColor,
+              titleColor: theme.titleColor,
+              bodyColor: theme.bodyColor,
+              borderColor: theme.borderColor,
+              borderWidth: 1,
+              padding: 12,
+              cornerRadius: 10,
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+              callbacks: {
+                label: (context) => {
+                  const data = context.raw;
+                  return [
+                    `Open: ${isBitcoin ? '$' : '₹'}${data.o.toLocaleString(isBitcoin ? 'en-US' : 'en-IN', { maximumFractionDigits: 2 })}`,
+                    `High: ${isBitcoin ? '$' : '₹'}${data.h.toLocaleString(isBitcoin ? 'en-US' : 'en-IN', { maximumFractionDigits: 2 })}`,
+                    `Low: ${isBitcoin ? '$' : '₹'}${data.l.toLocaleString(isBitcoin ? 'en-US' : 'en-IN', { maximumFractionDigits: 2 })}`,
+                    `Close: ${isBitcoin ? '$' : '₹'}${data.c.toLocaleString(isBitcoin ? 'en-US' : 'en-IN', { maximumFractionDigits: 2 })}`
+                  ];
+                }
+              },
+              annotation: {
+                annotations: {
+                  currentPriceLine: {
+                    type: 'line',
+                    yMin: currentPrice,
+                    yMax: currentPrice,
+                    borderColor: theme.currentPriceLine,
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    label: {
+                      content: `Current: ${isBitcoin ? '$' : '₹'}${currentPrice.toLocaleString(isBitcoin ? 'en-US' : 'en-IN', { maximumFractionDigits: 2 })}`,
+                      enabled: true,
+                      position: 'end',
+                      backgroundColor: theme.currentPriceLine,
+                      color: '#fff',
+                      font: { size: 12 },
+                      padding: 4,
+                      cornerRadius: 4
+                    }
+                  }
+                }
+              }
+            },
+            scales: {
+              x: { display: false },
+              y: {
+                ticks: {
+                  color: theme.textColor,
+                  callback: (value) => `${isBitcoin ? '$' : '₹'}${value.toLocaleString(isBitcoin ? 'en-US' : 'en-IN', { maximumFractionDigits: 2 })}`
+                },
+                grid: { color: theme.gridColor, borderDash: [6, 6] }
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+
+  function toggleChartType() {
+    currentChartType = currentChartType === 'line' ? 'candlestick' : 'line';
+    toggleChartTypeButton.textContent = `Switch to ${currentChartType === 'line' ? 'Candlestick' : 'Line'}`;
+    if (currentData && activeSymbol === currentData.symbol) {
+      renderChart(currentData.name, currentData.historicalData, currentData.currentPrice);
+    }
+  }
+
+  function switchTradeTab(action) {
+    tradeAction = action;
+    const buyTab = document.querySelector('.trade-tab.buy');
+    const sellTab = document.querySelector('.trade-tab.sell');
+    const tradeButton = document.getElementById('tradeButton');
+    
+    if (action === 'buy') {
+      buyTab.classList.add('active');
+      sellTab.classList.remove('active');
+      tradeButton.classList.remove('sell');
+      tradeButton.classList.add('buy');
+      tradeButton.textContent = 'BUY';
+    } else {
+      sellTab.classList.add('active');
+      buyTab.classList.remove('active');
+      tradeButton.classList.remove('buy');
+      tradeButton.classList.add('sell');
+      tradeButton.textContent = 'SELL';
+    }
+    updateTradeInfo();
+  }
+
+  function selectTradeOption(element, option) {
+    document.querySelectorAll('.trade-option').forEach(opt => opt.classList.remove('active'));
+    element.classList.add('active');
+    updateTradeInfo();
+  }
+
+  function updateTradeInfo() {
+    const quantity = parseInt(document.getElementById('quantitySelect').value) || 0;
+    const orderType = document.getElementById('orderTypeSelect').value;
+    const priceInput = document.getElementById('priceInput');
+    const tradeInfo = document.getElementById('tradeInfo');
+    const approxReq = document.getElementById('approxReq');
+
+    let price = parseFloat(priceInput.value) || currentData.currentPrice;
+    if (orderType === 'Market') {
+      price = currentData.currentPrice;
+      priceInput.value = price.toFixed(2);
+      priceInput.disabled = true;
+    } else {
+      priceInput.disabled = false;
+    }
+
+    const totalCost = quantity * price;
+    approxReq.textContent = `Approx req.: ₹${totalCost.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+    
+    if (orderType === 'Limit') {
+      tradeInfo.textContent = `Order will be executed at ₹${price.toLocaleString('en-IN', { maximumFractionDigits: 2 })} or ${tradeAction === 'buy' ? 'lower' : 'higher'} price`;
+    } else {
+      tradeInfo.textContent = `Order will be executed at market price: ₹${price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+    }
+  }
+
+  function executeTradeFromPanel() {
+    if (!isMarketOpen() && currentSymbol !== 'BTCUSDT') {
+      showError('Market is closed. Trading is only available from 9:15 AM to 3:30 PM IST.');
+      return;
+    }
+
+    const quantity = parseInt(document.getElementById('quantitySelect').value) || 0;
+    const orderType = document.getElementById('orderTypeSelect').value;
+    let price = parseFloat(document.getElementById('priceInput').value) || currentData.currentPrice;
+
+    if (quantity <= 0) {
+      showError('Please select a valid quantity.');
+      return;
+    }
+
+    const totalCost = quantity * price;
+    if (tradeAction === 'buy' && totalCost > userBalance && userBalance >= 0) {
+      showError('Insufficient balance to place this buy order.');
+      return;
+    }
+
+    if (tradeAction === 'buy') {
+      userBalance -= totalCost;
+    } else {
+      userBalance += totalCost;
+    }
+    document.getElementById('balanceInfo').innerHTML = `Balance: <span class="${userBalance < 0 ? 'negative' : ''}">₹${userBalance.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>`;
+
+    const formattedPrice = price.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+    showError(`${tradeAction.toUpperCase()} order placed for ${currentData.name} (${currentSymbol}) - ${quantity} shares at ₹${formattedPrice}`);
+    
+    document.getElementById('quantitySelect').value = '';
+    document.getElementById('priceInput').value = '';
+    updateTradeInfo();
+  }
+
+  function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+  }
+
+  const autoSearch = debounce((query) => {
+    if (query) {
+      ws.send(JSON.stringify({ search: query }));
+    } else {
+      ws.send(JSON.stringify({ clearSearch: true }));
+      toggleHistoricalData('^NSEI', 'NIFTY 50');
+    }
+  }, 500);
+
+  function manualSearch() {
+    const query = searchInput.value.trim();
+    if (query) {
+      ws.send(JSON.stringify({ search: query }));
+    } else {
+      ws.send(JSON.stringify({ clearSearch: true }));
+      toggleHistoricalData('^NSEI', 'NIFTY 50');
+    }
+  }
+
+  searchInput.addEventListener('input', (e) => autoSearch(e.target.value.trim()));
+</script>
+</body>
+</html>
