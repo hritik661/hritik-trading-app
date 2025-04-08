@@ -3,12 +3,15 @@ const yahooFinance = require('yahoo-finance2').default;
 const WebSocket = require('ws');
 const http = require('http');
 const path = require('path');
+// Optional: Add cors if needed for cross-origin requests
+const cors = require('cors');
 
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(cors()); // Optional: Enable CORS if required
 
 const indices = [
   { name: 'NIFTY 50', symbol: '^NSEI' },
@@ -414,7 +417,50 @@ wss.on('connection', (ws) => {
   });
 });
 
+let isServerListening = false;
+
+function startServer(port) {
+  return new Promise((resolve, reject) => {
+    if (isServerListening) {
+      console.log(`Server is already listening on port ${port}, skipping duplicate listen call.`);
+      resolve();
+      return;
+    }
+
+    server.listen(port, () => {
+      isServerListening = true;
+      console.log(`Server running on port ${port}`);
+      resolve();
+    });
+
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`Port ${port} is already in use, attempting to close and retry...`);
+        server.close(() => startServer(port).then(resolve).catch(reject));
+      } else {
+        reject(err);
+      }
+    });
+  });
+}
+
+function shutdown() {
+  console.log('Received shutdown signal, closing server...');
+  isServerListening = false;
+  server.close(() => {
+    console.log('HTTP server closed.');
+    wss.close(() => {
+      console.log('WebSocket server closed.');
+      process.exit(0);
+    });
+  });
+}
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
+
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  server.listen(PORT, () => console.log(`Server running on port ${PORT}`))
+startServer(PORT).catch((err) => {
+  console.error('Failed to start server:', err.message);
+  process.exit(1);
 });
