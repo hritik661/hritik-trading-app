@@ -820,43 +820,40 @@ body.midnight {
     cursor: pointer;
     animation: fadeInUp 0.6s ease-out both;
     backdrop-filter: blur(8px);
+    color: var(--text-primary); /* Ensure text is visible in dark/midnight themes */
 }
 
 .top-stock-card:hover {
     transform: translateY(-6px);
     box-shadow: 0 10px 24px var(--shadow-color);
-    background: var(--accent-color);
-    color: #fff;
-}
-
-.top-stock-card:hover .stock-name,
-.top-stock-card:hover .stock-price,
-.top-stock-card:hover .stock-change {
-    color: #fff;
+    background: var(--accent-hover);
+    color: #fff; /* White text on hover for contrast */
 }
 
 .stock-info {
     display: flex;
     flex-direction: column;
+    color: var(--text-primary); /* Ensure all text within stock-info uses theme text color */
 }
 
 .stock-name {
     font-size: 16px;
     font-weight: 600;
-    color: var(--text-primary);
     margin-bottom: 8px;
+    color: var(--text-primary); /* Explicitly set for better control */
 }
 
 .stock-price {
     font-size: 16px;
     font-weight: 700;
-    color: var(--positive);
     margin-bottom: 8px;
+    color: var(--positive); /* Keep positive color for price */
 }
 
 .stock-change {
     font-size: 13px;
     font-weight: 500;
+    color: inherit; /* Inherit from parent to adapt to hover state */
 }
 
 .stock-change.positive {
@@ -1905,4 +1902,66 @@ body.midnight {
     .loser-card {
         padding: 12px;
     }
+}
+.trade-button.buy {
+    background: var(--positive);
+}
+
+.trade-button.sell {
+    background: var(--negative);
+}
+
+.options-button.buy {
+    background: var(--positive);
+}
+
+.options-button.sell {
+    background: var(--negative);
+}
+
+.trade-info, .options-info {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+.stock-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.action-button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px var(--shadow-color);
+}
+
+.action-button.buy {
+    background: var(--positive);
+    color: #fff;
+}
+
+.action-button.sell {
+    background: var(--negative);
+    color: #fff;
+}
+
+.action-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.action-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px var(--shadow-color);
+}
+
+#walletBalance {
+    color: var(--positive);
+    font-weight: 600;
 }

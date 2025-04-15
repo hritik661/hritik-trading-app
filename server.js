@@ -3,7 +3,6 @@ const yahooFinance = require('yahoo-finance2').default;
 const WebSocket = require('ws');
 const http = require('http');
 const path = require('path');
-// Optional: Add cors if needed for cross-origin requests
 const cors = require('cors');
 
 const app = express();
@@ -11,7 +10,7 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(cors()); // Optional: Enable CORS if required
+app.use(cors());
 
 const indices = [
   { name: 'NIFTY 50', symbol: '^NSEI' },
@@ -132,6 +131,7 @@ async function fetchData(items) {
       const quote = await yahooFinance.quote(item.symbol);
       const currentPrice = quote.regularMarketPrice || 'N/A';
       const lastClose = quote.regularMarketPreviousClose || 'N/A';
+      const volume = quote.regularMarketVolume || 'N/A'; // Add volume
       const fiftyTwoWeekHigh = quote.fiftyTwoWeekHigh || 'N/A';
       let percentChange = 'N/A';
       let percentDrop = 'N/A';
@@ -146,6 +146,7 @@ async function fetchData(items) {
         symbol: item.symbol,
         price: currentPrice,
         lastClose: lastClose,
+        volume: volume, // Include volume
         percentChange: percentChange,
         fiftyTwoWeekHigh: fiftyTwoWeekHigh,
         percentDrop: percentDrop
@@ -157,6 +158,7 @@ async function fetchData(items) {
         symbol: item.symbol,
         price: 'N/A',
         lastClose: 'N/A',
+        volume: 'N/A', // Default volume
         percentChange: 'N/A',
         fiftyTwoWeekHigh: 'N/A',
         percentDrop: 'N/A'
@@ -168,13 +170,14 @@ async function fetchData(items) {
 
 async function fetchLosers(stocksData) {
   const losers = stocksData
-    .filter(stock => stock.percentDrop !== 'N/A' && stock.percentDrop >= 30) // Stocks down 30% or more
-    .sort((a, b) => b.percentDrop - a.percentDrop) // Sort by largest drop
-    .slice(0, 30); // Limit to 30 stocks
+    .filter(stock => stock.percentDrop !== 'N/A' && stock.percentDrop >= 30)
+    .sort((a, b) => b.percentDrop - a.percentDrop)
+    .slice(0, 30);
   return losers.map(stock => ({
     name: stock.name,
     symbol: stock.symbol,
     price: stock.price,
+    volume: stock.volume, // Include volume
     percentDrop: stock.percentDrop
   }));
 }
@@ -203,13 +206,15 @@ async function searchStock(query) {
       name: stock.shortname || stock.longname || 'Unknown',
       symbol: stock.symbol,
       price: quote.regularMarketPrice || 'N/A',
+      volume: quote.regularMarketVolume || 'N/A', // Add volume
       currency: quote.currency || 'Unknown',
       historicalData: historical.map(data => ({
         date: data.date,
         open: data.open,
         high: data.high,
         low: data.low,
-        close: data.close
+        close: data.close,
+        volume: data.volume // Include historical volume
       }))
     };
   } catch (error) {
@@ -237,13 +242,15 @@ async function fetchHistoricalData(symbol, name) {
         open: data.open,
         high: data.high,
         low: data.low,
-        close: data.close
+        close: data.close,
+        volume: data.volume // Include historical volume
       })),
-      currentPrice: quote.regularMarketPrice || 'N/A'
+      currentPrice: quote.regularMarketPrice || 'N/A',
+      volume: quote.regularMarketVolume || 'N/A' // Current volume
     };
   } catch (error) {
     console.error(`Error fetching historical data for ${symbol}:`, error.message);
-    return { symbol, name, data: [], currentPrice: 'N/A' };
+    return { symbol, name, data: [], currentPrice: 'N/A', volume: 'N/A' };
   }
 }
 
@@ -251,7 +258,7 @@ function generateDynamicNews(indicesData) {
   const niftyData = indicesData.find(index => index.symbol === '^NSEI') || { percentChange: 0 };
   const isMarketUp = niftyData.percentChange > 0;
   const changeMagnitude = Math.abs(niftyData.percentChange).toFixed(2);
-  const currentPrice = niftyData.price || 24000; // Fallback value
+  const currentPrice = niftyData.price || 24000;
   const timeNow = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
   const newsTemplates = isMarketUp ? [
@@ -294,7 +301,6 @@ function generateDynamicNews(indicesData) {
     }
   ];
 
-  // Return 3 random news items
   return newsTemplates.sort(() => 0.5 - Math.random()).slice(0, 3);
 }
 
@@ -311,6 +317,7 @@ function dataChanged(oldData, newData) {
   return oldData.some((item, idx) => 
     item.price !== newData[idx].price || 
     item.lastClose !== newData[idx].lastClose || 
+    item.volume !== newData[idx].volume || // Check volume change
     item.percentChange !== newData[idx].percentChange || 
     item.name !== newData[idx].name || 
     item.symbol !== newData[idx].symbol ||
@@ -323,7 +330,7 @@ setInterval(async () => {
     const indicesData = await fetchData(indices);
     const stocksData = await fetchData(topStocks);
     const losersData = await fetchLosers(stocksData);
-    const newsData = generateDynamicNews(indicesData); // Generate dynamic news
+    const newsData = generateDynamicNews(indicesData);
     const broadcastData = {};
 
     if (dataChanged(lastIndicesData, indicesData)) {
@@ -341,7 +348,7 @@ setInterval(async () => {
       lastLosersData = losersData;
     }
 
-    broadcastData.news = newsData; // Always include news in the update
+    broadcastData.news = newsData;
 
     if (Object.keys(broadcastData).length > 0) {
       broadcastData.searchResult = currentSearchResult;
@@ -361,7 +368,7 @@ wss.on('connection', (ws) => {
       lastIndicesData = indicesData;
       lastStocksData = stocksData;
       lastLosersData = await fetchLosers(stocksData);
-      const newsData = generateDynamicNews(indicesData); // Initial news on connection
+      const newsData = generateDynamicNews(indicesData);
       ws.send(JSON.stringify({ 
         indices: indicesData, 
         stocks: stocksData, 
@@ -389,7 +396,8 @@ wss.on('connection', (ws) => {
             symbol: currentSearchResult.symbol,
             name: currentSearchResult.name,
             data: currentSearchResult.historicalData,
-            currentPrice: currentSearchResult.price
+            currentPrice: currentSearchResult.price,
+            volume: currentSearchResult.volume // Include volume
           };
         }
       } else if (data.clearSearch) {

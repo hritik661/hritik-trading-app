@@ -9,6 +9,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.21.2",
+    "luxon": "^3.6.1",
     "path": "^0.12.7",
     "ws": "^8.18.1",
     "yahoo-finance2": "^2.13.3"
