@@ -1965,3 +1965,353 @@ body.midnight {
     color: var(--positive);
     font-weight: 600;
 }
+.predictions-section {
+    margin: 2rem 0;
+    padding: 0 1rem;
+  }
+  
+  .predictions-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-primary, #F3F4F6);
+  }
+  
+  .predictions-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  .prediction-card {
+    background: var(--card-bg, #2D3748);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    flex: 1 1 calc(33.333% - 1rem);
+    min-width: 250px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    animation: fadeIn 0.5s ease forwards;
+  }
+  
+  .prediction-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  }
+  
+  .prediction-info h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem;
+    color: var(--text-primary, #F3F4F6);
+  }
+  
+  .prediction-info p {
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary, #9CA3AF);
+  }
+  
+  .prediction-price.available {
+    color: var(--text-primary, #F3F4F6);
+  }
+  
+  .prediction-gain {
+    color: #4ADE80;
+    font-weight: 500;
+  }
+  
+  @media (max-width: 768px) {
+    .prediction-card {
+      flex: 1 1 calc(50% - 1rem);
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .prediction-card {
+      flex: 1 1 100%;
+    }
+  }
+  
+  body.light .predictions-title,
+  body.light .prediction-info h3,
+  body.light .prediction-price.available {
+    color: #1E3A8A;
+  }
+  
+  body.light .prediction-info p {
+    color: #374151;
+  }
+  
+  body.light .prediction-card {
+    background: #F9FAFB;
+  }
+  
+  body.midnight .predictions-title,
+  body.midnight .prediction-info h3,
+  body.midnight .prediction-price.available {
+    color: #E2E8F0;
+  }
+  
+  body.midnight .prediction-info p {
+    color: #A0AECB;
+  }
+  
+  body.midnight .prediction-card {
+    background: #2D3748;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .portfolio-section {
+    margin-top: 24px;
+    padding: 20px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(245, 247, 250, 0.1));
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.portfolio-section:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+}
+
+.portfolio-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, var(--accent-color), #60A5FA);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.portfolio-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: var(--bg-secondary);
+    border-radius: 15px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 6px 18px var(--shadow-color);
+}
+
+.portfolio-stats p {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.portfolio-stats span {
+    font-weight: 700;
+    color: var(--positive);
+}
+
+.portfolio-stats .negative {
+    color: var(--negative);
+}
+
+#portfolioContainer {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.portfolio-card {
+    background: var(--bg-secondary);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 8px 24px var(--shadow-color);
+    border: 1px solid var(--border-color);
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+    animation: fadeInUp 0.6s ease-out both;
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+}
+
+.portfolio-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.15), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 0;
+}
+
+.portfolio-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 12px 32px var(--shadow-color);
+    background: var(--accent-hover);
+}
+
+.portfolio-card:hover::before {
+    opacity: 1;
+}
+
+.portfolio-card:hover .portfolio-name,
+.portfolio-card:hover .portfolio-info p {
+    color: #ffffff;
+}
+
+.portfolio-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    transition: color 0.3s ease;
+}
+
+.portfolio-info p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 6px 0;
+    transition: color 0.3s ease;
+}
+
+.portfolio-info .positive {
+    color: var(--positive);
+}
+
+.portfolio-info .negative {
+    color: var(--negative);
+}
+
+@media (max-width: 768px) {
+    .portfolio-section {
+        padding: 16px;
+    }
+    .portfolio-title {
+        font-size: 20px;
+    }
+    .portfolio-stats p {
+        font-size: 14px;
+    }
+    .portfolio-card {
+        padding: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .portfolio-section {
+        padding: 12px;
+    }
+    .portfolio-title {
+        font-size: 18px;
+    }
+    .portfolio-stats p {
+        font-size: 12px;
+    }
+    .portfolio-card {
+        padding: 10px;
+    }
+    #portfolioContainer {
+        grid-template-columns: 1fr;
+    }
+}
+
+.holding-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Space between circle and text */
+    padding: 8px 12px;
+    background-color: #3B82F6; /* Example color, adjust as needed */
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+  }
+  
+  .holding-toggle:hover {
+    background-color: #2563EB; /* Darker shade on hover */
+  }
+  
+  .circle {
+    width: 12px;
+    height: 12px;
+    background-color: #fff; /* Circle color */
+    border-radius: 50%; /* Makes it circular */
+    display: inline-block;
+  }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background-color: #1F2A44;
+    color: #F3F4F6;
+  }
+  
+  .header .holding-toggle {
+    margin-left: auto; /* Pushes the button to the right */
+  }
+  /* Add this to your existing CSS */
+.red-circle {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    background: red;
+    border-radius: 50%;
+    border: 2px solid white;
+    z-index: 1000; /* Ensure it stays on top of other elements */
+}
+
+/* Position the circle over the NIFTY 50 chart section */
+#chartContainer .red-circle {
+    top: 300px; /* Adjust this value to move vertically */
+    left: 50px; /* Adjust this value to move horizontally */
+}
+.holding-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: transparent; /* Ensure transparent background */
+    border: 1px solid transparent; /* Remove visible border */
+    color: var(--text-color);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.3s ease;
+  }
+  
+  .holding-toggle:hover {
+    background: transparent; /* No background on hover */
+    color: var(--hover-text-color); /* Slightly brighter text on hover */
+  }
+  
+  /* Define CSS variables for each theme */
+  body.light {
+    --text-color: #374151;
+    --hover-text-color: #1F2A44;
+  }
+  
+  body.dark {
+    --text-color: #9CA3AF;
+    --hover-text-color: #D1D5DB;
+  }
+  
+  body.midnight {
+    --text-color: #A0AECB;
+    --hover-text-color: #CBD5E1;
+  }

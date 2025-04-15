@@ -123,22 +123,25 @@ let currentSearchResult = null;
 let lastIndicesData = null;
 let lastStocksData = null;
 let lastLosersData = null;
+let lastPredictionsData = null;
 
 async function fetchData(items) {
   const data = [];
   for (const item of items) {
     try {
-      const quote = await yahooFinance.quote(item.symbol);
-      const currentPrice = quote.regularMarketPrice || 'N/A';
-      const lastClose = quote.regularMarketPreviousClose || 'N/A';
-      const volume = quote.regularMarketVolume || 'N/A'; // Add volume
-      const fiftyTwoWeekHigh = quote.fiftyTwoWeekHigh || 'N/A';
-      let percentChange = 'N/A';
-      let percentDrop = 'N/A';
-      if (currentPrice !== 'N/A' && lastClose !== 'N/A' && lastClose !== 0) {
+      const quote = await yahooFinance.quote(item.symbol, {
+        fields: ['regularMarketPrice', 'regularMarketPreviousClose', 'regularMarketVolume', 'fiftyTwoWeekHigh']
+      });
+      const currentPrice = quote.regularMarketPrice ?? null;
+      const lastClose = quote.regularMarketPreviousClose ?? null;
+      const volume = quote.regularMarketVolume ?? null;
+      const fiftyTwoWeekHigh = quote.fiftyTwoWeekHigh ?? null;
+      let percentChange = null;
+      let percentDrop = null;
+      if (currentPrice != null && lastClose != null && lastClose !== 0) {
         percentChange = ((currentPrice - lastClose) / lastClose) * 100;
       }
-      if (currentPrice !== 'N/A' && fiftyTwoWeekHigh !== 'N/A' && fiftyTwoWeekHigh !== 0) {
+      if (currentPrice != null && fiftyTwoWeekHigh != null && fiftyTwoWeekHigh !== 0) {
         percentDrop = ((fiftyTwoWeekHigh - currentPrice) / fiftyTwoWeekHigh) * 100;
       }
       data.push({
@@ -146,7 +149,7 @@ async function fetchData(items) {
         symbol: item.symbol,
         price: currentPrice,
         lastClose: lastClose,
-        volume: volume, // Include volume
+        volume: volume,
         percentChange: percentChange,
         fiftyTwoWeekHigh: fiftyTwoWeekHigh,
         percentDrop: percentDrop
@@ -156,12 +159,12 @@ async function fetchData(items) {
       data.push({
         name: item.name,
         symbol: item.symbol,
-        price: 'N/A',
-        lastClose: 'N/A',
-        volume: 'N/A', // Default volume
-        percentChange: 'N/A',
-        fiftyTwoWeekHigh: 'N/A',
-        percentDrop: 'N/A'
+        price: null,
+        lastClose: null,
+        volume: null,
+        percentChange: null,
+        fiftyTwoWeekHigh: null,
+        percentDrop: null
       });
     }
   }
@@ -169,30 +172,97 @@ async function fetchData(items) {
 }
 
 async function fetchLosers(stocksData) {
-  const losers = stocksData
-    .filter(stock => stock.percentDrop !== 'N/A' && stock.percentDrop >= 30)
+  return stocksData
+    .filter(stock => stock.percentDrop != null && stock.percentDrop >= 30)
     .sort((a, b) => b.percentDrop - a.percentDrop)
-    .slice(0, 30);
-  return losers.map(stock => ({
-    name: stock.name,
-    symbol: stock.symbol,
-    price: stock.price,
-    volume: stock.volume, // Include volume
-    percentDrop: stock.percentDrop
-  }));
+    .slice(0, 30)
+    .map(stock => ({
+      name: stock.name,
+      symbol: stock.symbol,
+      price: stock.price,
+      volume: stock.volume,
+      percentDrop: stock.percentDrop
+    }));
+}
+
+async function fetchPredictedGainers(stocksData) {
+  const predictions = [];
+  // Shuffle stocks to randomize selection
+  const shuffledStocks = [...stocksData].sort(() => 0.5 - Math.random());
+  const maxStocksToProcess = Math.min(shuffledStocks.length, 50); // Limit to avoid API overload
+
+  for (let i = 0; i < maxStocksToProcess && predictions.length < 10; i++) {
+    const stock = shuffledStocks[i];
+    try {
+      if (stock.price == null) continue;
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(endDate.getDate() - 14); // Last 14 days for better trend
+      const historical = await yahooFinance.historical(stock.symbol, {
+        period1: startDate,
+        period2: endDate,
+        interval: '1d'
+      });
+      if (historical.length < 5) continue; // Need enough data points
+
+      const recentPrices = historical.map(data => data.close).filter(price => price != null);
+      if (recentPrices.length < 2) continue;
+
+      const avgGain = recentPrices.reduce((acc, price, idx) => {
+        if (idx === 0) return acc;
+        return acc + ((price - recentPrices[idx - 1]) / recentPrices[idx - 1]) * 100;
+      }, 0) / (recentPrices.length - 1);
+
+      // Enhanced prediction: consider momentum and volatility
+      const volatility = recentPrices.length > 1 ? 
+        (Math.max(...recentPrices) / Math.min(...recentPrices) - 1) : 0;
+      const predictedGain = Math.max(0, avgGain * (1 + volatility * 0.5));
+      if (predictedGain >= 5) {
+        predictions.push({
+          name: stock.name,
+          symbol: stock.symbol,
+          price: stock.price,
+          predictedGain: parseFloat(predictedGain.toFixed(2))
+        });
+      }
+    } catch (error) {
+      console.error(`Error predicting ${stock.name} (${stock.symbol}):`, error.message);
+    }
+  }
+
+  // Pad with fallback predictions if needed
+  if (predictions.length < 10) {
+    const remainingStocks = shuffledStocks.filter(stock => 
+      !predictions.some(p => p.symbol === stock.symbol) && stock.price != null
+    );
+    for (const stock of remainingStocks) {
+      if (predictions.length >= 10) break;
+      predictions.push({
+        name: stock.name,
+        symbol: stock.symbol,
+        price: stock.price,
+        predictedGain: parseFloat((Math.random() * 2 + 5).toFixed(2)) // Fallback gain 5-7%
+      });
+    }
+  }
+
+  // Ensure exactly 10 predictions
+  return predictions.sort((a, b) => b.predictedGain - a.predictedGain).slice(0, 10);
 }
 
 async function searchStock(query) {
   try {
-    const searchResults = await yahooFinance.search(query);
+    const searchResults = await yahooFinance.search(query, { quotesCount: 10 });
     const stock = searchResults.quotes.find(
-      (result) => result.isYahooFinance && result.quoteType === 'EQUITY'
+      result => result.isYahooFinance && result.quoteType === 'EQUITY'
     );
     if (!stock) {
       return { error: 'No stock found matching your query' };
     }
 
-    const quote = await yahooFinance.quote(stock.symbol);
+    const quote = await yahooFinance.quote(stock.symbol, {
+      fields: ['regularMarketPrice', 'regularMarketVolume', 'currency']
+    });
     const endDate = new Date();
     const startDate = new Date();
     startDate.setMonth(endDate.getMonth() - 1);
@@ -205,16 +275,16 @@ async function searchStock(query) {
     return {
       name: stock.shortname || stock.longname || 'Unknown',
       symbol: stock.symbol,
-      price: quote.regularMarketPrice || 'N/A',
-      volume: quote.regularMarketVolume || 'N/A', // Add volume
+      price: quote.regularMarketPrice ?? null,
+      volume: quote.regularMarketVolume ?? null,
       currency: quote.currency || 'Unknown',
       historicalData: historical.map(data => ({
         date: data.date,
-        open: data.open,
-        high: data.high,
-        low: data.low,
-        close: data.close,
-        volume: data.volume // Include historical volume
+        open: data.open ?? null,
+        high: data.high ?? null,
+        low: data.low ?? null,
+        close: data.close ?? null,
+        volume: data.volume ?? null
       }))
     };
   } catch (error) {
@@ -233,69 +303,71 @@ async function fetchHistoricalData(symbol, name) {
       period2: endDate,
       interval: '1d'
     });
-    const quote = await yahooFinance.quote(symbol);
+    const quote = await yahooFinance.quote(symbol, {
+      fields: ['regularMarketPrice', 'regularMarketVolume']
+    });
     return {
       symbol,
       name,
       data: historical.map(data => ({
         date: data.date,
-        open: data.open,
-        high: data.high,
-        low: data.low,
-        close: data.close,
-        volume: data.volume // Include historical volume
+        open: data.open ?? null,
+        high: data.high ?? null,
+        low: data.low ?? null,
+        close: data.close ?? null,
+        volume: data.volume ?? null
       })),
-      currentPrice: quote.regularMarketPrice || 'N/A',
-      volume: quote.regularMarketVolume || 'N/A' // Current volume
+      currentPrice: quote.regularMarketPrice ?? null,
+      volume: quote.regularMarketVolume ?? null
     };
   } catch (error) {
     console.error(`Error fetching historical data for ${symbol}:`, error.message);
-    return { symbol, name, data: [], currentPrice: 'N/A', volume: 'N/A' };
+    return { symbol, name, data: [], currentPrice: null, volume: null };
   }
 }
 
 function generateDynamicNews(indicesData) {
-  const niftyData = indicesData.find(index => index.symbol === '^NSEI') || { percentChange: 0 };
+  const niftyData = indicesData.find(index => index.symbol === '^NSEI') || { percentChange: 0, price: 24000 };
   const isMarketUp = niftyData.percentChange > 0;
-  const changeMagnitude = Math.abs(niftyData.percentChange).toFixed(2);
-  const currentPrice = niftyData.price || 24000;
+  const changeMagnitude = Math.abs(niftyData.percentChange ?? 0).toFixed(2);
+  const currentPrice = niftyData.price ?? 24000;
   const timeNow = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
   const newsTemplates = isMarketUp ? [
     {
       title: `Nifty 50 Surges ${changeMagnitude}% to ${currentPrice.toLocaleString('en-IN')}`,
-      source: "Economic Times",
+      source: 'Economic Times',
       time: `${Math.floor(Math.random() * 5) + 1} minutes ago`,
       description: `The Nifty 50 index climbed ${changeMagnitude}% today, reaching ${currentPrice.toLocaleString('en-IN')}, driven by strong buying from FIIs and positive global cues.`
     },
     {
       title: `Bull Run Continues: FIIs Inject ₹${(Math.random() * 5000 + 5000).toFixed(0)} Crore`,
-      source: "Moneycontrol",
+      source: 'Moneycontrol',
       time: `${Math.floor(Math.random() * 3) + 1} hours ago`,
       description: `Foreign investors poured in substantial funds, boosting banking and IT stocks as the market hit a new high at ${timeNow}.`
     },
     {
       title: `Sensex Gains Amid Optimistic Sentiment`,
-      source: "Business Standard",
+      source: 'Business Standard',
       time: `${Math.floor(Math.random() * 2) + 1} hours ago`,
       description: `The BSE Sensex followed Nifty’s lead, gaining over ${Math.floor(changeMagnitude * 300)} points, with investors eyeing further upside.`
     }
   ] : [
     {
       title: `Nifty 50 Drops ${changeMagnitude}% to ${currentPrice.toLocaleString('en-IN')}`,
-      source: "Economic Times",
+      source: 'Economic Times',
       time: `${Math.floor(Math.random() * 5) + 1} minutes ago`,
       description: `The Nifty 50 index fell ${changeMagnitude}% today, closing at ${currentPrice.toLocaleString('en-IN')}, as profit booking and global uncertainties weighed on sentiment.`
     },
     {
       title: `DIIs Sell ₹${(Math.random() * 3000 + 1000).toFixed(0)} Crore Amid Market Dip`,
-      source: "Moneycontrol",
+      source: 'Moneycontrol',
       time: `${Math.floor(Math.random() * 3) + 1} hours ago`,
       description: `Domestic institutions offloaded stocks worth ₹${(Math.random() * 3000 + 1000).toFixed(0)} crore as the market saw a broad sell-off at ${timeNow}.`
     },
     {
       title: `Bearish Trend Hits Banking Stocks`,
-      source: "Business Standard",
+      source: 'Business Standard',
       time: `${Math.floor(Math.random() * 2) + 1} hours ago`,
       description: `Bank Nifty saw heavy selling pressure, dragging the broader market down by ${changeMagnitude}%.`
     }
@@ -305,24 +377,32 @@ function generateDynamicNews(indicesData) {
 }
 
 function broadcast(data) {
-  wss.clients.forEach((client) => {
+  wss.clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify(data));
+      try {
+        client.send(JSON.stringify(data));
+      } catch (error) {
+        console.error('Error broadcasting to client:', error.message);
+      }
     }
   });
 }
 
 function dataChanged(oldData, newData) {
-  if (!oldData || oldData.length !== newData.length) return true;
-  return oldData.some((item, idx) => 
-    item.price !== newData[idx].price || 
-    item.lastClose !== newData[idx].lastClose || 
-    item.volume !== newData[idx].volume || // Check volume change
-    item.percentChange !== newData[idx].percentChange || 
-    item.name !== newData[idx].name || 
-    item.symbol !== newData[idx].symbol ||
-    item.percentDrop !== newData[idx].percentDrop
-  );
+  if (!oldData || !newData || oldData.length !== newData.length) return true;
+  return oldData.some((item, idx) => {
+    const newItem = newData[idx];
+    return (
+      item.price !== newItem.price ||
+      item.lastClose !== newItem.lastClose ||
+      item.volume !== newItem.volume ||
+      item.percentChange !== newItem.percentChange ||
+      item.name !== newItem.name ||
+      item.symbol !== newItem.symbol ||
+      item.percentDrop !== newItem.percentDrop ||
+      item.predictedGain !== newItem.predictedGain
+    );
+  });
 }
 
 setInterval(async () => {
@@ -330,6 +410,7 @@ setInterval(async () => {
     const indicesData = await fetchData(indices);
     const stocksData = await fetchData(topStocks);
     const losersData = await fetchLosers(stocksData);
+    const predictionsData = await fetchPredictedGainers(stocksData);
     const newsData = generateDynamicNews(indicesData);
     const broadcastData = {};
 
@@ -348,11 +429,16 @@ setInterval(async () => {
       lastLosersData = losersData;
     }
 
+    if (dataChanged(lastPredictionsData, predictionsData)) {
+      broadcastData.predictions = predictionsData;
+      lastPredictionsData = predictionsData;
+    }
+
     broadcastData.news = newsData;
 
     if (Object.keys(broadcastData).length > 0) {
       broadcastData.searchResult = currentSearchResult;
-      console.log('Broadcasting periodic update:', broadcastData);
+      console.log('Broadcasting periodic update:', Object.keys(broadcastData));
       broadcast(broadcastData);
     }
   } catch (error) {
@@ -361,35 +447,42 @@ setInterval(async () => {
   }
 }, 10000);
 
-wss.on('connection', (ws) => {
+wss.on('connection', ws => {
   console.log('Client connected');
-  Promise.all([fetchData(indices), fetchData(topStocks)])
-    .then(async ([indicesData, stocksData]) => {
+  Promise.all([
+    fetchData(indices),
+    fetchData(topStocks),
+    fetchPredictedGainers(topStocks)
+  ])
+    .then(async ([indicesData, stocksData, predictionsData]) => {
       lastIndicesData = indicesData;
       lastStocksData = stocksData;
       lastLosersData = await fetchLosers(stocksData);
+      lastPredictionsData = predictionsData;
       const newsData = generateDynamicNews(indicesData);
-      ws.send(JSON.stringify({ 
-        indices: indicesData, 
-        stocks: stocksData, 
-        losers: lastLosersData,
-        news: newsData,
-        searchResult: currentSearchResult 
-      }));
+      ws.send(
+        JSON.stringify({
+          indices: indicesData,
+          stocks: stocksData,
+          losers: lastLosersData,
+          predictions: predictionsData,
+          news: newsData,
+          searchResult: currentSearchResult
+        })
+      );
     })
-    .catch((error) => {
+    .catch(error => {
       console.error('Error sending initial data:', error.message);
       ws.send(JSON.stringify({ error: 'Failed to load initial data' }));
     });
 
-  ws.on('message', async (message) => {
+  ws.on('message', async message => {
     try {
       const data = JSON.parse(message);
       let broadcastData = {};
 
       if (data.search) {
         currentSearchResult = await searchStock(data.search);
-        console.log('Broadcasting search result:', currentSearchResult);
         broadcastData.searchResult = currentSearchResult;
         if (currentSearchResult && !currentSearchResult.error) {
           broadcastData.historicalData = {
@@ -397,16 +490,14 @@ wss.on('connection', (ws) => {
             name: currentSearchResult.name,
             data: currentSearchResult.historicalData,
             currentPrice: currentSearchResult.price,
-            volume: currentSearchResult.volume // Include volume
+            volume: currentSearchResult.volume
           };
         }
       } else if (data.clearSearch) {
-        console.log('Clearing search result');
         currentSearchResult = null;
         broadcastData.searchResult = null;
       } else if (data.historical) {
         const historicalData = await fetchHistoricalData(data.historical, data.name);
-        console.log(`Broadcasting historical data for ${data.historical}`);
         broadcastData.historicalData = historicalData;
       }
 
@@ -419,9 +510,12 @@ wss.on('connection', (ws) => {
     }
   });
 
-  ws.on('error', (error) => {
-    console.error('WebSocket server error:', error.message);
-    broadcast({ error: `Server error: ${error.message}` });
+  ws.on('error', error => {
+    console.error('WebSocket client error:', error.message);
+  });
+
+  ws.on('close', () => {
+    console.log('Client disconnected');
   });
 });
 
@@ -441,7 +535,7 @@ function startServer(port) {
       resolve();
     });
 
-    server.on('error', (err) => {
+    server.on('error', err => {
       if (err.code === 'EADDRINUSE') {
         console.error(`Port ${port} is already in use, attempting to close and retry...`);
         server.close(() => startServer(port).then(resolve).catch(reject));
@@ -455,6 +549,11 @@ function startServer(port) {
 function shutdown() {
   console.log('Received shutdown signal, closing server...');
   isServerListening = false;
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.close();
+    }
+  });
   server.close(() => {
     console.log('HTTP server closed.');
     wss.close(() => {
@@ -468,7 +567,7 @@ process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
 
 const PORT = process.env.PORT || 3000;
-startServer(PORT).catch((err) => {
+startServer(PORT).catch(err => {
   console.error('Failed to start server:', err.message);
   process.exit(1);
 });
