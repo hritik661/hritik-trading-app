@@ -18,20 +18,38 @@
     <div class="header-date">
       Live Market Data • <span id="currentDate"></span> • Wallet: <span id="walletBalance">₹1,00,00,000</span>
     </div>
+        <button class="holding-toggle" onclick="toggleHoldings()" title="Show Holdings" aria-label="Show Holdings">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F3F4F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="holdingsIcon">
+        <path d="M20 6H4c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/>
+        <path d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2"/>
+        <path d="M10 12h4"/>
+      </svg>
+      Holdings
+    </button>
     <button class="theme-toggle" onclick="toggleTheme()" title="Switch Theme" aria-label="Toggle Theme">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-        <path id="lightIcon" d="M12 17C14.7614 17 17 14.7614 17 12C17 9.23858 14.7614 7 12 7C9.23858 7 7 9.23858 7 12C7 14.7614 9.23858 17 12 17Z M12 1V3M12 21V23M4.22 4.22L5.64 5.64M18.36 18.36L19.78 19.78M1 12H3M21 12H23M4.22 19.78L5.64 18.36M18.36 5.64L19.78 4.22" stroke="#1F2A44" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style="display: none;"/>
+        <path id="lightIcon" d="M12 17C14.7614 17 17 14.7614 17 12C17 9.23858 14.7614 7 12 7C9.23858 7 7 9.23858 7 12C7 14.7614 9.23858 17 12 17Z M12 1V3M12 21V23M4.22 4.22L5.64 5.64M18.36 18.36L19.78 19.78M1 12H3M21 12H23M4.22 1918.36L5.64 18.36M18.36 5.64L19.78 4.22" stroke="#1F2A44" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style="display: none;"/>
         <path id="darkIcon" d="M21 12.79C20.8427 14.4922 20.2039 16.1144 19.1582 17.4668C18.1126 18.8192 16.7035 19.8458 15.0957 20.4265C13.4879 21.0073 11.7479 21.1181 10.0795 20.7461C8.41111 20.3741 6.88058 19.5345 5.67453 18.3285C4.46847 17.1224 3.62885 15.5919 3.25689 13.9235C2.88493 12.2551 2.99571 10.5151 3.57648 8.9073C4.15725 7.29952 5.18387 5.89039 6.53618 4.84474C7.88849 3.79908 9.51071 3.16029 11.213 3.00303C10.2555 4.1482 9.75149 5.59284 9.79786 7.06901C9.84423 8.54517 10.4382 9.95479 11.4743 11.0358C12.5103 12.1168 13.9241 12.7832 15.4036 12.9052C16.8831 13.0272 18.3608 12.6954 19.597 11.897C20.137 12.1643 20.6073 12.4531 21 12.79Z" stroke="#F3F4F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     </button>
-    <button class="holding-toggle" onclick="toggleHoldings()" title="Show Holdings" aria-label="Show Holdings">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F3F4F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="holdingsIcon">
-          <path d="M20 6H4c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/>
-          <path d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2"/>
-          <path d="M10 12h4"/>
-        </svg>
-        Holdings
-      </button>
+
+  </div>
+
+  <!-- Portfolio Section (Moved under Header) -->
+  <div class="portfolio-section" id="portfolioSection" style="display: none; position: relative;">
+    <h2 class="portfolio-title">Portfolio (Holdings)</h2>
+    <button class="portfolio-close" onclick="toggleHoldings()" title="Close Portfolio" aria-label="Close Portfolio">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F3F4F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
+    </button>
+    <div class="portfolio-stats">
+      <p>Total Invested: <span id="totalInvested">₹0</span></p>
+      <p>Current Value: <span id="currentValue">₹0</span></p>
+      <p>Profit/Loss: <span id="profitLoss">₹0</span></p>
+    </div>
+    <div id="portfolioContainer" class="portfolio-grid"></div>
   </div>
 
   <div class="search-bar">
@@ -73,15 +91,6 @@
     </div>
 
     <div class="price-dashboard">
-      <div class="portfolio-section" id="portfolioSection" style="display: none;">
-        <h2 class="portfolio-title">Portfolio (Holding)</h2>
-        <div class="portfolio-stats">
-          <p>Total Invested: <span id="totalInvested">₹0</span></p>
-          <p>Current Value: <span id="currentValue">₹0</span></p>
-          <p>Profit/Loss: <span id="profitLoss">₹0</span></p>
-        </div>
-        <div id="portfolioContainer"></div>
-      </div>
       <h2 class="dashboard-title">Market Overview</h2>
       <div id="stockCards"></div>
     </div>
@@ -96,6 +105,7 @@
     <h2 class="losers-title">Biggest Losers (Down 30%+ from 52-Week High)</h2>
     <div class="losers-container" id="losersContainer"></div>
   </div>
+  
   <div class="news-section">
     <h2 class="news-title">Latest Stock Trading News</h2>
     <div class="news-container" id="newsContainer"></div>
@@ -166,6 +176,11 @@
     function renderPortfolio() {
         const portfolioContainer = document.getElementById('portfolioContainer');
         portfolioContainer.innerHTML = '';
+        if (Object.keys(portfolio).length === 0) {
+            portfolioContainer.innerHTML = '<p class="no-holdings">No holdings yet. Start trading to add stocks!</p>';
+            updatePortfolioStats();
+            return;
+        }
         Object.entries(portfolio).forEach(([symbol, holding], idx) => {
             const card = document.createElement('div');
             card.className = 'portfolio-card';
@@ -178,6 +193,10 @@
                     <p>Avg. Price: ₹${holding.avgPrice.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
                     <p>Current Price: ₹${holding.currentPrice.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
                     <p class="${pl >= 0 ? 'positive' : 'negative'}">P/L: ${pl >= 0 ? '+' : '-'}₹${Math.abs(pl).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
+                    <div class="stock-actions">
+                        <button class="action-button buy" onclick="promptTrade('buy', '${symbol}', '${holding.name}', ${holding.currentPrice})">Buy</button>
+                        <button class="action-button sell" onclick="promptTrade('sell', '${symbol}', '${holding.name}', ${holding.currentPrice})">Sell</button>
+                    </div>
                 </div>
             `;
             portfolioContainer.appendChild(card);
@@ -272,9 +291,12 @@
     function toggleHoldings() {
       if (portfolioSection.style.display === 'none' || portfolioSection.style.display === '') {
         portfolioSection.style.display = 'block';
+        portfolioSection.classList.add('show');
         renderPortfolio();
+        portfolioSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
       } else {
         portfolioSection.style.display = 'none';
+        portfolioSection.classList.remove('show');
       }
     }
 
@@ -377,10 +399,9 @@
                         indexData[symbol].price = data.priceUpdate.price;
                         indexData[symbol].percentChange = ((data.priceUpdate.price - lastClose) / lastClose * 100).toFixed(2);
     
-                        // Update portfolio with the latest price
                         if (portfolio[symbol]) {
                             portfolio[symbol].currentPrice = data.priceUpdate.price;
-                            renderPortfolio(); // Update the UI with new P/L
+                            renderPortfolio();
                         }
     
                         if (currentData && activeSymbol === symbol) {
@@ -459,6 +480,7 @@
             setTimeout(connectWebSocket, 2000);
         };
     }
+
     function dataChanged(oldData, newData) {
         if (!oldData || !newData || oldData.length !== newData.length) return true;
         return oldData.some((item, idx) => 
@@ -640,7 +662,6 @@
         });
     }
 
-    // Simulate daily stock predictions
     function generateDailyPredictions() {
         const today = new Date().toDateString();
         if (currentPredictionDate !== today) {
@@ -663,13 +684,12 @@
                 { symbol: 'SUNPHARMA', name: 'Sun Pharmaceutical' }
             ];
 
-            // Randomly select 10 stocks and assign predicted gains
             const shuffled = stockPool.sort(() => 0.5 - Math.random());
             const selectedStocks = shuffled.slice(0, 10).map(stock => ({
                 symbol: stock.symbol,
                 name: stock.name,
-                price: (Math.random() * 2000 + 500).toFixed(2), // Random price between 500 and 2500
-                predictedGain: (Math.random() * 10 + 5).toFixed(2) // Gain between 5% and 15%
+                price: (Math.random() * 2000 + 500).toFixed(2),
+                predictedGain: (Math.random() * 10 + 5).toFixed(2)
             }));
 
             lastPredictionsData = selectedStocks;
@@ -688,7 +708,6 @@
         const predictionsContainer = document.getElementById('predictionsContainer');
         predictionsContainer.innerHTML = '';
 
-        // Ensure exactly 10 predictions
         const displayPredictions = predictions.length >= 10 ? predictions.slice(0, 10) : predictions;
         displayPredictions.forEach((stock, idx) => {
             if (!stock || !stock.symbol || !stock.name) return;
@@ -722,7 +741,6 @@
             predictionsContainer.appendChild(card);
         });
 
-        // If predictions are less than 10, generate more
         if (predictions.length < 10) {
             generateDailyPredictions();
         }
@@ -805,7 +823,6 @@
 
     function toggleHistoricalData(symbol, name) {
         if (activeSymbol === symbol) {
-            // Deselect the current index
             activeSymbol = null;
             chartContainer.classList.remove('show');
             if (stockChart) stockChart.destroy();
@@ -814,11 +831,9 @@
             currentData = null;
             updateActiveButton(null);
         } else {
-            // Select a new index
             activeSymbol = symbol;
             currentSymbol = symbol;
             isIndex = true;
-            // Request historical data via WebSocket
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ historical: symbol, name }));
             } else {

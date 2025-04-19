@@ -108,8 +108,8 @@ body.midnight {
 }
 
 .theme-toggle {
-    width: 48px;
-    height: 48px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     border: none;
     background: var(--bg-secondary);
@@ -2314,4 +2314,216 @@ body.midnight {
   body.midnight {
     --text-color: #A0AECB;
     --hover-text-color: #CBD5E1;
+  }
+
+  
+  /* Portfolio Section Styling */
+.portfolio-section {
+    background: var(--portfolio-bg, #2d3748); /* Default for dark theme */
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .portfolio-section.show {
+    display: block;
+    animation: slideIn 0.5s ease forwards;
+  }
+  
+  .portfolio-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--title-color, #f3f4f6);
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+  
+  .portfolio-stats {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+  
+  .portfolio-stats p {
+    font-size: 1.2rem;
+    color: var(--text-color, #9ca3af);
+  }
+  
+  .portfolio-stats p span {
+    font-weight: 600;
+    color: var(--body-color, #f3f4f6);
+  }
+  
+  .portfolio-stats p .positive {
+    color: #4ade80;
+  }
+  
+  .portfolio-stats p .negative {
+    color: #ff6b6b;
+  }
+  
+  /* Portfolio Grid for Cards */
+  .portfolio-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .portfolio-card {
+    background: var(--card-bg, #374151);
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+  }
+  
+  .portfolio-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  }
+  
+  .portfolio-info h3 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--title-color, #f3f4f6);
+    margin-bottom: 0.5rem;
+  }
+  
+  .portfolio-info p {
+    font-size: 1rem;
+    color: var(--text-color, #9ca3af);
+    margin: 0.3rem 0;
+  }
+  
+  .portfolio-info p.positive {
+    color: #4ade80;
+  }
+  
+  .portfolio-info p.negative {
+    color: #ff6b6b;
+  }
+  
+  /* Placeholder for empty portfolio */
+  .no-holdings {
+    text-align: center;
+    font-size: 1.2rem;
+    color: var(--text-color, #9ca3af);
+    padding: 2rem;
+  }
+  
+  /* Theme-specific variables */
+  body.dark {
+    --portfolio-bg: #2d3748;
+    --card-bg: #374151;
+    --title-color: #f3f4f6;
+    --body-color: #f3f4f6;
+    --text-color: #9ca3af;
+  }
+  
+  body.light {
+    --portfolio-bg: #ffffff;
+    --card-bg: #f9fafb;
+    --title-color: #1e3a8a;
+    --body-color: #374151;
+    --text-color: #6b7280;
+  }
+  
+  body.midnight {
+    --portfolio-bg: #1a2344;
+    --card-bg: #2d3748;
+    --title-color: #e2e8f0;
+    --body-color: #e2e8f0;
+    --text-color: #a0aecb;
+  }
+  
+  /* Animation for sliding in */
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .portfolio-section {
+      padding: 1.5rem;
+    }
+  
+    .portfolio-title {
+      font-size: 1.8rem;
+    }
+  
+    .portfolio-stats {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+  
+    .portfolio-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .portfolio-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+  }
+  
+  .portfolio-close svg {
+    stroke: #F3F4F6;
+    width: 24px;
+    height: 24px;
+  }
+  
+  .portfolio-close:hover svg {
+    stroke: #FF6B6B;
+  }
+  
+  .portfolio-card .stock-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  
+  .portfolio-card .action-button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+  }
+  
+  .portfolio-card .action-button.buy {
+    background-color: #4ADE80;
+    color: #fff;
+  }
+  
+  .portfolio-card .action-button.buy:hover {
+    background-color: #2A9F73;
+  }
+  
+  .portfolio-card .action-button.sell {
+    background-color: #FF6B6B;
+    color: #fff;
+  }
+  
+  .portfolio-card .action-button.sell:hover {
+    background-color: #C34E4E;
   }

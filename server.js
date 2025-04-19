@@ -125,13 +125,47 @@ let lastStocksData = null;
 let lastLosersData = null;
 let lastPredictionsData = null;
 
+// Cache to store fetched data
+const dataCache = {
+  indices: null,
+  stocks: null,
+  losers: null,
+  predictions: null,
+  lastUpdated: null,
+};
+
+// Utility to validate JSON
+function isValidJson(data) {
+  try {
+    JSON.stringify(data);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Retry logic for API calls
+async function fetchWithRetry(fn, maxRetries = 3, delay = 1000) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (i === maxRetries - 1) throw error;
+      console.warn(`Retrying API call (${i + 1}/${maxRetries}) after error: ${error.message}`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+}
+
 async function fetchData(items) {
   const data = [];
   for (const item of items) {
     try {
-      const quote = await yahooFinance.quote(item.symbol, {
-        fields: ['regularMarketPrice', 'regularMarketPreviousClose', 'regularMarketVolume', 'fiftyTwoWeekHigh']
-      });
+      const quote = await fetchWithRetry(() =>
+        yahooFinance.quote(item.symbol, {
+          fields: ['regularMarketPrice', 'regularMarketPreviousClose', 'regularMarketVolume', 'fiftyTwoWeekHigh'],
+        })
+      );
       const currentPrice = quote.regularMarketPrice ?? null;
       const lastClose = quote.regularMarketPreviousClose ?? null;
       const volume = quote.regularMarketVolume ?? null;
@@ -139,10 +173,10 @@ async function fetchData(items) {
       let percentChange = null;
       let percentDrop = null;
       if (currentPrice != null && lastClose != null && lastClose !== 0) {
-        percentChange = ((currentPrice - lastClose) / lastClose) * 100;
+        percentChange = parseFloat(((currentPrice - lastClose) / lastClose) * 100);
       }
       if (currentPrice != null && fiftyTwoWeekHigh != null && fiftyTwoWeekHigh !== 0) {
-        percentDrop = ((fiftyTwoWeekHigh - currentPrice) / fiftyTwoWeekHigh) * 100;
+        percentDrop = parseFloat(((fiftyTwoWeekHigh - currentPrice) / fiftyTwoWeekHigh) * 100);
       }
       data.push({
         name: item.name,
@@ -152,7 +186,7 @@ async function fetchData(items) {
         volume: volume,
         percentChange: percentChange,
         fiftyTwoWeekHigh: fiftyTwoWeekHigh,
-        percentDrop: percentDrop
+        percentDrop: percentDrop,
       });
     } catch (error) {
       console.error(`Error fetching ${item.name} (${item.symbol}):`, error.message);
@@ -164,7 +198,7 @@ async function fetchData(items) {
         volume: null,
         percentChange: null,
         fiftyTwoWeekHigh: null,
-        percentDrop: null
+        percentDrop: null,
       });
     }
   }
@@ -181,15 +215,14 @@ async function fetchLosers(stocksData) {
       symbol: stock.symbol,
       price: stock.price,
       volume: stock.volume,
-      percentDrop: stock.percentDrop
+      percentDrop: stock.percentDrop,
     }));
 }
 
 async function fetchPredictedGainers(stocksData) {
   const predictions = [];
-  // Shuffle stocks to randomize selection
   const shuffledStocks = [...stocksData].sort(() => 0.5 - Math.random());
-  const maxStocksToProcess = Math.min(shuffledStocks.length, 50); // Limit to avoid API overload
+  const maxStocksToProcess = Math.min(shuffledStocks.length, 50);
 
   for (let i = 0; i < maxStocksToProcess && predictions.length < 10; i++) {
     const stock = shuffledStocks[i];
@@ -197,13 +230,15 @@ async function fetchPredictedGainers(stocksData) {
       if (stock.price == null) continue;
       const endDate = new Date();
       const startDate = new Date();
-      startDate.setDate(endDate.getDate() - 14); // Last 14 days for better trend
-      const historical = await yahooFinance.historical(stock.symbol, {
-        period1: startDate,
-        period2: endDate,
-        interval: '1d'
-      });
-      if (historical.length < 5) continue; // Need enough data points
+      startDate.setDate(endDate.getDate() - 14);
+      const historical = await fetchWithRetry(() =>
+        yahooFinance.historical(stock.symbol, {
+          period1: startDate,
+          period2: endDate,
+          interval: '1d',
+        })
+      );
+      if (historical.length < 5) continue;
 
       const recentPrices = historical.map(data => data.close).filter(price => price != null);
       if (recentPrices.length < 2) continue;
@@ -213,16 +248,16 @@ async function fetchPredictedGainers(stocksData) {
         return acc + ((price - recentPrices[idx - 1]) / recentPrices[idx - 1]) * 100;
       }, 0) / (recentPrices.length - 1);
 
-      // Enhanced prediction: consider momentum and volatility
-      const volatility = recentPrices.length > 1 ? 
-        (Math.max(...recentPrices) / Math.min(...recentPrices) - 1) : 0;
+      const volatility = recentPrices.length > 1
+        ? Math.max(...recentPrices) / Math.min(...recentPrices) - 1
+        : 0;
       const predictedGain = Math.max(0, avgGain * (1 + volatility * 0.5));
       if (predictedGain >= 5) {
         predictions.push({
           name: stock.name,
           symbol: stock.symbol,
           price: stock.price,
-          predictedGain: parseFloat(predictedGain.toFixed(2))
+          predictedGain: parseFloat(predictedGain.toFixed(2)),
         });
       }
     } catch (error) {
@@ -230,10 +265,9 @@ async function fetchPredictedGainers(stocksData) {
     }
   }
 
-  // Pad with fallback predictions if needed
   if (predictions.length < 10) {
-    const remainingStocks = shuffledStocks.filter(stock => 
-      !predictions.some(p => p.symbol === stock.symbol) && stock.price != null
+    const remainingStocks = shuffledStocks.filter(
+      stock => !predictions.some(p => p.symbol === stock.symbol) && stock.price != null
     );
     for (const stock of remainingStocks) {
       if (predictions.length >= 10) break;
@@ -241,18 +275,19 @@ async function fetchPredictedGainers(stocksData) {
         name: stock.name,
         symbol: stock.symbol,
         price: stock.price,
-        predictedGain: parseFloat((Math.random() * 2 + 5).toFixed(2)) // Fallback gain 5-7%
+        predictedGain: parseFloat((Math.random() * 2 + 5).toFixed(2)),
       });
     }
   }
 
-  // Ensure exactly 10 predictions
   return predictions.sort((a, b) => b.predictedGain - a.predictedGain).slice(0, 10);
 }
 
 async function searchStock(query) {
   try {
-    const searchResults = await yahooFinance.search(query, { quotesCount: 10 });
+    const searchResults = await fetchWithRetry(() =>
+      yahooFinance.search(query, { quotesCount: 10 })
+    );
     const stock = searchResults.quotes.find(
       result => result.isYahooFinance && result.quoteType === 'EQUITY'
     );
@@ -260,17 +295,21 @@ async function searchStock(query) {
       return { error: 'No stock found matching your query' };
     }
 
-    const quote = await yahooFinance.quote(stock.symbol, {
-      fields: ['regularMarketPrice', 'regularMarketVolume', 'currency']
-    });
+    const quote = await fetchWithRetry(() =>
+      yahooFinance.quote(stock.symbol, {
+        fields: ['regularMarketPrice', 'regularMarketVolume', 'currency'],
+      })
+    );
     const endDate = new Date();
     const startDate = new Date();
     startDate.setMonth(endDate.getMonth() - 1);
-    const historical = await yahooFinance.historical(stock.symbol, {
-      period1: startDate,
-      period2: endDate,
-      interval: '1d'
-    });
+    const historical = await fetchWithRetry(() =>
+      yahooFinance.historical(stock.symbol, {
+        period1: startDate,
+        period2: endDate,
+        interval: '1d',
+      })
+    );
 
     return {
       name: stock.shortname || stock.longname || 'Unknown',
@@ -279,13 +318,13 @@ async function searchStock(query) {
       volume: quote.regularMarketVolume ?? null,
       currency: quote.currency || 'Unknown',
       historicalData: historical.map(data => ({
-        date: data.date,
+        date: data.date.toISOString(),
         open: data.open ?? null,
         high: data.high ?? null,
         low: data.low ?? null,
         close: data.close ?? null,
-        volume: data.volume ?? null
-      }))
+        volume: data.volume ?? null,
+      })),
     };
   } catch (error) {
     console.error(`Error searching for "${query}":`, error.message);
@@ -298,27 +337,31 @@ async function fetchHistoricalData(symbol, name) {
     const endDate = new Date();
     const startDate = new Date();
     startDate.setMonth(endDate.getMonth() - 1);
-    const historical = await yahooFinance.historical(symbol, {
-      period1: startDate,
-      period2: endDate,
-      interval: '1d'
-    });
-    const quote = await yahooFinance.quote(symbol, {
-      fields: ['regularMarketPrice', 'regularMarketVolume']
-    });
+    const historical = await fetchWithRetry(() =>
+      yahooFinance.historical(symbol, {
+        period1: startDate,
+        period2: endDate,
+        interval: '1d',
+      })
+    );
+    const quote = await fetchWithRetry(() =>
+      yahooFinance.quote(symbol, {
+        fields: ['regularMarketPrice', 'regularMarketVolume'],
+      })
+    );
     return {
       symbol,
       name,
       data: historical.map(data => ({
-        date: data.date,
+        date: data.date.toISOString(),
         open: data.open ?? null,
         high: data.high ?? null,
         low: data.low ?? null,
         close: data.close ?? null,
-        volume: data.volume ?? null
+        volume: data.volume ?? null,
       })),
       currentPrice: quote.regularMarketPrice ?? null,
-      volume: quote.regularMarketVolume ?? null
+      volume: quote.regularMarketVolume ?? null,
     };
   } catch (error) {
     console.error(`Error fetching historical data for ${symbol}:`, error.message);
@@ -327,56 +370,74 @@ async function fetchHistoricalData(symbol, name) {
 }
 
 function generateDynamicNews(indicesData) {
-  const niftyData = indicesData.find(index => index.symbol === '^NSEI') || { percentChange: 0, price: 24000 };
+  const niftyData = indicesData.find(index => index.symbol === '^NSEI') || {
+    percentChange: 0,
+    price: 24000,
+  };
   const isMarketUp = niftyData.percentChange > 0;
   const changeMagnitude = Math.abs(niftyData.percentChange ?? 0).toFixed(2);
   const currentPrice = niftyData.price ?? 24000;
   const timeNow = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
-  const newsTemplates = isMarketUp ? [
-    {
-      title: `Nifty 50 Surges ${changeMagnitude}% to ${currentPrice.toLocaleString('en-IN')}`,
-      source: 'Economic Times',
-      time: `${Math.floor(Math.random() * 5) + 1} minutes ago`,
-      description: `The Nifty 50 index climbed ${changeMagnitude}% today, reaching ${currentPrice.toLocaleString('en-IN')}, driven by strong buying from FIIs and positive global cues.`
-    },
-    {
-      title: `Bull Run Continues: FIIs Inject ₹${(Math.random() * 5000 + 5000).toFixed(0)} Crore`,
-      source: 'Moneycontrol',
-      time: `${Math.floor(Math.random() * 3) + 1} hours ago`,
-      description: `Foreign investors poured in substantial funds, boosting banking and IT stocks as the market hit a new high at ${timeNow}.`
-    },
-    {
-      title: `Sensex Gains Amid Optimistic Sentiment`,
-      source: 'Business Standard',
-      time: `${Math.floor(Math.random() * 2) + 1} hours ago`,
-      description: `The BSE Sensex followed Nifty’s lead, gaining over ${Math.floor(changeMagnitude * 300)} points, with investors eyeing further upside.`
-    }
-  ] : [
-    {
-      title: `Nifty 50 Drops ${changeMagnitude}% to ${currentPrice.toLocaleString('en-IN')}`,
-      source: 'Economic Times',
-      time: `${Math.floor(Math.random() * 5) + 1} minutes ago`,
-      description: `The Nifty 50 index fell ${changeMagnitude}% today, closing at ${currentPrice.toLocaleString('en-IN')}, as profit booking and global uncertainties weighed on sentiment.`
-    },
-    {
-      title: `DIIs Sell ₹${(Math.random() * 3000 + 1000).toFixed(0)} Crore Amid Market Dip`,
-      source: 'Moneycontrol',
-      time: `${Math.floor(Math.random() * 3) + 1} hours ago`,
-      description: `Domestic institutions offloaded stocks worth ₹${(Math.random() * 3000 + 1000).toFixed(0)} crore as the market saw a broad sell-off at ${timeNow}.`
-    },
-    {
-      title: `Bearish Trend Hits Banking Stocks`,
-      source: 'Business Standard',
-      time: `${Math.floor(Math.random() * 2) + 1} hours ago`,
-      description: `Bank Nifty saw heavy selling pressure, dragging the broader market down by ${changeMagnitude}%.`
-    }
-  ];
+  const newsTemplates = isMarketUp
+    ? [
+        {
+          title: `Nifty 50 Surges ${changeMagnitude}% to ${currentPrice.toLocaleString('en-IN')}`,
+          source: 'Economic Times',
+          time: `${Math.floor(Math.random() * 5) + 1} minutes ago`,
+          description: `The Nifty 50 index climbed ${changeMagnitude}% today, reaching ${currentPrice.toLocaleString(
+            'en-IN'
+          )}, driven by strong buying from FIIs and positive global cues.`,
+        },
+        {
+          title: `Bull Run Continues: FIIs Inject ₹${(Math.random() * 5000 + 5000).toFixed(0)} Crore`,
+          source: 'Moneycontrol',
+          time: `${Math.floor(Math.random() * 3) + 1} hours ago`,
+          description: `Foreign investors poured in substantial funds, boosting banking and IT stocks as the market hit a new high at ${timeNow}.`,
+        },
+        {
+          title: `Sensex Gains Amid Optimistic Sentiment`,
+          source: 'Business Standard',
+          time: `${Math.floor(Math.random() * 2) + 1} hours ago`,
+          description: `The BSE Sensex followed Nifty’s lead, gaining over ${
+            Math.floor(changeMagnitude * 300)
+          } points, with investors eyeing further upside.`,
+        },
+      ]
+    : [
+        {
+          title: `Nifty 50 Drops ${changeMagnitude}% to ${currentPrice.toLocaleString('en-IN')}`,
+          source: 'Economic Times',
+          time: `${Math.floor(Math.random() * 5) + 1} minutes ago`,
+          description: `The Nifty 50 index fell ${changeMagnitude}% today, closing at ${currentPrice.toLocaleString(
+            'en-IN'
+          )}, as profit booking and global uncertainties weighed on sentiment.`,
+        },
+        {
+          title: `DIIs Sell ₹${(Math.random() * 3000 + 1000).toFixed(0)} Crore Amid Market Dip`,
+          source: 'Moneycontrol',
+          time: `${Math.floor(Math.random() * 3) + 1} hours ago`,
+          description: `Domestic institutions offloaded stocks worth ₹${(
+            Math.random() * 3000 +
+            1000
+          ).toFixed(0)} crore as the market saw a broad sell-off at ${timeNow}.`,
+        },
+        {
+          title: `Bearish Trend Hits Banking Stocks`,
+          source: 'Business Standard',
+          time: `${Math.floor(Math.random() * 2) + 1} hours ago`,
+          description: `Bank Nifty saw heavy selling pressure, dragging the broader market down by ${changeMagnitude}%.`,
+        },
+      ];
 
   return newsTemplates.sort(() => 0.5 - Math.random()).slice(0, 3);
 }
 
 function broadcast(data) {
+  if (!isValidJson(data)) {
+    console.error('Invalid JSON data, skipping broadcast:', data);
+    return;
+  }
   wss.clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
       try {
@@ -407,8 +468,25 @@ function dataChanged(oldData, newData) {
 
 setInterval(async () => {
   try {
+    const cacheTTL = 30000; // Cache for 30 seconds
+    const now = Date.now();
+    if (dataCache.lastUpdated && now - dataCache.lastUpdated < cacheTTL) {
+      // Use cached data if within TTL
+      const broadcastData = {};
+      if (dataCache.indices) broadcastData.indices = dataCache.indices;
+      if (dataCache.stocks) broadcastData.stocks = dataCache.stocks;
+      if (dataCache.losers) broadcastData.losers = dataCache.losers;
+      if (dataCache.predictions) broadcastData.predictions = dataCache.predictions;
+      broadcastData.news = generateDynamicNews(dataCache.indices || []);
+      broadcastData.searchResult = currentSearchResult;
+      if (Object.keys(broadcastData).length > 0) {
+        broadcast(broadcastData);
+      }
+      return;
+    }
+
     const indicesData = await fetchData(indices);
-    const stocksData = await fetchData(topStocks);
+    const stocksData = await fetchData(topStocks.slice(0, 50)); // Limit to avoid rate limits
     const losersData = await fetchLosers(stocksData);
     const predictionsData = await fetchPredictedGainers(stocksData);
     const newsData = generateDynamicNews(indicesData);
@@ -417,27 +495,32 @@ setInterval(async () => {
     if (dataChanged(lastIndicesData, indicesData)) {
       broadcastData.indices = indicesData;
       lastIndicesData = indicesData;
+      dataCache.indices = indicesData;
     }
 
     if (dataChanged(lastStocksData, stocksData)) {
       broadcastData.stocks = stocksData;
       lastStocksData = stocksData;
+      dataCache.stocks = stocksData;
     }
 
     if (dataChanged(lastLosersData, losersData)) {
       broadcastData.losers = losersData;
       lastLosersData = losersData;
+      dataCache.losers = losersData;
     }
 
     if (dataChanged(lastPredictionsData, predictionsData)) {
       broadcastData.predictions = predictionsData;
       lastPredictionsData = predictionsData;
+      dataCache.predictions = predictionsData;
     }
 
     broadcastData.news = newsData;
+    broadcastData.searchResult = currentSearchResult;
 
     if (Object.keys(broadcastData).length > 0) {
-      broadcastData.searchResult = currentSearchResult;
+      dataCache.lastUpdated = now;
       console.log('Broadcasting periodic update:', Object.keys(broadcastData));
       broadcast(broadcastData);
     }
@@ -445,14 +528,14 @@ setInterval(async () => {
     console.error('Error in periodic update:', error.message);
     broadcast({ error: 'Server error during update' });
   }
-}, 10000);
+}, 15000); // Increased interval to reduce API load
 
 wss.on('connection', ws => {
   console.log('Client connected');
   Promise.all([
     fetchData(indices),
-    fetchData(topStocks),
-    fetchPredictedGainers(topStocks)
+    fetchData(topStocks.slice(0, 50)),
+    fetchPredictedGainers(topStocks.slice(0, 50)),
   ])
     .then(async ([indicesData, stocksData, predictionsData]) => {
       lastIndicesData = indicesData;
@@ -460,16 +543,26 @@ wss.on('connection', ws => {
       lastLosersData = await fetchLosers(stocksData);
       lastPredictionsData = predictionsData;
       const newsData = generateDynamicNews(indicesData);
-      ws.send(
-        JSON.stringify({
-          indices: indicesData,
-          stocks: stocksData,
-          losers: lastLosersData,
-          predictions: predictionsData,
-          news: newsData,
-          searchResult: currentSearchResult
-        })
-      );
+      const initialData = {
+        indices: indicesData,
+        stocks: stocksData,
+        losers: lastLosersData,
+        predictions: predictionsData,
+        news: newsData,
+        searchResult: currentSearchResult,
+      };
+      if (isValidJson(initialData)) {
+        ws.send(JSON.stringify(initialData));
+        // Update cache
+        dataCache.indices = indicesData;
+        dataCache.stocks = stocksData;
+        dataCache.losers = lastLosersData;
+        dataCache.predictions = predictionsData;
+        dataCache.lastUpdated = Date.now();
+      } else {
+        console.error('Invalid initial data, not sending:', initialData);
+        ws.send(JSON.stringify({ error: 'Failed to load initial data' }));
+      }
     })
     .catch(error => {
       console.error('Error sending initial data:', error.message);
@@ -478,7 +571,15 @@ wss.on('connection', ws => {
 
   ws.on('message', async message => {
     try {
-      const data = JSON.parse(message);
+      let data;
+      try {
+        data = JSON.parse(message);
+      } catch (error) {
+        console.error('Invalid client message JSON:', message);
+        ws.send(JSON.stringify({ error: 'Invalid message format' }));
+        return;
+      }
+
       let broadcastData = {};
 
       if (data.search) {
@@ -490,7 +591,7 @@ wss.on('connection', ws => {
             name: currentSearchResult.name,
             data: currentSearchResult.historicalData,
             currentPrice: currentSearchResult.price,
-            volume: currentSearchResult.volume
+            volume: currentSearchResult.volume,
           };
         }
       } else if (data.clearSearch) {
@@ -502,7 +603,11 @@ wss.on('connection', ws => {
       }
 
       if (Object.keys(broadcastData).length > 0) {
-        broadcast(broadcastData);
+        if (isValidJson(broadcastData)) {
+          broadcast(broadcastData);
+        } else {
+          console.error('Invalid broadcast data, not sending:', broadcastData);
+        }
       }
     } catch (error) {
       console.error('Error handling message:', error.message);
