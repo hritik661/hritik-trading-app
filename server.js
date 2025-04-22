@@ -173,10 +173,10 @@ async function fetchData(items) {
       let percentChange = null;
       let percentDrop = null;
       if (currentPrice != null && lastClose != null && lastClose !== 0) {
-        percentChange = parseFloat(((currentPrice - lastClose) / lastClose) * 100);
+        percentChange = parseFloat(((currentPrice - lastClose) / lastClose) * 100).toFixed(2);
       }
       if (currentPrice != null && fiftyTwoWeekHigh != null && fiftyTwoWeekHigh !== 0) {
-        percentDrop = parseFloat(((fiftyTwoWeekHigh - currentPrice) / fiftyTwoWeekHigh) * 100);
+        percentDrop = parseFloat(((fiftyTwoWeekHigh - currentPrice) / fiftyTwoWeekHigh) * 100).toFixed(2);
       }
       data.push({
         name: item.name,
@@ -209,13 +209,13 @@ async function fetchLosers(stocksData) {
   return stocksData
     .filter(stock => stock.percentDrop != null && stock.percentDrop >= 30)
     .sort((a, b) => b.percentDrop - a.percentDrop)
-    .slice(0, 30)
+    .slice(0, 10)
     .map(stock => ({
       name: stock.name,
       symbol: stock.symbol,
-      price: stock.price,
-      volume: stock.volume,
-      percentDrop: stock.percentDrop,
+      price: stock.price ?? 0,
+      volume: stock.volume ?? 0,
+      percentDrop: parseFloat(stock.percentDrop).toFixed(2),
     }));
 }
 
@@ -227,7 +227,7 @@ async function fetchPredictedGainers(stocksData) {
   for (let i = 0; i < maxStocksToProcess && predictions.length < 10; i++) {
     const stock = shuffledStocks[i];
     try {
-      if (stock.price == null) continue;
+      if (stock.price == null || stock.price === 0) continue;
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - 14);
@@ -267,7 +267,7 @@ async function fetchPredictedGainers(stocksData) {
 
   if (predictions.length < 10) {
     const remainingStocks = shuffledStocks.filter(
-      stock => !predictions.some(p => p.symbol === stock.symbol) && stock.price != null
+      stock => !predictions.some(p => p.symbol === stock.symbol) && stock.price != null && stock.price > 0
     );
     for (const stock of remainingStocks) {
       if (predictions.length >= 10) break;
@@ -289,7 +289,7 @@ async function searchStock(query) {
       yahooFinance.search(query, { quotesCount: 10 })
     );
     const stock = searchResults.quotes.find(
-      result => result.isYahooFinance && result.quoteType === 'EQUITY'
+      result => result.isYahooFinance && result.quoteType === 'EQUITY' && result.symbol.endsWith('.NS')
     );
     if (!stock) {
       return { error: 'No stock found matching your query' };
@@ -297,7 +297,7 @@ async function searchStock(query) {
 
     const quote = await fetchWithRetry(() =>
       yahooFinance.quote(stock.symbol, {
-        fields: ['regularMarketPrice', 'regularMarketVolume', 'currency'],
+        fields: ['regularMarketPrice', 'regularMarketVolume', 'currency', 'regularMarketPreviousClose'],
       })
     );
     const endDate = new Date();
@@ -311,19 +311,26 @@ async function searchStock(query) {
       })
     );
 
+    const currentPrice = quote.regularMarketPrice ?? 0;
+    const lastClose = quote.regularMarketPreviousClose ?? currentPrice;
+    const percentChange = currentPrice && lastClose && lastClose !== 0
+      ? parseFloat(((currentPrice - lastClose) / lastClose) * 100).toFixed(2)
+      : null;
+
     return {
       name: stock.shortname || stock.longname || 'Unknown',
       symbol: stock.symbol,
-      price: quote.regularMarketPrice ?? null,
-      volume: quote.regularMarketVolume ?? null,
-      currency: quote.currency || 'Unknown',
+      price: currentPrice,
+      volume: quote.regularMarketVolume ?? 0,
+      currency: quote.currency || 'INR',
+      percentChange: percentChange,
       historicalData: historical.map(data => ({
         date: data.date.toISOString(),
-        open: data.open ?? null,
-        high: data.high ?? null,
-        low: data.low ?? null,
-        close: data.close ?? null,
-        volume: data.volume ?? null,
+        open: data.open ?? 0,
+        high: data.high ?? 0,
+        low: data.low ?? 0,
+        close: data.close ?? 0,
+        volume: data.volume ?? 0,
       })),
     };
   } catch (error) {
@@ -354,18 +361,18 @@ async function fetchHistoricalData(symbol, name) {
       name,
       data: historical.map(data => ({
         date: data.date.toISOString(),
-        open: data.open ?? null,
-        high: data.high ?? null,
-        low: data.low ?? null,
-        close: data.close ?? null,
-        volume: data.volume ?? null,
+        open: data.open ?? 0,
+        high: data.high ?? 0,
+        low: data.low ?? 0,
+        close: data.close ?? 0,
+        volume: data.volume ?? 0,
       })),
-      currentPrice: quote.regularMarketPrice ?? null,
-      volume: quote.regularMarketVolume ?? null,
+      currentPrice: quote.regularMarketPrice ?? 0,
+      volume: quote.regularMarketVolume ?? 0,
     };
   } catch (error) {
     console.error(`Error fetching historical data for ${symbol}:`, error.message);
-    return { symbol, name, data: [], currentPrice: null, volume: null };
+    return { symbol, name, data: [], currentPrice: 0, volume: 0 };
   }
 }
 
@@ -377,7 +384,11 @@ function generateDynamicNews(indicesData) {
   const isMarketUp = niftyData.percentChange > 0;
   const changeMagnitude = Math.abs(niftyData.percentChange ?? 0).toFixed(2);
   const currentPrice = niftyData.price ?? 24000;
-  const timeNow = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  const timeNow = new Date().toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
   const newsTemplates = isMarketUp
     ? [
@@ -385,9 +396,7 @@ function generateDynamicNews(indicesData) {
           title: `Nifty 50 Surges ${changeMagnitude}% to ${currentPrice.toLocaleString('en-IN')}`,
           source: 'Economic Times',
           time: `${Math.floor(Math.random() * 5) + 1} minutes ago`,
-          description: `The Nifty 50 index climbed ${changeMagnitude}% today, reaching ${currentPrice.toLocaleString(
-            'en-IN'
-          )}, driven by strong buying from FIIs and positive global cues.`,
+          description: `The Nifty 50 index climbed ${changeMagnitude}% today, reaching ${currentPrice.toLocaleString('en-IN')}, driven by strong buying from FIIs and positive global cues.`,
         },
         {
           title: `Bull Run Continues: FIIs Inject ₹${(Math.random() * 5000 + 5000).toFixed(0)} Crore`,
@@ -399,9 +408,7 @@ function generateDynamicNews(indicesData) {
           title: `Sensex Gains Amid Optimistic Sentiment`,
           source: 'Business Standard',
           time: `${Math.floor(Math.random() * 2) + 1} hours ago`,
-          description: `The BSE Sensex followed Nifty’s lead, gaining over ${
-            Math.floor(changeMagnitude * 300)
-          } points, with investors eyeing further upside.`,
+          description: `The BSE Sensex followed Nifty’s lead, gaining over ${Math.floor(changeMagnitude * 300)} points, with investors eyeing further upside.`,
         },
       ]
     : [
@@ -409,18 +416,13 @@ function generateDynamicNews(indicesData) {
           title: `Nifty 50 Drops ${changeMagnitude}% to ${currentPrice.toLocaleString('en-IN')}`,
           source: 'Economic Times',
           time: `${Math.floor(Math.random() * 5) + 1} minutes ago`,
-          description: `The Nifty 50 index fell ${changeMagnitude}% today, closing at ${currentPrice.toLocaleString(
-            'en-IN'
-          )}, as profit booking and global uncertainties weighed on sentiment.`,
+          description: `The Nifty 50 index fell ${changeMagnitude}% today, closing at ${currentPrice.toLocaleString('en-IN')}, as profit booking and global uncertainties weighed on sentiment.`,
         },
         {
           title: `DIIs Sell ₹${(Math.random() * 3000 + 1000).toFixed(0)} Crore Amid Market Dip`,
           source: 'Moneycontrol',
           time: `${Math.floor(Math.random() * 3) + 1} hours ago`,
-          description: `Domestic institutions offloaded stocks worth ₹${(
-            Math.random() * 3000 +
-            1000
-          ).toFixed(0)} crore as the market saw a broad sell-off at ${timeNow}.`,
+          description: `Domestic institutions offloaded stocks worth ₹${(Math.random() * 3000 + 1000).toFixed(0)} crore as the market saw a broad sell-off at ${timeNow}.`,
         },
         {
           title: `Bearish Trend Hits Banking Stocks`,
@@ -471,14 +473,13 @@ setInterval(async () => {
     const cacheTTL = 30000; // Cache for 30 seconds
     const now = Date.now();
     if (dataCache.lastUpdated && now - dataCache.lastUpdated < cacheTTL) {
-      // Use cached data if within TTL
       const broadcastData = {};
       if (dataCache.indices) broadcastData.indices = dataCache.indices;
       if (dataCache.stocks) broadcastData.stocks = dataCache.stocks;
       if (dataCache.losers) broadcastData.losers = dataCache.losers;
       if (dataCache.predictions) broadcastData.predictions = dataCache.predictions;
       broadcastData.news = generateDynamicNews(dataCache.indices || []);
-      broadcastData.searchResult = currentSearchResult;
+      if (currentSearchResult) broadcastData.searchResult = currentSearchResult;
       if (Object.keys(broadcastData).length > 0) {
         broadcast(broadcastData);
       }
@@ -517,7 +518,7 @@ setInterval(async () => {
     }
 
     broadcastData.news = newsData;
-    broadcastData.searchResult = currentSearchResult;
+    if (currentSearchResult) broadcastData.searchResult = currentSearchResult;
 
     if (Object.keys(broadcastData).length > 0) {
       dataCache.lastUpdated = now;
@@ -528,7 +529,7 @@ setInterval(async () => {
     console.error('Error in periodic update:', error.message);
     broadcast({ error: 'Server error during update' });
   }
-}, 15000); // Increased interval to reduce API load
+}, 15000);
 
 wss.on('connection', ws => {
   console.log('Client connected');
@@ -553,7 +554,6 @@ wss.on('connection', ws => {
       };
       if (isValidJson(initialData)) {
         ws.send(JSON.stringify(initialData));
-        // Update cache
         dataCache.indices = indicesData;
         dataCache.stocks = stocksData;
         dataCache.losers = lastLosersData;
