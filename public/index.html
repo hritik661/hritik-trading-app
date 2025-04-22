@@ -183,46 +183,102 @@
   function renderPortfolio() {
     const portfolioContainer = document.getElementById('portfolioContainer');
     portfolioContainer.innerHTML = '';
-    isIndex = false;
+    isIndex = false; // Portfolio contains stocks, not indices
     
     if (Object.keys(portfolio).length === 0) {
-      portfolioContainer.innerHTML = '<p class="no-holdings">No holdings yet. Start trading to add stocks!</p>';
-      updatePortfolioStats();
-      return;
+        portfolioContainer.innerHTML = '<p class="no-holdings">No holdings yet. Start trading to add stocks!</p>';
+        updatePortfolioStats();
+        return;
     }
     
+    // First create and add all cards to the DOM
     Object.entries(portfolio).forEach(([symbol, holding], idx) => {
-      if (!holding.name || !holding.quantity || !holding.avgPrice) return;
-      
-      const currentPrice = holding.currentPrice && !isNaN(holding.currentPrice) && holding.currentPrice > 0 ? holding.currentPrice : 0;
-      const pl = currentPrice ? (currentPrice - holding.avgPrice) * holding.quantity : 0;
-      const plPercent = currentPrice ? ((currentPrice - holding.avgPrice) / holding.avgPrice * 100) : 0;
-      
-      const card = document.createElement('div');
-      card.className = 'portfolio-card';
-      card.style.animationDelay = `${0.1 + (idx * 0.05)}s`;
-      card.setAttribute('data-symbol', symbol);
-      card.innerHTML = `
-        <div class="portfolio-info">
-          <h3 class="portfolio-name">${holding.name}</h3>
-          <p>Quantity: ${holding.quantity}</p>
-          <p>Avg. Price: ₹${holding.avgPrice.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
-          <p>Current Price: ₹${currentPrice.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
-          <p class="${pl >= 0 ? 'positive' : 'negative'}" style="${pl < 0 ? 'color: #FF3333' : ''}">
-            P/L: ${pl >= 0 ? '+' : '-'}₹${Math.abs(pl).toLocaleString('en-IN', { maximumFractionDigits: 2 })} 
-            (${plPercent >= 0 ? '+' : ''}${plPercent.toFixed(2)}%)
-          </p>
-          <div class="stock-actions" data-symbol="${symbol}">
-            <button class="action-button buy" onclick="promptTrade('buy', '${symbol}', '${holding.name.replace(/'/g, "\\'")}', ${currentPrice})">Buy</button>
-            <button class="action-button sell" onclick="promptTrade('sell', '${symbol}', '${holding.name.replace(/'/g, "\\'")}', ${currentPrice})">Sell</button>
-          </div>
-        </div>
-      `;
-      portfolioContainer.appendChild(card);
+        if (!holding.name || !holding.quantity || !holding.avgPrice) {
+            return;
+        }
+        
+        const currentPrice = holding.currentPrice && !isNaN(holding.currentPrice) && holding.currentPrice > 0 ? holding.currentPrice : 0;
+        
+        const pl = currentPrice ? (currentPrice - holding.avgPrice) * holding.quantity : 0;
+        const plPercent = currentPrice ? ((currentPrice - holding.avgPrice) / holding.avgPrice * 100) : 0;
+        
+        // Create the card element
+        const card = document.createElement('div');
+        card.className = 'portfolio-card';
+        card.style.animationDelay = `${0.1 + (idx * 0.05)}s`;
+        card.setAttribute('data-symbol', symbol);
+        
+        card.innerHTML = `
+            <div class="portfolio-info">
+                <h3 class="portfolio-name">${holding.name}</h3>
+                <p>Quantity: ${holding.quantity}</p>
+                <p>Avg. Price: ₹${holding.avgPrice.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
+                <p>Current Price: ₹${currentPrice.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
+                <p class="${pl >= 0 ? 'positive' : 'negative'}" style="${pl < 0 ? 'color: #FF3333' : ''}">
+                    P/L: ${pl >= 0 ? '+' : '-'}₹${Math.abs(pl).toLocaleString('en-IN', { maximumFractionDigits: 2})} 
+                    (${plPercent >= 0 ? '+' : ''}${plPercent.toFixed(2)}%)
+                </p>
+                <div class="stock-actions" data-symbol="${symbol}">
+                    <!-- Buttons will be added separately -->
+                </div>
+            </div>
+        `;
+        
+        portfolioContainer.appendChild(card);
+    });
+    
+    // Now add buttons separately after all cards are in the DOM
+    Object.entries(portfolio).forEach(([symbol, holding]) => {
+        const actionsContainer = portfolioContainer.querySelector(`.stock-actions[data-symbol="${symbol}"]`);
+        
+        if (actionsContainer) {
+            // Create buy button
+            const buyButton = document.createElement('button');
+            buyButton.className = 'action-button buy';
+            buyButton.textContent = 'Buy';
+            buyButton.style.pointerEvents = 'auto';
+            buyButton.style.position = 'relative';
+            buyButton.style.zIndex = '10';
+            
+            // Create sell button
+            const sellButton = document.createElement('button');
+            sellButton.className = 'action-button sell';
+            sellButton.textContent = 'Sell';
+            sellButton.style.pointerEvents = 'auto';
+            sellButton.style.position = 'relative';
+            sellButton.style.zIndex = '10';
+            
+            // Add buttons to container
+            actionsContainer.appendChild(buyButton);
+            actionsContainer.appendChild(sellButton);
+            
+            // Add event listeners
+            buyButton.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                promptTrade('buy', symbol, holding.name, holding.currentPrice || 0);
+                return false;
+            }, true);
+            
+            sellButton.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                promptTrade('sell', symbol, holding.name, holding.currentPrice || 0);
+                return false;
+            }, true);
+        }
+    });
+    
+    // Add click prevention to the card
+    document.querySelectorAll('.portfolio-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            const target = e.target;
+            // Empty handler to prevent unwanted interactions
+        });
     });
     
     updatePortfolioStats();
-  }
+}
 
   function buyStock(symbol, name, price, quantity) {
     if (isIndex) {
