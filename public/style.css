@@ -162,11 +162,16 @@ body.midnight {
     border-color: var(--accent-color);
     box-shadow: 0 6px 16px var(--shadow-color);
 }
+.search-bar button {
+    background-color: transparent; /* Ensure background doesn't hide the icon */
+    border: none; /* Remove border if present */
+    color: #000000; /* Match text color to icon */
+  }
 
 .search-bar button {
     padding: 14px 28px;
     background: var(--accent-color);
-    color: #fff;
+    color: black;
     border: none;
     border-radius: 40px;
     font-size: 16px;
@@ -2546,6 +2551,7 @@ body.midnight {
     overflow: hidden;
 }
 
+
 .holding-toggle:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 20px var(--shadow-color);
@@ -2852,3 +2858,239 @@ body.midnight .holding-toggle:hover {
         color: #1A2B49; /* Dark text to match light theme */
         margin-bottom: 20px;
     }
+    /* Stock Actions Container */
+.stock-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+    justify-content: flex-start;
+  }
+  
+  /* Buy and Sell Button Styles */
+  .action-button {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    outline: none;
+    animation: buttonFadeIn 0.3s ease forwards;
+  }
+  
+  .action-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease;
+    z-index: -1;
+  }
+  
+  .action-button:hover::before {
+    width: 200px;
+    height: 200px;
+  }
+  
+  .action-button:active {
+    transform: scale(0.95);
+  }
+  
+  .action-button.buy {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #fff;
+  }
+  
+  .action-button.buy:hover {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+    transform: translateY(-2px);
+  }
+  
+  .action-button.sell {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: #fff;
+  }
+  
+  .action-button.sell:hover {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+    transform: translateY(-2px);
+  }
+  
+  /* Theme-Specific Adjustments */
+  body.light .action-button {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  body.light .action-button.buy {
+    background: linear-gradient(135deg, #34d399, #22c55e);
+  }
+  
+  body.light .action-button.buy:hover {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.3);
+  }
+  
+  body.light .action-button.sell {
+    background: linear-gradient(135deg, #f87171, #ef4444);
+  }
+  
+  body.light .action-button.sell:hover {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+  }
+  
+  body.dark .action-button.buy {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+  }
+  
+  body.dark .action-button.buy:hover {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+  }
+  
+  body.dark .action-button.sell {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+  }
+  
+  body.dark .action-button.sell:hover {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+  }
+  
+  body.midnight .action-button.buy {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+  }
+  
+  body.midnight .action-button.buy:hover {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+  }
+  
+  body.midnight .action-button.sell {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+  }
+  
+  body.midnight .action-button.sell:hover {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+  }
+  
+  /* Animation for Button Appearance */
+  @keyframes buttonFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Disabled State */
+  .action-button:disabled {
+    background: #6b7280;
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.7;
+  }
+  
+  .action-button:disabled:hover {
+    background: #6b7280;
+    transform: none;
+    box-shadow: none;
+  }
+  
+  .action-button:disabled::before {
+    display: none;
+  }
+
+  .portfolio-card:hover {
+    background: #141B3D; /* Normal white */
+    transition: background 0.3s ease; /* Smooth transition */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Optional: Subtle shadow for depth */
+}
+
+.top-stock-card:hover,
+    .loser-card:hover {
+        background: #141B3D;
+        transition: background 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    /* Ensure consistency with portfolio-card */
+  /* Light theme background */
+body.light {
+    background-color: #F9FAFB; /* Replace with your desired color */
+    color: #1F2A44; /* Ensure text contrast */
+}
+
+/* Optional: Adjust other elements for light theme consistency */
+body.light .header,
+body.light .search-bar,
+body.light .portfolio-section,
+body.light .top-stocks,
+body.light .indices-buttons,
+body.light .content-grid,
+body.light .predictions-section,
+body.light .losers-section,
+body.light .news-section {
+    background-color: #FFFFFF; /* White background for sections */
+    color: #1F2A44; /* Dark text for readability */
+}
+
+/* Ensure cards and buttons have appropriate styling */
+body.light .price-card,
+body.light .top-stock-card,
+body.light .portfolio-card,
+body.light .prediction-card,
+body.light .loser-card,
+body.light .news-card {
+    background-color: #FFFFFF;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    color: #1F2A44;
+}
+
+/* Buttons in light theme */
+body.light .action-button,
+body.light .index-button,
+body.light .theme-toggle,
+body.light .holding-toggle,
+body.light .portfolio-close {
+    background-color: #E5E7EB; /* Light gray for buttons */
+    color: #1F2A44;
+}
+
+body.light .action-button:hover,
+body.light .index-button:hover,
+body.light .theme-toggle:hover,
+body.light .holding-toggle:hover,
+body.light .portfolio-close:hover {
+    background-color: #D1D5DB; /* Slightly darker on hover */
+}
+
+/* Search bar in light theme */
+body.light .search-bar input {
+    background-color: #FFFFFF;
+    border: 1px solid #D1D5DB;
+    color: #1F2A44;
+}
+
+body.light .search-bar button {
+    background-color: #3B82F6; /* Blue for search button */
+    color: #FFFFFF;
+}
+
+body.light .search-bar button:hover {
+    background-color: #2563EB;
+}
+
