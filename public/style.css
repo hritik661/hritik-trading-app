@@ -2843,61 +2843,12 @@ body.midnight .holding-toggle:hover {
     .portfolio-card .action-button:active {
         transform: translateY(0);
     }
-    /* Remove background from header */
-.header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 20px;
-    background: transparent; /* Remove blue gradient */
-    color: #1A2B49; /* Dark text to match light theme */
-    border-radius: 0;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Keep subtle shadow for separation */
-    margin-bottom: 20px;
-}
-
-/* Adjust header date color to match light theme */
-.header-date {
-    font-size: 15px;
-    font-weight: 500;
-    color: #64748B; /* Secondary text color for light theme */
-    flex: 1;
-    text-align: center;
-}
-
-/* Ensure holding-toggle contrasts with transparent header */
-.holding-toggle {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    background: #3B82F6; /* Blue background for button */
-    color: #FFFFFF; /* White text */
-    border: none;
-    border-radius: 20px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.3s ease, color 0.3s ease;
-}
-
-.holding-toggle:hover {
-    background: #2563EB; /* Darker blue on hover */
-    color: #FFFFFF;
-}
-
-/* Ensure light theme variables remain consistent */
-body.light {
-    --bg-primary: #FFFFFF;
-    --bg-secondary: #F9FAFB;
-    --text-primary: #1A2B49;
-    --text-secondary: #64748B;
-    --border-color: #E5E7EB;
-    --accent-color: #3B82F6;
-    --accent-hover: #2563EB;
-    --card-bg: #FFFFFF;
-    --shadow-color: rgba(0, 0, 0, 0.05);
-    --negative: #EF4444;
-    --positive: #10B981;
-    background: var(--bg-primary);
-}
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 20px;
+        background: transparent; /* Remove blue gradient */
+        color: #1A2B49; /* Dark text to match light theme */
+        margin-bottom: 20px;
+    }
