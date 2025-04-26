@@ -163,13 +163,22 @@ async function fetchData(items) {
     try {
       const quote = await fetchWithRetry(() =>
         yahooFinance.quote(item.symbol, {
-          fields: ['regularMarketPrice', 'regularMarketPreviousClose', 'regularMarketVolume', 'fiftyTwoWeekHigh'],
+          fields: [
+            'regularMarketPrice',
+            'regularMarketPreviousClose',
+            'regularMarketVolume',
+            'fiftyTwoWeekHigh',
+            'regularMarketDayHigh',
+            'regularMarketDayLow',
+          ],
         })
       );
       const currentPrice = quote.regularMarketPrice ?? null;
       const lastClose = quote.regularMarketPreviousClose ?? null;
       const volume = quote.regularMarketVolume ?? null;
       const fiftyTwoWeekHigh = quote.fiftyTwoWeekHigh ?? null;
+      const dayHigh = quote.regularMarketDayHigh ?? null;
+      const dayLow = quote.regularMarketDayLow ?? null;
       let percentChange = null;
       let percentDrop = null;
       if (currentPrice != null && lastClose != null && lastClose !== 0) {
@@ -187,6 +196,8 @@ async function fetchData(items) {
         percentChange: percentChange,
         fiftyTwoWeekHigh: fiftyTwoWeekHigh,
         percentDrop: percentDrop,
+        dayHigh: dayHigh,
+        dayLow: dayLow,
       });
     } catch (error) {
       console.error(`Error fetching ${item.name} (${item.symbol}):`, error.message);
@@ -199,6 +210,8 @@ async function fetchData(items) {
         percentChange: null,
         fiftyTwoWeekHigh: null,
         percentDrop: null,
+        dayHigh: null,
+        dayLow: null,
       });
     }
   }
@@ -216,6 +229,8 @@ async function fetchLosers(stocksData) {
       price: stock.price ?? 0,
       volume: stock.volume ?? 0,
       percentDrop: parseFloat(stock.percentDrop).toFixed(2),
+      dayHigh: stock.dayHigh ?? 0,
+      dayLow: stock.dayLow ?? 0,
     }));
 }
 
@@ -258,6 +273,8 @@ async function fetchPredictedGainers(stocksData) {
           symbol: stock.symbol,
           price: stock.price,
           predictedGain: parseFloat(predictedGain.toFixed(2)),
+          dayHigh: stock.dayHigh ?? 0,
+          dayLow: stock.dayLow ?? 0,
         });
       }
     } catch (error) {
@@ -276,6 +293,8 @@ async function fetchPredictedGainers(stocksData) {
         symbol: stock.symbol,
         price: stock.price,
         predictedGain: parseFloat((Math.random() * 2 + 5).toFixed(2)),
+        dayHigh: stock.dayHigh ?? 0,
+        dayLow: stock.dayLow ?? 0,
       });
     }
   }
@@ -297,7 +316,14 @@ async function searchStock(query) {
 
     const quote = await fetchWithRetry(() =>
       yahooFinance.quote(stock.symbol, {
-        fields: ['regularMarketPrice', 'regularMarketVolume', 'currency', 'regularMarketPreviousClose'],
+        fields: [
+          'regularMarketPrice',
+          'regularMarketVolume',
+          'currency',
+          'regularMarketPreviousClose',
+          'regularMarketDayHigh',
+          'regularMarketDayLow',
+        ],
       })
     );
     const endDate = new Date();
@@ -324,6 +350,8 @@ async function searchStock(query) {
       volume: quote.regularMarketVolume ?? 0,
       currency: quote.currency || 'INR',
       percentChange: percentChange,
+      dayHigh: quote.regularMarketDayHigh ?? 0,
+      dayLow: quote.regularMarketDayLow ?? 0,
       historicalData: historical.map(data => ({
         date: data.date.toISOString(),
         open: data.open ?? 0,
@@ -353,7 +381,12 @@ async function fetchHistoricalData(symbol, name) {
     );
     const quote = await fetchWithRetry(() =>
       yahooFinance.quote(symbol, {
-        fields: ['regularMarketPrice', 'regularMarketVolume'],
+        fields: [
+          'regularMarketPrice',
+          'regularMarketVolume',
+          'regularMarketDayHigh',
+          'regularMarketDayLow',
+        ],
       })
     );
     return {
@@ -369,10 +402,12 @@ async function fetchHistoricalData(symbol, name) {
       })),
       currentPrice: quote.regularMarketPrice ?? 0,
       volume: quote.regularMarketVolume ?? 0,
+      dayHigh: quote.regularMarketDayHigh ?? 0,
+      dayLow: quote.regularMarketDayLow ?? 0,
     };
   } catch (error) {
     console.error(`Error fetching historical data for ${symbol}:`, error.message);
-    return { symbol, name, data: [], currentPrice: 0, volume: 0 };
+    return { symbol, name, data: [], currentPrice: 0, volume: 0, dayHigh: 0, dayLow: 0 };
   }
 }
 
@@ -463,7 +498,9 @@ function dataChanged(oldData, newData) {
       item.name !== newItem.name ||
       item.symbol !== newItem.symbol ||
       item.percentDrop !== newItem.percentDrop ||
-      item.predictedGain !== newItem.predictedGain
+      item.predictedGain !== newItem.predictedGain ||
+      item.dayHigh !== newItem.dayHigh ||
+      item.dayLow !== newItem.dayLow
     );
   });
 }
@@ -592,6 +629,8 @@ wss.on('connection', ws => {
             data: currentSearchResult.historicalData,
             currentPrice: currentSearchResult.price,
             volume: currentSearchResult.volume,
+            dayHigh: currentSearchResult.dayHigh,
+            dayLow: currentSearchResult.dayLow,
           };
         }
       } else if (data.clearSearch) {
