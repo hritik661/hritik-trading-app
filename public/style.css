@@ -131,65 +131,6 @@ body.midnight {
     width: 24px;
     height: 24px;
 }
-
-.search-bar {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 32px;
-}
-
-.search-bar form {
-    display: flex;
-    gap: 16px;
-    width: 100%;
-    max-width: 600px;
-}
-
-#searchInput {
-    flex: 1;
-    padding: 14px 24px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 40px;
-    font-size: 16px;
-    color: var(--text-primary);
-    outline: none;
-    box-shadow: 0 4px 12px var(--shadow-color);
-    backdrop-filter: blur(8px);
-}
-
-#searchInput:focus {
-    border-color: var(--accent-color);
-    box-shadow: 0 6px 16px var(--shadow-color);
-}
-
-.search-bar button {
-    padding: 14px 28px;
-    background: var(--accent-color);
-    color: black;
-    border: none;
-    border-radius: 40px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 0 4px 12px var(--shadow-color);
-    transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.search-bar button:hover {
-    background: var(--accent-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px var(--shadow-color);
-}
-
-.search-bar button:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 8px var(--shadow-color);
-}
-
 #searchResult {
     margin: 32px auto;
     width: 90%;
@@ -306,17 +247,15 @@ body.midnight {
 
 #toggleChartType {
     position: absolute;
-    top: 20px;
-    right: 20px;
     padding: 10px 28px;
     background: var(--bg-secondary);
     color: var(--text-primary);
     border: 1px solid var(--border-color);
     border-radius: 40px;
     font-size: 15px;
-    font-weight: 600;
+    font-weight: 10;
     cursor: pointer;
-    box-shadow: 0 4px 12px var(--shadow-color);
+    box-shadow: 0 1px 5px var(--shadow-color);
     transition: all 0.3s ease;
     backdrop-filter: blur(8px);
 }
@@ -1115,89 +1054,10 @@ body.midnight {
             box-shadow: 0 6px 16px var(--shadow-color);
         }
         
-        .search-bar {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 32px;
-        }
+       
         
-        .search-bar form {
-            display: flex;
-            gap: 16px;
-            width: 100%;
-            max-width: 600px;
-        }
-        
-        #searchInput {
-            flex: 1;
-            padding: 14px 24px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 40px;
-            font-size: 16px;
-            color: var(--text-primary);
-            outline: none;
-            box-shadow: 0 4px 12px var(--shadow-color);
-        }
-        
-        #searchInput:focus {
-            border-color: var(--accent-color);
-            box-shadow: 0 6px 16px var(--shadow-color);
-        }
-        
-        .search-bar button {
-            padding: 14px 28px;
-            background: var(--accent-color);
-            color: #fff;
-            border: none;
-            border-radius: 40px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 12px var(--shadow-color);
-        }
-        
-        .search-bar button:hover {
-            background: var(--accent-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px var(--shadow-color);
-        }
-        
-        #searchResult {
-            margin: 32px auto;
-            width: 90%;
-            max-width: 600px;
-            padding: 20px 24px;
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            box-shadow: 0 6px 20px var(--shadow-color);
-            border: 1px solid var(--border-color);
-            display: none;
-        }
-        
-        #searchResult.show {
-            display: block;
-            animation: fadeIn 0.5s ease-out;
-        }
-        
-        #searchResult.error {
-            color: var(--negative);
-        }
-        
-        #searchResult h3 {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 8px;
-        }
-        
-        #searchResult p {
-            font-size: 15px;
-            color: var(--text-secondary);
-        }
+     
+
         
         .indices-buttons {
             display: flex;
@@ -3290,13 +3150,15 @@ body.midnight .holding-toggle:hover {
     margin-bottom: 32px;
     position: relative;
     z-index: 10;
+    
+    
 }
 
 /* Search Bar Form */
+
 .search-bar form {
     display: flex;
     gap: 12px;
-    width: 100%;
     max-width: 600px;
     align-items: center;
     position: relative;
@@ -3383,7 +3245,7 @@ body.midnight .holding-toggle:hover {
 
 /* Search Button */
 .search-bar button {
-    padding: 14px 28px;
+    padding: 10px 28px;
     background: linear-gradient(135deg, #00E5D8, #00C7BB);
     color: #1F2A44;
     border: none;
@@ -3490,7 +3352,7 @@ body.midnight .holding-toggle:hover {
 
     #searchInput {
         padding: 12px 20px 12px 45px;
-        font-size: 14px;
+        font-size: 1px;
     }
 
     .search-bar button {
@@ -3635,5 +3497,422 @@ body.midnight .holding-toggle:hover {
         height: 16px;
     }
 }
+#searchForm button[type="submit"] {
+    padding: 9px 20px;
+    font-size: 14px;
+    line-height: 1;
+}
 
+#searchForm button[type="submit"] svg {
+    width: 10px;
+    height: 16px;
+}
 
+@media (max-width: 1024px) {
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+    #chartContainer {
+        height: 400px;
+    }
+    .price-dashboard {
+        max-height: 480px;
+    }
+    .portfolio-section {
+        padding: 16px;
+    }
+    .portfolio-title {
+        font-size: 20px;
+    }
+    .portfolio-stats p {
+        font-size: 14px;
+    }
+    .portfolio-card {
+        padding: 15px;
+    }
+    .losers-section {
+        padding: 20px;
+        margin-top: 32px;
+    }
+    .losers-title {
+        font-size: 20px;
+    }
+    .losers-container {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+    .loser-card {
+        padding: 16px;
+    }
+    .news-section {
+        padding: 20px;
+        margin-top: 32px;
+    }
+    .news-title {
+        font-size: 20px;
+    }
+    .news-card {
+        padding: 16px;
+    }
+    .prediction-card {
+        flex: 1 1 calc(50% - 1rem);
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 16px;
+    }
+    .header {
+        flex-direction: column;
+        padding: 12px;
+        gap: 12px;
+    }
+    .logo {
+        font-size: 24px;
+    }
+    .header-date {
+        font-size: 14px;
+        margin: 8px 0;
+    }
+    .theme-toggle {
+        width: 40px;
+        height: 40px;
+    }
+    .search-bar form {
+        flex-direction: column;
+        gap: 12px;
+        max-width: 100%;
+        padding: 0 12px;
+    }
+    #searchInput {
+        padding: 12px 20px 12px 45px;
+        font-size: 14px;
+    }
+    .search-bar button {
+        padding: 12px 20px;
+        font-size: 14px;
+    }
+    .indices-buttons {
+        gap: 12px;
+    }
+    .index-button {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+    #chartContainer {
+        height: 350px;
+    }
+    #toggleChartType {
+        top: 15px;
+        right: 15px;
+        padding: 8px 20px;
+        font-size: 14px;
+    }
+    #priceInfo {
+        padding: 12px 16px;
+    }
+    #priceInfo p {
+        font-size: 14px;
+    }
+    #tradePanel {
+        padding: 12px 16px;
+    }
+    .trade-tab {
+        font-size: 11px;
+    }
+    .trade-option {
+        padding: 6px;
+        font-size: 12px;
+    }
+    .trade-inputs select,
+    .trade-inputs input {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+    .trade-info {
+        font-size: 11px;
+    }
+    .trade-button {
+        padding: 10px;
+        font-size: 14px;
+    }
+    #optionsPanel {
+        padding: 12px 16px;
+    }
+    .options-tab {
+        font-size: 11px;
+    }
+    .options-selectors select {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+    .options-info {
+        font-size: 11px;
+    }
+    .options-button {
+        padding: 10px;
+        font-size: 14px;
+    }
+    .price-dashboard {
+        padding: 20px;
+        max-height: 420px;
+    }
+    .dashboard-title {
+        font-size: 20px;
+    }
+    .price-card {
+        padding: 12px 16px;
+    }
+    .price-card .asset-name {
+        font-size: 14px;
+    }
+    .price-card .current-price {
+        font-size: 14px;
+    }
+    .top-stocks {
+        padding: 20px;
+    }
+    .top-stocks-title {
+        font-size: 20px;
+    }
+    .top-stock-card {
+        padding: 16px;
+        min-width: 200px;
+    }
+    .stock-name {
+        font-size: 14px;
+    }
+    .stock-price {
+        font-size: 14px;
+    }
+    .stock-change {
+        font-size: 12px;
+    }
+    .losers-title {
+        font-size: 18px;
+    }
+    .losers-container {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+    .loser-card {
+        padding: 12px;
+    }
+    .loser-name {
+        font-size: 14px;
+    }
+    .loser-price {
+        font-size: 14px;
+    }
+    .loser-drop {
+        font-size: 12px;
+    }
+    .news-title {
+        font-size: 18px;
+    }
+    .news-headline {
+        font-size: 14px;
+    }
+    .news-source {
+        font-size: 12px;
+    }
+    .news-description {
+        font-size: 13px;
+    }
+    .prediction-card {
+        flex: 1 1 calc(50% - 0.5rem);
+        padding: 12px;
+    }
+    .prediction-info h3 {
+        font-size: 1rem;
+    }
+    .prediction-info p {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 12px;
+    }
+    .header {
+        padding: 8px;
+    }
+    .logo {
+        font-size: 20px;
+    }
+    .header-date {
+        font-size: 12px;
+    }
+    .theme-toggle {
+        width: 36px;
+        height: 36px;
+    }
+    #searchInput {
+        padding: 10px 18px 10px 40px;
+        font-size: 13px;
+    }
+    .search-bar button {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+    .indices-buttons {
+        gap: 8px;
+    }
+    .index-button {
+        padding: 8px 16px;
+        font-size: 12px;
+    }
+    #chartContainer {
+        height: 300px;
+        padding: 20px;
+    }
+    #toggleChartType {
+        top: 10px;
+        right: 10px;
+        padding: 6px 16px;
+        font-size: 12px;
+    }
+    #priceInfo {
+        padding: 10px 12px;
+    }
+    #priceInfo p {
+        font-size: 12px;
+    }
+    #tradePanel {
+        padding: 10px 12px;
+    }
+    .trade-tab {
+        font-size: 10px;
+    }
+    .trade-option {
+        padding: 4px;
+        font-size: 11px;
+    }
+    .trade-inputs select,
+    .trade-inputs input {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+    .trade-info {
+        font-size: 10px;
+    }
+    .trade-button {
+        padding: 8px;
+        font-size: 12px;
+    }
+    #optionsPanel {
+        padding: 10px 12px;
+    }
+    .options-tab {
+        font-size: 10px;
+    }
+    .options-selectors select {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+    .options-info {
+        font-size: 10px;
+    }
+    .options-button {
+        padding: 8px;
+        font-size: 12px;
+    }
+    .price-dashboard {
+        padding: 16px;
+        max-height: 380px;
+    }
+    .dashboard-title {
+        font-size: 18px;
+    }
+    .price-card {
+        padding: 10px 12px;
+    }
+    .price-card .asset-name {
+        font-size: 12px;
+    }
+    .price-card .current-price {
+        font-size: 12px;
+    }
+    .top-stocks {
+        padding: 16px;
+    }
+    .top-stocks-title {
+        font-size: 18px;
+    }
+    .top-stock-card {
+        padding: 12px;
+        min-width: 180px;
+    }
+    .stock-name {
+        font-size: 12px;
+    }
+    .stock-price {
+        font-size: 12px;
+    }
+    .stock-change {
+        font-size: 10px;
+    }
+    .losers-section {
+        padding: 12px;
+        margin-top: 20px;
+    }
+    .losers-title {
+        font-size: 16px;
+    }
+    .losers-container {
+        grid-template-columns: 1fr;
+    }
+    .loser-card {
+        padding: 10px;
+    }
+    .loser-name {
+        font-size: 12px;
+    }
+    .loser-price {
+        font-size: 12px;
+    }
+    .loser-drop {
+        font-size: 10px;
+    }
+    .news-section {
+        padding: 12px;
+        margin-top: 20px;
+    }
+    .news-title {
+        font-size: 16px;
+    }
+    .news-headline {
+        font-size: 13px;
+    }
+    .news-source {
+        font-size: 11px;
+    }
+    .news-description {
+        font-size: 12px;
+    }
+    .prediction-card {
+        flex: 1 1 100%;
+        padding: 10px;
+    }
+    .prediction-info h3 {
+        font-size: 0.9rem;
+    }
+    .prediction-info p {
+        font-size: 0.7rem;
+    }
+    .portfolio-section {
+        padding: 12px;
+    }
+    .portfolio-title {
+        font-size: 18px;
+    }
+    .portfolio-stats p {
+        font-size: 12px;
+    }
+    .portfolio-card {
+        padding: 10px;
+    }
+    #portfolioContainer {
+        grid-template-columns: 1fr;
+    }
+}
