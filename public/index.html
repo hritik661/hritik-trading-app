@@ -1,118 +1,118 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hritik Indian Stock Market Live</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
-  <script src="https://cdn.jsdelivr.net/npm/luxon"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-</head>
-<body class="dark">
-  <div class="header">
-    <h1 class="logo">Hritik Indian Stock Market Live</h1>
-    <div class="header-date">
-      Live Market Data • <span id="currentDate"></span> • Wallet: <span id="walletBalance">₹1,00,00,000</span>
-    </div>
-    <button class="holding-toggle" onclick="toggleHoldings()" title="Show Holdings" aria-label="Show Holdings">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F3F4F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="holdingsIcon">
-        <path d="M20 6H4c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/>
-        <path d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2"/>
-        <path d="M10 12h4"/>
-      </svg>
-      Holdings
-    </button>
-    <button class="theme-toggle" onclick="toggleTheme()" title="Switch Theme" aria-label="Toggle Theme">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-        <path id="lightIcon" d="M12 17C14.7614 17 17 14.7614 17 12C17 9.23858 14.7614 7 12 7C9.23858 7 7 9.23858 7 12C7 14.7614 9.23858 17 12 17Z M12 1V3M12 21V23M4.22 4.22L5.64 5.64M18.36 18.36L19.78 19.78M1 12H3M21 12H23M4.22 19.78L5.64 18.36M18.36 5.64L19.78 4.22" stroke="#1F2A44" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style="display: none;"/>
-        <path id="darkIcon" d="M21 12.79C20.8427 14.4922 20.2039 16.1144 19.1582 17.4668C18.1126 18.8192 16.7035 19.8458 15.0957 20.4265C13.4879 21.0073 11.7479 21.1181 10.0795 20.7461C8.41111 20.3741 6.88058 19.5345 5.67453 18.3285C4.46847 17.1224 3.62885 15.5919 3.25689 13.9235C2.88493 12.2551 2.99571 10.5151 3.57648 8.9073C4.15725 7.29952 5.18387 5.89039 6.53618 4.84474C7.88849 3.79908 9.51071 3.16029 11.213 3.00303C10.2555 4.1482 9.75149 5.59284 9.79786 7.06901C9.84423 8.54517 10.4382 9.95479 11.4743 11.0358C12.5103 12.1168 13.9241 12.7832 15.4036 12.9052C16.8831 13.0272 18.3608 12.6954 19.597 11.897C20.137 12.1643 20.6073 12.4531 21 12.79Z" stroke="#F3F4F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    </button>
-  </div>
-
-  <div class="portfolio-section" id="portfolioSection" style="display: none; position: relative;">
-    <h2 class="portfolio-title">Portfolio (Holdings)</h2>
-    <button class="portfolio-close" onclick="toggleHoldings()" title="Close Portfolio" aria-label="Close Portfolio">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F3F4F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="18" y1="6" x2="6" y2="18" />
-        <line x1="6" y1="6" x2="18" y2="18" />
-      </svg>
-    </button>
-    <div class="portfolio-stats">
-      <p>Total Invested: <span id="totalInvested">₹0</span></p>
-      <p>Current Value: <span id="currentValue">₹0</span></p>
-      <p>Profit/Loss: <span id="profitLoss">₹0</span></p>
-    </div>
-    <div id="portfolioContainer" class="portfolio-grid"></div>
-  </div>
-
-  <div class="search-bar">
-    <form id="searchForm">
-        <input type="text" id="searchInput" placeholder="Search For any Stock" />
-        <div class="placeholder-wrapper">
-            <svg class="placeholder-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <span class="placeholder-text">Search For any Stock </span>
-        </div>
-        <button type="submit">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            Search
-        </button>
-    </form>
-</div>
-
-  <div id="searchResult" role="alert"></div>
-  <div id="notificationMessage" class="notification"></div>
-
-  <div class="top-stocks">
-    <h2 class="top-stocks-title">Most Traded Stocks</h2>
-    <div class="top-stocks-container" id="topStocksContainer"></div>
-  </div>
-
-  <div class="indices-buttons">
-    <button class="index-button active" onclick="toggleHistoricalData('^NSEI', 'NIFTY 50')" aria-label="NIFTY 50">NIFTY 50</button>
-    <button class="index-button" onclick="toggleHistoricalData('^BSESN', 'SENSEX')" aria-label="SENSEX">SENSEX</button>
-    <button class="index-button" onclick="toggleHistoricalData('^NSEBANK', 'BANK NIFTY')" aria-label="BANK NIFTY">BANK NIFTY</button>
-    <button class="index-button" onclick="toggleHistoricalData('^NSEMDCP50', 'NIFTY MIDCAP 50')" aria-label="NIFTY MIDCAP 50">NIFTY MIDCAP 50</button>
-    <button class="index-button" onclick="toggleBitcoinData('BTCUSDT', 'Bitcoin (BTC/USDT)')" aria-label="Bitcoin (BTC/USDT)">BTC/USDT</button>
-  </div>
-
-  <div class="content-grid">
-    <div class="chart-section">
-      <div id="chartContainer">
-        <button id="toggleChartType" onclick="toggleChartType()" aria-label="Switch Chart Type">Switch to Candlestick</button>
-        <canvas id="stockChart" aria-label="Stock Chart"></canvas>
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hritik Indian Stock Market Live</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body class="dark">
+    <div class="header">
+      <h1 class="logo">Hritik Indian Stock Market Live</h1>
+      <div class="header-date">
+        Live Market Data • <span id="currentDate"></span> • Wallet: <span id="walletBalance">₹1,00,00,000</span>
       </div>
-      <div id="priceInfo"></div>
+      <button class="holding-toggle" onclick="toggleHoldings()" title="Show Holdings" aria-label="Show Holdings">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F3F4F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="holdingsIcon">
+          <path d="M20 6H4c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/>
+          <path d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2"/>
+          <path d="M10 12h4"/>
+        </svg>
+        Holdings
+      </button>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Switch Theme" aria-label="Toggle Theme">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path id="lightIcon" d="M12 17C14.7614 17 17 14.7614 17 12C17 9.23858 14.7614 7 12 7C9.23858 7 7 9.23858 7 12C7 14.7614 9.23858 17 12 17Z M12 1V3M12 21V23M4.22 4.22L5.64 5.64M18.36 18.36L19.78 19.78M1 12H3M21 12H23M4.22 19.78L5.64 18.36M18.36 5.64L19.78 4.22" stroke="#1F2A44" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style="display: none;"/>
+          <path id="darkIcon" d="M21 12.79C20.8427 14.4922 20.2039 16.1144 19.1582 17.4668C18.1126 18.8192 16.7035 19.8458 15.0957 20.4265C13.4879 21.0073 11.7479 21.1181 10.0795 20.7461C8.41111 20.3741 6.88058 19.5345 5.67453 18.3285C4.46847 17.1224 3.62885 15.5919 3.25689 13.9235C2.88493 12.2551 2.99571 10.5151 3.57648 8.9073C4.15725 7.29952 5.18387 5.89039 6.53618 4.84474C7.88849 3.79908 9.51071 3.16029 11.213 3.00303C10.2555 4.1482 9.75149 5.59284 9.79786 7.06901C9.84423 8.54517 10.4382 9.95479 11.4743 11.0358C12.5103 12.1168 13.9241 12.7832 15.4036 12.9052C16.8831 13.0272 18.3608 12.6954 19.597 11.897C20.137 12.1643 20.6073 12.4531 21 12.79Z" stroke="#F3F4F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
     </div>
 
-    <div class="price-dashboard">
-      <h2 class="dashboard-title">Market Overview</h2>
-      <div id="stockCards"></div>
+    <div class="portfolio-section" id="portfolioSection" style="display: none; position: relative;">
+      <h2 class="portfolio-title">Portfolio (Holdings)</h2>
+      <button class="portfolio-close" onclick="toggleHoldings()" title="Close Portfolio" aria-label="Close Portfolio">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F3F4F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+      <div class="portfolio-stats">
+        <p>Total Invested: <span id="totalInvested">₹0</span></p>
+        <p>Current Value: <span id="currentValue">₹0</span></p>
+        <p>Profit/Loss: <span id="profitLoss">₹0</span></p>
+      </div>
+      <div id="portfolioContainer" class="portfolio-grid"></div>
     </div>
+
+    <div class="search-bar">
+      <form id="searchForm">
+          <input type="text" id="searchInput" placeholder="Search For any Stock" />
+          <div class="placeholder-wrapper">
+              <svg class="placeholder-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <span class="placeholder-text">Search For any Stock </span>
+          </div>
+          <button type="submit">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              Search
+          </button>
+      </form>
   </div>
 
-  <div class="predictions-section">
-    <h2 class="predictions-title">Predicted Stock Gainers (5%+ Up)</h2>
-    <div class="predictions-container" id="predictionsContainer"></div>
-  </div>
-  
-  <div class="losers-section">
-    <h2 class="losers-title">Biggest Losers (Down 30%+ from 52-Week High)</h2>
-    <div class="losers-container" id="losersContainer"></div>
-  </div>
-  
-  <div class="news-section">
-    <h2 class="news-title">Latest Stock Trading News</h2>
-    <div class="news-container" id="newsContainer"></div>
-  </div>
+    <div id="searchResult" role="alert"></div>
+    <div id="notificationMessage" class="notification"></div>
+
+    <div class="top-stocks">
+      <h2 class="top-stocks-title">Most Traded Stocks</h2>
+      <div class="top-stocks-container" id="topStocksContainer"></div>
+    </div>
+
+    <div class="indices-buttons">
+      <button class="index-button active" onclick="toggleHistoricalData('^NSEI', 'NIFTY 50')" aria-label="NIFTY 50">NIFTY 50</button>
+      <button class="index-button" onclick="toggleHistoricalData('^BSESN', 'SENSEX')" aria-label="SENSEX">SENSEX</button>
+      <button class="index-button" onclick="toggleHistoricalData('^NSEBANK', 'BANK NIFTY')" aria-label="BANK NIFTY">BANK NIFTY</button>
+      <button class="index-button" onclick="toggleHistoricalData('^NSEMDCP50', 'NIFTY MIDCAP 50')" aria-label="NIFTY MIDCAP 50">NIFTY MIDCAP 50</button>
+      <button class="index-button" onclick="toggleBitcoinData('BTCUSDT', 'Bitcoin (BTC/USDT)')" aria-label="Bitcoin (BTC/USDT)">BTC/USDT</button>
+    </div>
+
+    <div class="content-grid">
+      <div class="chart-section">
+        <div id="chartContainer">
+          <button id="toggleChartType" onclick="toggleChartType()" aria-label="Switch Chart Type">Switch to Candlestick</button>
+          <canvas id="stockChart" aria-label="Stock Chart"></canvas>
+        </div>
+        <div id="priceInfo"></div>
+      </div>
+
+      <div class="price-dashboard">
+        <h2 class="dashboard-title">Market Overview</h2>
+        <div id="stockCards"></div>
+      </div>
+    </div>
+
+    <div class="predictions-section">
+      <h2 class="predictions-title">Predicted Stock Gainers (5%+ Up)</h2>
+      <div class="predictions-container" id="predictionsContainer"></div>
+    </div>
+    
+    <div class="losers-section">
+      <h2 class="losers-title">Biggest Losers (Down 30%+ from 52-Week High)</h2>
+      <div class="losers-container" id="losersContainer"></div>
+    </div>
+    
+    <div class="news-section">
+      <h2 class="news-title">Latest Stock Trading News</h2>
+      <div class="news-container" id="newsContainer"></div>
+    </div>
   <script>
     
   let ws;
@@ -897,7 +897,7 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
       updatePredictions(lastPredictionsData);
     }
   }
-  function updatePredictions(predictions) {
+ function updatePredictions(predictions) {
     if (!Array.isArray(predictions)) {
       generateDailyPredictions();
       return;
@@ -914,8 +914,6 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
         `₹${Number(stock.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'N/A';
       const predictedGain = stock.predictedGain && !isNaN(stock.predictedGain) ? 
         `+${Number(stock.predictedGain).toFixed(2)}%` : 'N/A';
-      const volume = stock.volume && !isNaN(stock.volume) ? 
-        Number(stock.volume).toLocaleString('en-IN') : '0';
   
       const card = document.createElement('div');
       card.id = `prediction-${stock.symbol}`;
@@ -926,7 +924,6 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
           <h3 class="prediction-name">${stock.name}</h3>
           <p class="prediction-price ${price === 'N/A' ? 'unavailable' : 'available'}">Current Price: ${price}</p>
           <p class="prediction-gain">Predicted Gain: ${predictedGain}</p>
-          <p class="volume">Volume: ${volume}</p>
           <div class="stock-actions">
             <button class="action-button buy" onclick="promptTrade('buy', '${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Buy</button>
             <button class="action-button sell" onclick="promptTrade('sell', '${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Sell</button>
@@ -943,7 +940,7 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
       });
       predictionsContainer.appendChild(card);
     });
-  }
+}
   
   function updateLosers(losers) {
     if (!Array.isArray(losers)) return;
