@@ -4324,3 +4324,92 @@ body.midnight .top-stock-card {
     pointer-events: none; /* Avoid interfering with scrolling */
 }
 
+/* Style the search result container to allow positioning of the close button */
+#searchResult {
+    position: relative;
+    padding: 20px;
+    background-color: #1F2A44;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Style the close button as a circular 'X' in the top-right corner */
+.close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #FF4444;
+    color: white;
+    border: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%; /* Makes it circular */
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 16px;
+    line-height: 24px; /* Centers the '✖' vertically */
+    text-align: center;
+    transition: background-color 0.3s;
+    padding: 0;
+}
+
+.close-button:hover {
+    background-color: #DC2626;
+}
+
+/* Ensure the search result content doesn't overlap with the close button */
+#searchResult > * {
+    margin-top: 0; /* Reset margin to avoid overlap */
+}
+/* Style the portfolio section for relative positioning */
+.portfolio-section {
+    position: relative;
+    padding: 20px;
+    background-color: #1F2A44;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Style the portfolio-close button to match the search result close button */
+.portfolio-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #FF4444;
+    color: white;
+    border: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 16px;
+    line-height: 24px;
+    text-align: center;
+    transition: background-color 0.3s;
+    padding: 0;
+}
+
+.portfolio-close:hover {
+    background-color: #DC2626;
+}
+
+/* Ensure the portfolio content doesn't overlap with the close button */
+.portfolio-title {
+    margin-top: 0;
+}
+
+/* Ensure portfolio-stats and portfolio-grid are styled properly */
+.portfolio-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.portfolio-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
