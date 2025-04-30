@@ -4210,3 +4210,94 @@ body.midnight .holding-toggle:hover {
 }
 
 
+.top-stocks {
+    width: 100%;
+    overflow: hidden;
+    padding: 1rem 0;
+    position: relative;
+  }
+
+  .top-stocks-container {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    gap: 1rem;
+    padding: 0 1rem;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    width: max-content;
+    animation: autoScroll 60s linear infinite; /* Slow scroll */
+  }
+
+  .top-stocks-container::-webkit-scrollbar {
+    display: none;
+  }
+
+  .top-stocks-container:hover {
+    animation-play-state: paused;
+  }
+
+  .top-stock-card {
+    flex: 0 0 auto;
+    width: 280px;
+    min-width: 260px;
+    max-width: 300px;
+    padding: 1rem;
+
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    color: #F3F4F6;
+  }
+
+  .top-stock-card:hover {
+    transform: translateY(-4px); /* Only transform, no color change */
+  }
+
+  .top-stock-card:focus {
+    outline: 2px solid #3B82F6;
+    outline-offset: 2px;
+  }
+
+  /* Theme-specific styles */
+  body.light .top-stock-card {
+    background: #F9FAFB;
+    color: #374151;
+  }
+  body.midnight .top-stock-card {
+    background: #1A2344;
+    color: #A0AECB;
+  }
+
+  /* Keyframes for auto-scrolling */
+  @keyframes autoScroll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%); /* Move half the container width */
+    }
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .top-stock-card {
+      width: 240px;
+      min-width: 220px;
+    }
+    .top-stocks-container {
+      animation-duration: 800s;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .top-stock-card {
+      width: 200px;
+      min-width: 180px;
+    }
+    .top-stocks-container {
+      animation-duration: 40s;
+    }
+  }
