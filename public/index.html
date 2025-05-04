@@ -1532,42 +1532,231 @@ function updateSearchResult(result) {
   
   searchInput.addEventListener('input', (e) => autoSearch(e.target.value.trim()));
   
-  function updateNews(newsItems) {
-    const newsContainer = document.getElementById('newsContainer');
-    if (!newsContainer.hasChildNodes()) {
-      newsItems.forEach((item, idx) => {
-        const newsCard = document.createElement('div');
-        newsCard.className = 'news-card';
-        newsCard.style.animationDelay = `${0.2 + (idx * 0.1)}s`;
-        newsCard.innerHTML = `
-          <h3 class="news-headline">${item.title}</h3>
-          <p class="news-source">${item.source} • <span>${item.time}</span></p>
-          <p class="news-description">${item.description}</p>
-        `;
-        newsContainer.appendChild(newsCard);
-      });
-    } else {
-      const existingCards = newsContainer.querySelectorAll('.news-card');
-      newsItems.forEach((item, idx) => {
-        if (idx < existingCards.length) {
-          const card = existingCards[idx];
-          const headline = card.querySelector('.news-headline');
-          const source = card.querySelector('.news-source');
-          const description = card.querySelector('.news-description');
-          if (headline.textContent !== item.title) headline.textContent = item.title;
-          if (source.textContent !== `${item.source} • ${item.time}`) source.textContent = `${item.source} • ${item.time}`;
-          if (description.textContent !== item.description) description.textContent = item.description;
-        }
-      });
-    }
-  }
-  
-  document.addEventListener('DOMContentLoaded', () => {
-    updateWalletBalance();
-    generateDailyPredictions();
-    renderPortfolio();
-  });
+  // Static fallback news data to display if WebSocket fails
+const fallbackNews = [
+{ title: "Market Update", source: "Local News", time: "Just now", description: "The market is experiencing steady growth today." },
+{ title: "Tech Stocks Rise", source: "Local News", time: "1 hour ago", description: "Tech giants are leading the rally this week." }
+];
 
+function updateNews(newsItems) {
+const newsContainer = document.getElementById('newsContainer');
+// Clear any existing content (e.g., loading state)
+newsContainer.innerHTML = '';
+
+// If no news items are provided or the array is empty, use fallback content
+if (!newsItems || newsItems.length === 0) {
+    newsItems = fallbackNews;
+}
+
+// Populate news items
+newsItems.forEach((item, idx) => {
+    const newsCard = document.createElement('div');
+    newsCard.className = 'news-card';
+    newsCard.style.animationDelay = `${0.2 + (idx * 0.1)}s`;
+    newsCard.innerHTML = `
+        <h3 class="news-headline">${item.title}</h3>
+        <p class="news-source">${item.source} • <span>${item.time}</span></p>
+        <p class="news-description">${item.description}</p>
+    `;
+    newsContainer.appendChild(newsCard);
+});
+}
+
+// Modify the WebSocket message handler to log news data for debugging
+ws.onmessage = (event) => {
+try {
+    const data = JSON.parse(event.data);
+    // Debug: Log news data to check if it's being received
+    if (data.news) {
+        console.log('Received news data:', data.news);
+    } else {
+        console.log('No news data in WebSocket message:', data);
+    }
+
+    if (data.indices && dataChanged(lastIndicesData, data.indices)) {
+        data.indices.forEach(index => {
+            indexData[index.symbol] = {
+                name: index.name,
+                price: index.price,
+                lastClose: index.lastClose,
+                percentChange: index.percentChange
+            };
+            if (activeSymbol === index.symbol && currentData) {
+                currentData.currentPrice = index.price;
+                updateChartEndPoint(currentData.name, currentData.historicalData, currentData.currentPrice, currentData.volume);
+            }
+        });
+        updateIndices(data.indices);
+        lastIndicesData = data.indices;
+    }
+
+    if (data.stocks && dataChanged(lastStocksData, data.stocks)) {
+        data.stocks.forEach(stock => {
+            const normalizedSymbol = stock.symbol.endsWith('.NS') ? stock.symbol : `${stock.symbol}.NS`;
+            if (portfolio[normalizedSymbol] && stock.price && !isNaN(stock.price)) {
+                portfolio[normalizedSymbol].currentPrice = stock.price;
+                portfolio[normalizedSymbol].volume = stock.volume || 0;
+                portfolio[normalizedSymbol].dayHigh = stock.dayHigh || stock.price;
+                portfolio[normalizedSymbol].dayLow = stock.dayLow || stock.price;
+            }
+        });
+        updateTopStocks(data.stocks);
+        renderPortfolio();
+        lastStocksData = data.stocks;
+    }
+
+    if ('searchResult' in data) {
+        updateSearchResult(data.searchResult);
+    }
+
+    if ('historicalData' in data) {
+        const symbol = data.historicalData.symbol;
+        currentData = {
+            symbol: symbol,
+            name: data.historicalData.name,
+            historicalData: data.historicalData.data,
+            currentPrice: data.historicalData.currentPrice,
+            volume: data.historicalData.volume || 0,
+            dayHigh: data.historicalData.dayHigh || null,
+            dayLow: data.historicalData.dayLow || null
+        };
+        indexData[symbol] = {
+            ...indexData[symbol],
+            price: data.historicalData.currentPrice,
+            lastClose: data.historicalData.data.length > 1 ? 
+                data.historicalData.data[data.historicalData.data.length - 2].close : 
+                data.historicalData.currentPrice,
+            percentChange: ((data.historicalData.currentPrice - 
+                (data.historicalData.data.length > 1 ? 
+                    data.historicalData.data[data.historicalData.data.length - 2].close : 
+                    data.historicalData.currentPrice)) / 
+                (data.historicalData.data.length > 1 ? 
+                    data.historicalData.data[data.historicalData.data.length - 2].close : 
+                    data.historicalData.currentPrice) * 100).toFixed(2)
+        };
+        if (activeSymbol === symbol) {
+            renderChart(currentData.name, currentData.historicalData, currentData.currentPrice, currentData.volume);
+            updateActiveButton(symbol);
+        }
+        updateIndices();
+    }
+
+    if ('priceUpdate' in data) {
+        const symbol = data.priceUpdate.symbol;
+        if (indexData[symbol]) {
+            const lastClose = indexData[symbol].lastClose || 
+                (currentData?.historicalData?.length > 1 ? 
+                    currentData.historicalData[currentData.historicalData.length - 2].close : 
+                    data.priceUpdate.price);
+            indexData[symbol].price = data.priceUpdate.price;
+            indexData[symbol].percentChange = ((data.priceUpdate.price - lastClose) / lastClose * 100).toFixed(2);
+            const normalizedSymbol = symbol.endsWith('.NS') ? symbol : `${symbol}.NS`;
+            if (portfolio[normalizedSymbol] && data.priceUpdate.price && !isNaN(data.priceUpdate.price)) {
+                portfolio[normalizedSymbol].currentPrice = data.priceUpdate.price;
+                portfolio[normalizedSymbol].volume = data.priceUpdate.volume || 0;
+                portfolio[normalizedSymbol].dayHigh = data.priceUpdate.dayHigh || data.priceUpdate.price;
+                portfolio[normalizedSymbol].dayLow = data.priceUpdate.dayLow || data.priceUpdate.price;
+                renderPortfolio();
+            }
+            if (currentData && activeSymbol === symbol) {
+                currentData.currentPrice = data.priceUpdate.price;
+                currentData.volume = data.priceUpdate.volume || currentData.volume || 0;
+                if (currentChartType === 'candlestick') {
+                    const lastCandle = currentData.historicalData[currentData.historicalData.length - 1] || {};
+                    const newCandle = {
+                        date: data.priceUpdate.date || new Date().toISOString(),
+                        open: lastCandle.close || data.priceUpdate.price,
+                        high: Math.max(lastCandle.high || data.priceUpdate.price, data.priceUpdate.price),
+                        low: Math.min(lastCandle.low || data.priceUpdate.price, data.priceUpdate.price),
+                        close: data.priceUpdate.price,
+                        volume: data.priceUpdate.volume || lastCandle.volume || 0
+                    };
+                    if (currentData.historicalData.length > 0 && 
+                        new Date(lastCandle.date).getTime() === new Date(newCandle.date).getTime()) {
+                        currentData.historicalData[currentData.historicalData.length - 1] = newCandle;
+                    } else {
+                        currentData.historicalData.push(newCandle);
+                        if (currentData.historicalData.length > 60) currentData.historicalData.shift();
+                    }
+                } else {
+                    if (currentData.historicalData.length > 0) {
+                        currentData.historicalData[currentData.historicalData.length - 1] = {
+                            ...currentData.historicalData[currentData.historicalData.length - 1],
+                            close: data.priceUpdate.price,
+                            volume: data.priceUpdate.volume || currentData.volume || 0
+                        };
+                    }
+                }
+                updateChartEndPoint(currentData.name, currentData.historicalData, currentData.currentPrice, currentData.volume);
+            }
+        }
+        updateIndices();
+    }
+
+    if (data.news && (!lastNewsData || JSON.stringify(data.news) !== JSON.stringify(lastNewsData))) {
+        updateNews(data.news);
+        lastNewsData = data.news;
+    }
+
+    if (data.losers && dataChanged(lastLosersData, data.losers)) {
+        data.losers.forEach(stock => {
+            const normalizedSymbol = stock.symbol.endsWith('.NS') ? stock.symbol : `${stock.symbol}.NS`;
+            if (portfolio[normalizedSymbol] && stock.price && !isNaN(stock.price)) {
+                portfolio[normalizedSymbol].currentPrice = stock.price;
+                portfolio[normalizedSymbol].volume = stock.volume || 0;
+                portfolio[normalizedSymbol].dayHigh = stock.dayHigh || stock.price;
+                portfolio[normalizedSymbol].dayLow = stock.dayLow || stock.price;
+            }
+        });
+        updateLosers(data.losers);
+        renderPortfolio();
+        lastLosersData = data.losers;
+    }
+
+    if (data.predictions && dataChanged(lastPredictionsData, data.predictions)) {
+        data.predictions.forEach(stock => {
+            const normalizedSymbol = stock.symbol.endsWith('.NS') ? stock.symbol : `${stock.symbol}.NS`;
+            if (portfolio[normalizedSymbol] && stock.price && !isNaN(stock.price)) {
+                portfolio[normalizedSymbol].currentPrice = stock.price;
+                portfolio[normalizedSymbol].volume = stock.volume || 0;
+                portfolio[normalizedSymbol].dayHigh = stock.dayHigh || stock.price;
+                portfolio[normalizedSymbol].dayLow = stock.dayLow || stock.price;
+            }
+        });
+        updatePredictions(data.predictions);
+        renderPortfolio();
+        lastPredictionsData = data.predictions;
+    } else {
+        generateDailyPredictions();
+    }
+
+    if (data.error) {
+        showNotification(`Error: ${data.error}`, 'error');
+    }
+} catch (err) {
+    console.error('Error parsing local WebSocket message:', err);
+    showNotification('Client-side error: Failed to process data', 'error');
+}
+};
+
+// Update DOMContentLoaded to initialize with fallback content
+document.addEventListener('DOMContentLoaded', () => {
+updateWalletBalance();
+generateDailyPredictions();
+renderPortfolio();
+
+// Initialize news section with fallback content immediately
+updateNews(fallbackNews);
+
+// Set a timeout to ensure fallback content remains if no news data is received
+setTimeout(() => {
+    const newsContainer = document.getElementById('newsContainer');
+    if (!lastNewsData) {
+        console.log('No news data received after 5 seconds, ensuring fallback content.');
+        updateNews(fallbackNews);
+    }
+}, 5000);
+});
   </script>
 </body>
 </html>
