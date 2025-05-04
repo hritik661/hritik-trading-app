@@ -990,19 +990,19 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
   }
   
   // Add this function to handle closing and returning to NIFTY 50 with state reset
-function closeSearch() {
-  toggleHistoricalData('^NSEI', 'NIFTY 50');
-  searchInput.value = '';
-  searchResult.classList.remove('show');
-  // Reset search state to prevent reappearance
-  currentSymbol = '^NSEI';
-  activeSymbol = '^NSEI';
-  if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ clearSearch: true }));
-  }
-  if (stockChart) stockChart.destroy();
-  priceInfo.innerHTML = '';
-  chartContainer.classList.remove('show');
+  function closeSearch() {
+    toggleHistoricalData('^NSEI', 'NIFTY 50');
+    searchInput.value = '';
+    searchResult.classList.remove('show');
+    toggleIndicesButtons(true); // Show indices and Most Traded Stocks when closing search
+    currentSymbol = '^NSEI';
+    activeSymbol = '^NSEI';
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ clearSearch: true }));
+    }
+    if (stockChart) stockChart.destroy();
+    priceInfo.innerHTML = '';
+    chartContainer.classList.remove('show');
 }
 
 // Update the updateSearchResult function to include '✖' close button
@@ -1072,8 +1072,8 @@ function updateSearchResult(result) {
       `;
   }
 }
-  function toggleHistoricalData(symbol, name) {
-    if (activeSymbol === symbol) {
+function toggleHistoricalData(symbol, name) {
+  if (activeSymbol === symbol) {
       activeSymbol = null;
       chartContainer.classList.remove('show');
       if (stockChart) stockChart.destroy();
@@ -1081,21 +1081,23 @@ function updateSearchResult(result) {
       currentSymbol = null;
       currentData = null;
       updateActiveButton(null);
-    } else {
+  } else {
       activeSymbol = symbol;
       currentSymbol = symbol;
       isIndex = true;
       if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ historical: symbol, name }));
+          ws.send(JSON.stringify({ historical: symbol, name }));
       } else {
-        showNotification('WebSocket is not connected. Please try again later.', 'error');
+          showNotification('WebSocket is not connected. Please try again later.', 'error');
       }
       updateActiveButton(symbol);
-    }
+      toggleIndicesButtons(true); // Show indices and Most Traded Stocks when viewing an index
   }
-  
-  function toggleBitcoinData(symbol, name) {
-    if (activeSymbol === symbol) {
+}
+
+// Update toggleBitcoinData to show both indices and Most Traded Stocks
+function toggleBitcoinData(symbol, name) {
+  if (activeSymbol === symbol) {
       activeSymbol = null;
       chartContainer.classList.remove('show');
       if (stockChart) stockChart.destroy();
@@ -1103,23 +1105,24 @@ function updateSearchResult(result) {
       currentSymbol = null;
       currentData = null;
       updateActiveButton(null);
-    } else {
+  } else {
       activeSymbol = symbol;
       currentSymbol = symbol;
       isIndex = true;
       if (!currentData || currentData.symbol !== 'BTCUSDT') {
-        currentData = {
-          symbol: 'BTCUSDT',
-          name: 'Bitcoin (BTC/USDT)',
-          historicalData: [],
-          currentPrice: null,
-          volume: 0
-        };
+          currentData = {
+              symbol: 'BTCUSDT',
+              name: 'Bitcoin (BTC/USDT)',
+              historicalData: [],
+              currentPrice: null,
+              volume: 0
+          };
       }
       renderChart(currentData.name, currentData.historicalData, currentData.currentPrice, currentData.volume);
       updateActiveButton(symbol);
-    }
+      toggleIndicesButtons(true); // Show indices and Most Traded Stocks when viewing BTC/USDT
   }
+}
   
   function renderChart(name, historicalData, currentPrice, volume) {
     if (stockChart) stockChart.destroy();
@@ -1511,24 +1514,40 @@ function updateSearchResult(result) {
     };
   }
   
-  const autoSearch = debounce((query) => {
-    if (query) {
+  // Add this function to toggle indices buttons visibility
+  function toggleIndicesButtons(show) {
+    const indicesButtons = document.querySelector('.indices-buttons');
+    const topStocksSection = document.querySelector('.top-stocks');
+    indicesButtons.style.display = show ? 'flex' : 'none';
+    topStocksSection.style.display = show ? 'block' : 'none'; // Toggle Most Traded Stocks
+}
+const autoSearch = debounce((query) => {
+  if (query) {
       ws.send(JSON.stringify({ search: query }));
-    } else {
+      toggleIndicesButtons(false); // Hide indices and Most Traded Stocks when searching
+  } else {
+      // Clear search and return to homepage only if triggered by input change
       ws.send(JSON.stringify({ clearSearch: true }));
       toggleHistoricalData('^NSEI', 'NIFTY 50');
-    }
-  }, 500);
-  
-  function manualSearch() {
-    const query = searchInput.value.trim();
-    if (query) {
-      ws.send(JSON.stringify({ search: query }));
-    } else {
-      ws.send(JSON.stringify({ clearSearch: true }));
-      toggleHistoricalData('^NSEI', 'NIFTY 50');
-    }
+      toggleIndicesButtons(true); // Show indices and Most Traded Stocks when search is cleared
   }
+}, 500);
+
+// Modify the search form submission to prevent default behavior
+document.getElementById('searchForm').addEventListener('submit', function(e) {
+  e.preventDefault(); // Prevent form submission from refreshing the page
+  manualSearch(); // Call the search function manually
+});
+function manualSearch() {
+  const query = searchInput.value.trim();
+  if (query) {
+      ws.send(JSON.stringify({ search: query }));
+      toggleIndicesButtons(false); // Hide indices and Most Traded Stocks when searching
+  } else {
+      // Do nothing if the input is empty, preventing any refresh or action
+      return;
+  }
+}
   
   searchInput.addEventListener('input', (e) => autoSearch(e.target.value.trim()));
   

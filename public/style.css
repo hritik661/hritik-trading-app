@@ -4589,3 +4589,16 @@ body, body.light, body.dark, body.midnight {
     color: var(--text-secondary, #a0a0a0);
     font-style: italic;
 }
+
+.indices-buttons {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Ensure the buttons can be hidden */
+.indices-buttons[style*="display: none"] {
+    display: none !important;
+}
