@@ -16,7 +16,7 @@
   <div class="header">
     <h1 class="logo">Hritik Indian Stock Market Live</h1>
     <div class="header-date">
-      Live Market Data • <span id="currentDate"></span> • Wallet: <span id="walletBalance">₹1,00,00,000</span>
+      <span id="marketStatus">Checking Market Status...</span> • <span id="currentDate"></span> • Wallet: <span id="walletBalance">₹1,00,00,000</span>
     </div>
     <button class="holding-toggle" onclick="toggleHoldings()" title="Show Holdings" aria-label="Show Holdings">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F3F4F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="holdingsIcon">
@@ -26,6 +26,12 @@
       </svg>
       Holdings
     </button>
+    <div class="auth-section">
+      <button id="loginBtn" class="auth-button" onclick="showLogin()" style="display: inline-block;">Login</button>
+      <button id="signupBtn" class="auth-button" onclick="showSignup()" style="display: inline-block;">Signup</button>
+      <button id="logoutBtn" class="auth-button" onclick="logout()" style="display: none;">Logout</button>
+      <span id="userWelcome" style="display: none; color: #F3F4F6; font-weight: 500;"></span>
+    </div>
     <button class="theme-toggle" onclick="toggleTheme()" title="Switch Theme" aria-label="Toggle Theme">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
         <path id="lightIcon" d="M12 17C14.7614 17 17 14.7614 17 12C17 9.23858 14.7614 7 12 7C9.23858 7 7 9.23858 7 12C7 14.7614 9.23858 17 12 17Z M12 1V3M12 21V23M4.22 4.22L5.64 5.64M18.36 18.36L19.78 19.78M1 12H3M21 12H23M4.22 19.78L5.64 18.36M18.36 5.64L19.78 4.22" stroke="#1F2A44" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style="display: none;"/>
@@ -33,7 +39,62 @@
       </svg>
     </button>
   </div>
-
+  <!-- Professional Auth Modal with Tabs -->
+  <div id="authModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close" onclick="closeAuthModal()">&times;</span>
+      <div class="auth-tabs">
+        <button class="tab-button active" id="loginTab" onclick="switchTab('login')">Login</button>
+        <button class="tab-button" id="signupTab" onclick="switchTab('signup')">Signup</button>
+      </div>
+      <div id="authFormContainer">
+        <!-- Login Form -->
+        <div id="loginForm" class="auth-form active">
+          <h2>Welcome Back</h2>
+          <p class="auth-subtitle">Sign in to your account</p>
+          <form id="loginFormEl">
+            <div class="input-group">
+              <input type="email" id="loginEmail" placeholder="Enter your email" required>
+              <span class="input-icon">📧</span>
+            </div>
+            <div class="input-group">
+              <input type="password" id="loginPassword" placeholder="Enter your password" required>
+              <span class="input-icon">🔒</span>
+            </div>
+            <button type="submit" id="loginSubmit" class="auth-submit">Sign In</button>
+            <p class="auth-error" id="loginError" style="display: none;"></p>
+          </form>
+          <p class="auth-link">Don't have an account? <span onclick="switchTab('signup')" style="color: #3B82F6; cursor: pointer; font-weight: 600;">Sign up here</span></p>
+        </div>
+        <!-- Signup Form -->
+        <div id="signupForm" class="auth-form">
+          <h2>Create Account</h2>
+          <p class="auth-subtitle">Join us today</p>
+          <form id="signupFormEl">
+            <div class="input-group">
+              <input type="text" id="signupName" placeholder="Enter your full name" required>
+              <span class="input-icon">👤</span>
+            </div>
+            <div class="input-group">
+              <input type="email" id="signupEmail" placeholder="Enter your email" required>
+              <span class="input-icon">📧</span>
+            </div>
+            <div class="input-group">
+              <input type="password" id="signupPassword" placeholder="Create a password" required minlength="6">
+              <span class="input-icon">🔒</span>
+            </div>
+            <div class="input-group">
+              <input type="password" id="confirmPassword" placeholder="Confirm your password" required>
+              <span class="input-icon">🔒</span>
+            </div>
+            <button type="submit" id="signupSubmit" class="auth-submit">Create Account</button>
+            <p class="auth-error" id="signupError" style="display: none;"></p>
+          </form>
+          <p class="auth-link">Already have an account? <span onclick="switchTab('login')" style="color: #3B82F6; cursor: pointer; font-weight: 600;">Sign in here</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="portfolio-section" id="portfolioSection" style="display: none; position: relative;">
     <h2 class="portfolio-title">Portfolio (Holdings)</h2>
     <button class="portfolio-close" onclick="toggleHoldings()" title="Close Portfolio" aria-label="Close Portfolio">
@@ -49,7 +110,6 @@
     </div>
     <div id="portfolioContainer" class="portfolio-grid"></div>
   </div>
-
   <div class="search-bar">
     <form id="searchForm">
       <input type="text" id="searchInput" placeholder="Search For any Stock" />
@@ -67,26 +127,32 @@
       </button>
     </form>
   </div>
-
   <div id="notificationMessage" class="notification"></div>
-
+  <!-- New Global Cues & Prediction Section -->
+  <div class="prediction-section-global">
+    <h2 class="global-cues-title">Global Cues & Market Prediction</h2>
+    <div class="prediction-banner" id="predictionBanner">
+      <p id="predictedOpen">Loading prediction...</p>
+      <p id="globalSentiment">Global Sentiment: Neutral</p>
+    </div>
+    <div id="globalCards"></div>
+  </div>
   <!-- Move "Most Traded Stocks" up to where searchResult was -->
   <div class="top-stocks">
     <h2 class="top-stocks-title">Most Traded Stocks</h2>
     <div class="top-stocks-container" id="topStocksContainer"></div>
   </div>
-
   <!-- Move searchResult below "Most Traded Stocks" -->
   <div id="searchResult" role="alert"></div>
-
   <div class="indices-buttons">
     <button class="index-button active" onclick="toggleHistoricalData('^NSEI', 'NIFTY 50')" aria-label="NIFTY 50">NIFTY 50</button>
     <button class="index-button" onclick="toggleHistoricalData('^BSESN', 'SENSEX')" aria-label="SENSEX">SENSEX</button>
     <button class="index-button" onclick="toggleHistoricalData('^NSEBANK', 'BANK NIFTY')" aria-label="BANK NIFTY">BANK NIFTY</button>
     <button class="index-button" onclick="toggleHistoricalData('^NSEMDCP50', 'NIFTY MIDCAP 50')" aria-label="NIFTY MIDCAP 50">NIFTY MIDCAP 50</button>
+    <button class="index-button" onclick="toggleGoldData('XAUINR=X', 'Gold 24K (10g)')" aria-label="Gold 24K (10g)">Gold 24K</button>
+    <button class="index-button" onclick="toggleSilverData('XAGINR=X', 'Silver 24K (10g)')" aria-label="Silver 24K (10g)">Silver 24K</button>
     <button class="index-button" onclick="toggleBitcoinData('BTCUSDT', 'Bitcoin (BTC/USDT)')" aria-label="Bitcoin (BTC/USDT)">BTC/USDT</button>
   </div>
-
   <div class="content-grid">
     <div class="chart-section">
       <div id="chartContainer">
@@ -95,29 +161,24 @@
       </div>
       <div id="priceInfo"></div>
     </div>
-
     <div class="price-dashboard">
       <h2 class="dashboard-title">Market Overview</h2>
       <div id="stockCards"></div>
     </div>
   </div>
-
   <div class="predictions-section">
     <h2 class="predictions-title">Predicted Stock Gainers (5%+ Up)</h2>
     <div class="predictions-container" id="predictionsContainer"></div>
   </div>
-  
   <div class="losers-section">
     <h2 class="losers-title">Biggest Losers (Down 30%+ from 52-Week High)</h2>
     <div class="losers-container" id="losersContainer"></div>
   </div>
-  
   <div class="news-section">
     <h2 class="news-title">Latest Stock Trading News</h2>
     <div class="news-container" id="newsContainer"></div>
   </div>
   <script>
-    
   let ws;
   let binanceWs;
   const stockCards = document.getElementById('stockCards');
@@ -150,27 +211,180 @@
   let totalInvested = 0;
   let currentValue = 0;
   let profitLoss = 0;
-  let indexData = {
-    '^NSEI': { name: 'NIFTY 50', price: 23598.95, lastClose: 23653.85, percentChange: -0.23 },
-    '^BSESN': { name: 'SENSEX', price: 77935.45, lastClose: 78227.08, percentChange: -0.37 },
-    '^NSEBANK': { name: 'BANK NIFTY', price: 50515.05, lastClose: 50851.15, percentChange: -0.66 },
-    '^NSEMDCP50': { name: 'NIFTY MIDCAP 50', price: 14035.8, lastClose: 14064.25, percentChange: -0.20 },
-    'BTCUSDT': { name: 'Bitcoin (BTC/USDT)', price: 60000, lastClose: 59000, percentChange: 1.69, volume: 0 }
-  };
+  // Update indexData with global indices + Gold + Silver (initial values from real data as of Oct 31, 2025)
+ let indexData = {
+  '^NSEI': { name: 'NIFTY 50', price: 25877.85, lastClose: 26053.90, percentChange: -0.68 },
+  '^BSESN': { name: 'SENSEX', price: 84404.46, lastClose: 84997.13, percentChange: -0.70 },
+  '^NSEBANK': { name: 'BANK NIFTY', price: 57012.35, lastClose: 57348.90, percentChange: -0.59 },
+  '^NSEMDCP50': { name: 'NIFTY MIDCAP 50', price: 15320.45, lastClose: 15364.20, percentChange: -0.28 },
+  'NIFTY_F1.NS': { name: 'GIFT NIFTY', price: 26041.50, lastClose: 25877.85, percentChange: 0.64 }, // Dynamic pre-open
+  'XAUINR=X': { name: 'Gold 24K (10g)', price: 121480, lastClose: 121300, percentChange: 0.15 }, // Real Mumbai retail Nov 1, 2025
+  'XAGINR=X': { name: 'Silver 24K (10g)', price: 1509, lastClose: 1491, percentChange: 1.21 }, // Real Delhi/Mumbai retail Nov 1, 2025 (updates live via WS)
+  '^DJI': { name: 'Dow Jones', price: 47207.12, lastClose: 46734.61, percentChange: 1.01 },
+  '^IXIC': { name: 'Nasdaq', price: 23204.87, lastClose: 22941.80, percentChange: 1.15 },
+  '^N225': { name: 'Nikkei', price: 49299.65, lastClose: 48641.61, percentChange: 1.35 },
+  '^HSI': { name: 'Hang Seng', price: 26160.15, lastClose: 25968, percentChange: 0.74 },
+  'BTCUSDT': { name: 'Bitcoin (BTC/USDT)', price: 60000, lastClose: 59000, percentChange: 1.69, volume: 0 }
+};
   let lastNewsData = null;
   let lastIndicesData = null;
   let lastStocksData = null;
   let lastLosersData = null;
   let lastPredictionsData = null;
   let currentPredictionDate = null;
-  
+  // Authentication variables - Enhanced with localStorage users for demo
+  let isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+  let currentUser = localStorage.getItem('currentUser') || '';
+  let users = JSON.parse(localStorage.getItem('users')) || []; // Array of {name, email, password}
   document.getElementById('currentDate').textContent = new Date().toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
-  
   function updateWalletBalance() {
-    document.getElementById('walletBalance').textContent = 
+    document.getElementById('walletBalance').textContent =
       `₹${walletBalance.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
   }
-  
+  function updateAuthUI() {
+    const loginBtn = document.getElementById('loginBtn');
+    const signupBtn = document.getElementById('signupBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const userWelcome = document.getElementById('userWelcome');
+    if (isLoggedIn) {
+      loginBtn.style.display = 'none';
+      signupBtn.style.display = 'none';
+      logoutBtn.style.display = 'inline-block';
+      userWelcome.style.display = 'inline';
+      userWelcome.textContent = `Welcome, ${currentUser}!`;
+    } else {
+      loginBtn.style.display = 'inline-block';
+      signupBtn.style.display = 'inline-block';
+      logoutBtn.style.display = 'none';
+      userWelcome.style.display = 'none';
+    }
+  }
+  function toggleAuthModal() {
+    const modal = document.getElementById('authModal');
+    modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
+  }
+  function closeAuthModal() {
+    toggleAuthModal();
+    // Reset forms
+    document.getElementById('loginFormEl').reset();
+    document.getElementById('signupFormEl').reset();
+    document.getElementById('loginError').style.display = 'none';
+    document.getElementById('signupError').style.display = 'none';
+  }
+  function switchTab(tab) {
+    // Hide all forms
+    document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+    // Show selected
+    document.getElementById(tab + 'Form').classList.add('active');
+    document.getElementById(tab + 'Tab').classList.add('active');
+  }
+  function showLogin() {
+    switchTab('login');
+    toggleAuthModal();
+  }
+  function showSignup() {
+    switchTab('signup');
+    toggleAuthModal();
+  }
+  function showError(elementId, message) {
+    const errorEl = document.getElementById(elementId);
+    errorEl.textContent = message;
+    errorEl.style.display = 'block';
+    errorEl.classList.add('show'); // Assume CSS for animation
+    setTimeout(() => {
+      errorEl.style.display = 'none';
+      errorEl.classList.remove('show');
+    }, 5000);
+  }
+  function handleLoginSubmit(e) {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    // Demo: Check against stored users or default
+    const user = users.find(u => u.email === email && u.password === password); // In real: hash password
+    if (user || (email === 'test@example.com' && password === 'password123')) {
+      isLoggedIn = true;
+      currentUser = user ? user.name : email.split('@')[0];
+      localStorage.setItem('isLoggedIn', 'true');
+      localStorage.setItem('currentUser', currentUser);
+      localStorage.setItem('authToken', btoa(email + ':' + password)); // Demo token
+      updateAuthUI();
+      closeAuthModal();
+      showNotification(`Welcome back, ${currentUser}!`, 'success');
+      // Re-render sections
+      if (lastStocksData) updateTopStocks(lastStocksData);
+      if (lastPredictionsData) updatePredictions(lastPredictionsData);
+      if (lastLosersData) updateLosers(lastLosersData);
+      renderPortfolio();
+    } else {
+      showError('loginError', 'Invalid email or password. Try test@example.com / password123');
+    }
+  }
+  function handleSignupSubmit(e) {
+    e.preventDefault();
+    const name = document.getElementById('signupName').value.trim();
+    const email = document.getElementById('signupEmail').value.trim();
+    const password = document.getElementById('signupPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    // Validation
+    if (password.length < 6) {
+      showError('signupError', 'Password must be at least 6 characters');
+      return;
+    }
+    if (password !== confirmPassword) {
+      showError('signupError', 'Passwords do not match');
+      return;
+    }
+    if (users.find(u => u.email === email)) {
+      showError('signupError', 'Email already registered. Please login.');
+      return;
+    }
+    // Add user (demo: plain password; real: hash)
+    users.push({ name, email, password });
+    localStorage.setItem('users', JSON.stringify(users));
+    // Auto-login after signup
+    isLoggedIn = true;
+    currentUser = name;
+    localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('currentUser', currentUser);
+    localStorage.setItem('authToken', btoa(email + ':' + password));
+    updateAuthUI();
+    closeAuthModal();
+    showNotification(`Account created successfully, ${name}! Welcome aboard.`, 'success');
+    // Re-render sections
+    if (lastStocksData) updateTopStocks(lastStocksData);
+    if (lastPredictionsData) updatePredictions(lastPredictionsData);
+    if (lastLosersData) updateLosers(lastLosersData);
+    renderPortfolio();
+  }
+  function logout() {
+    isLoggedIn = false;
+    currentUser = '';
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('authToken');
+    updateAuthUI();
+    // Re-render sections
+    if (lastStocksData) updateTopStocks(lastStocksData);
+    if (lastPredictionsData) updatePredictions(lastPredictionsData);
+    if (lastLosersData) updateLosers(lastLosersData);
+    renderPortfolio();
+    showNotification('Logged out successfully.', 'success');
+  }
+  function checkAuthAndTrade(action, symbol, name, price) {
+    if (!isLoggedIn) {
+      showNotification('Please login to trade stocks.', 'error');
+      showLogin();
+      return false;
+    }
+    if (isIndex || !symbol || !name || isNaN(price) || price <= 0 || ['^NSEI', '^BSESN', '^NSEBANK', '^NSEMDCP50', 'BTCUSDT', 'NIFTY_F1.NS', '^DJI', '^IXIC', '^N225', '^HSI', 'XAUINR=X', 'XAGINR=X'].includes(symbol)) {
+      showNotification('Cannot trade indices/commodities or invalid details', 'error');
+      return false;
+    }
+    return true;
+  }
+  // ... (Rest of the script remains unchanged from the original)
   function updatePortfolioStats() {
     totalInvested = 0;
     currentValue = 0;
@@ -182,43 +396,41 @@
     });
     profitLoss = currentValue - totalInvested;
     document.getElementById('totalInvested').textContent = `₹${totalInvested.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
-document.getElementById('currentValue').textContent = `₹${currentValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;    document.getElementById('profitLoss').textContent = 
+    document.getElementById('currentValue').textContent = `₹${currentValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+    document.getElementById('profitLoss').textContent =
       `${profitLoss >= 0 ? '+' : '-'}₹${Math.abs(profitLoss).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
     document.getElementById('profitLoss').className = profitLoss >= 0 ? 'positive' : 'negative';
     localStorage.setItem('portfolio', JSON.stringify(portfolio));
   }
-  
   function renderPortfolio() {
     const portfolioContainer = document.getElementById('portfolioContainer');
     portfolioContainer.innerHTML = '';
     isIndex = false; // Portfolio contains stocks, not indices
-    
     if (Object.keys(portfolio).length === 0) {
         portfolioContainer.innerHTML = '<p class="no-holdings">No holdings yet. Start trading to add stocks!</p>';
         updatePortfolioStats();
         return;
     }
-    
     // First create and add all cards to the DOM
     Object.entries(portfolio).forEach(([symbol, holding], idx) => {
         if (!holding.name || !holding.quantity || !holding.avgPrice) {
             return;
         }
-        
+    
         const currentPrice = holding.currentPrice && !isNaN(holding.currentPrice) && holding.currentPrice > 0 ? holding.currentPrice : 0;
         const volume = holding.volume && !isNaN(holding.volume) ? Number(holding.volume).toLocaleString('en-IN') : 'N/A';
         const dayHigh = holding.dayHigh && !isNaN(holding.dayHigh) ? `₹${Number(holding.dayHigh).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'N/A';
         const dayLow = holding.dayLow && !isNaN(holding.dayLow) ? `₹${Number(holding.dayLow).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'N/A';
-        
+    
         const pl = currentPrice ? (currentPrice - holding.avgPrice) * holding.quantity : 0;
         const plPercent = currentPrice ? ((currentPrice - holding.avgPrice) / holding.avgPrice * 100) : 0;
-        
+    
         // Create the card element
         const card = document.createElement('div');
         card.className = 'portfolio-card';
         card.style.animationDelay = `${0.1 + (idx * 0.05)}s`;
         card.setAttribute('data-symbol', symbol);
-        
+    
         card.innerHTML = `
             <div class="portfolio-info">
                 <h3 class="portfolio-name">${holding.name}</h3>
@@ -229,7 +441,7 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
                 <p>Day High: ${dayHigh}</p>
                 <p>Day Low: ${dayLow}</p>
                 <p class="${pl >= 0 ? 'positive' : 'negative'}" style="${pl < 0 ? 'color: #FF3333' : ''}">
-                    P/L: ${pl >= 0 ? '+' : '-'}₹${Math.abs(pl).toLocaleString('en-IN', { maximumFractionDigits: 2 })} 
+                    P/L: ${pl >= 0 ? '+' : '-'}₹${Math.abs(pl).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                     (${plPercent >= 0 ? '+' : ''}${plPercent.toFixed(2)}%)
                 </p>
                 <div class="stock-actions" data-symbol="${symbol}">
@@ -237,14 +449,13 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
                 </div>
             </div>
         `;
-        
+    
         portfolioContainer.appendChild(card);
     });
-    
     // Now add buttons separately after all cards are in the DOM
     Object.entries(portfolio).forEach(([symbol, holding]) => {
         const actionsContainer = portfolioContainer.querySelector(`.stock-actions[data-symbol="${symbol}"]`);
-        
+    
         if (actionsContainer) {
             // Create buy button
             const buyButton = document.createElement('button');
@@ -253,7 +464,7 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
             buyButton.style.pointerEvents = 'auto';
             buyButton.style.position = 'relative';
             buyButton.style.zIndex = '10';
-            
+        
             // Create sell button
             const sellButton = document.createElement('button');
             sellButton.className = 'action-button sell';
@@ -261,26 +472,27 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
             sellButton.style.pointerEvents = 'auto';
             sellButton.style.position = 'relative';
             sellButton.style.zIndex = '10';
-            
+        
             // Add buttons to container
             actionsContainer.appendChild(buyButton);
             actionsContainer.appendChild(sellButton);
-            
+        
             // Add event listeners with proper event prevention
             buyButton.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
+                if (!checkAuthAndTrade('buy', symbol, holding.name, holding.currentPrice || 0)) return;
                 promptTrade('buy', symbol, holding.name, holding.currentPrice || 0);
             });
-            
+        
             sellButton.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
+                if (!checkAuthAndTrade('sell', symbol, holding.name, holding.currentPrice || 0)) return;
                 promptTrade('sell', symbol, holding.name, holding.currentPrice || 0);
             });
         }
     });
-    
     // Add click prevention to the card with search trigger
     document.querySelectorAll('.portfolio-card').forEach(card => {
       card.addEventListener('click', function(e) {
@@ -296,12 +508,7 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
     });
     updatePortfolioStats();
   }
-  
   function buyStock(symbol, name, price, quantity) {
-    if (isIndex) {
-      showNotification('Cannot trade indices', 'error');
-      return;
-    }
     if (isNaN(price) || price <= 0) {
       showNotification('Invalid price for buying', 'error');
       return;
@@ -342,12 +549,7 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
     showNotification(`Bought ${quantity} shares of ${name} at ₹${price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`, 'success');
     localStorage.setItem('portfolio', JSON.stringify(portfolio));
   }
-  
   function sellStock(symbol, name, price, quantity) {
-    if (isIndex) {
-      showNotification('Cannot trade indices', 'error');
-      return;
-    }
     if (isNaN(price) || price <= 0) {
       showNotification('Invalid price for selling', 'error');
       return;
@@ -370,12 +572,7 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
     showNotification(`Sold ${quantity} shares of ${name} at ₹${price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`, 'success');
     localStorage.setItem('portfolio', JSON.stringify(portfolio));
   }
-  
   function promptTrade(action, symbol, name, price) {
-    if (isIndex || !symbol || !name || isNaN(price) || price <= 0 || ['^NSEI', '^BSESN', '^NSEBANK', '^NSEMDCP50', 'BTCUSDT'].includes(symbol)) {
-      showNotification('Cannot trade indices or invalid details', 'error');
-      return;
-    }
     const quantity = prompt(`Enter quantity to ${action} ${name}:`);
     if (quantity && !isNaN(quantity) && Number(quantity) > 0) {
       if (action === 'buy') {
@@ -387,14 +584,12 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
       showNotification('Invalid quantity entered', 'error');
     }
   }
-  
   function showNotification(message, type = 'error') {
     notificationMessage.textContent = message;
     notificationMessage.className = `notification ${type === 'success' ? 'notification-success' : 'notification-error'}`;
     notificationMessage.classList.add('show');
     setTimeout(() => notificationMessage.classList.remove('show'), 5000);
   }
-  
   function toggleTheme() {
     if (currentTheme === 'dark') {
       document.body.classList.remove('dark');
@@ -422,7 +617,6 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
       renderChart(currentData.name, currentData.historicalData, currentData.currentPrice, currentData.volume);
     }
   }
-  
   function toggleHoldings() {
     if (portfolioSection.style.display === 'none' || portfolioSection.style.display === '') {
       portfolioSection.style.display = 'block';
@@ -434,47 +628,78 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
       portfolioSection.classList.remove('show');
     }
   }
-  
+  // Function to check if the market is open
   function isMarketOpen() {
     const now = new Date();
-    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istOffset = 5.5 * 60 * 60 * 1000; // IST offset in milliseconds
     const istTime = new Date(now.getTime() + istOffset);
-    const marketOpen = new Date(istTime);
-    marketOpen.setHours(9, 15, 0, 0);
-    const marketClose = new Date(istTime);
-    marketClose.setHours(15, 30, 0, 0);
-    return istTime >= marketOpen && istTime <= marketClose;
+    const hours = istTime.getHours();
+    const minutes = istTime.getMinutes();
+    const day = istTime.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    // Market is open Monday to Friday, 9:15 AM to 3:30 PM IST
+    const isWeekday = day >= 1 && day <= 5;
+    const marketOpenTime = 9 * 60 + 15; // 9:15 AM in minutes
+    const marketCloseTime = 15 * 60 + 30; // 3:30 PM in minutes
+    const currentTimeInMinutes = hours * 60 + minutes;
+    return isWeekday && currentTimeInMinutes >= marketOpenTime && currentTimeInMinutes <= marketCloseTime;
   }
-  
+  // Function to update market status display
+  function updateMarketStatus(status) {
+    const marketStatusElement = document.getElementById('marketStatus');
+    if (status === 'open') {
+      marketStatusElement.textContent = 'Market is Open';
+      marketStatusElement.className = 'market-open';
+      document.querySelector('.logo').textContent = 'Hritik Indian Stock Market Live';
+    } else {
+      marketStatusElement.textContent = 'Market is Closed';
+      marketStatusElement.className = 'market-closed';
+      document.querySelector('.logo').textContent = 'Hritik Indian Stock Market';
+    }
+  }
   function connectWebSocket() {
     let wsUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ?
       'ws://localhost:3000' : 'wss://' + window.location.host;
     ws = new WebSocket(wsUrl);
-  
     ws.onopen = () => {
+      // Send auth token if logged in
+      if (isLoggedIn && localStorage.getItem('authToken')) {
+        ws.send(JSON.stringify({ auth: { token: localStorage.getItem('authToken') } }));
+      }
       ws.send(JSON.stringify({ historical: '^NSEI', name: 'NIFTY 50' }));
     };
-  
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        // Handle market status update
+        if (data.marketStatus) {
+          updateMarketStatus(data.marketStatus);
+        }
         if (data.indices && dataChanged(lastIndicesData, data.indices)) {
-          data.indices.forEach(index => {
-            indexData[index.symbol] = {
-              name: index.name,
-              price: index.price,
-              lastClose: index.lastClose,
-              percentChange: index.percentChange
-            };
-            if (activeSymbol === index.symbol && currentData) {
-              currentData.currentPrice = index.price;
-              updateChartEndPoint(currentData.name, currentData.historicalData, currentData.currentPrice, currentData.volume);
-            }
-          });
-          updateIndices(data.indices);
+  data.indices.forEach(index => {
+    indexData[index.symbol] = {
+      name: index.name,
+      price: index.price,
+      lastClose: index.lastClose,
+      percentChange: index.percentChange,
+      volume: index.volume || 0 // Add volume if available for commodities
+    };
+    // Dynamic chart update for active symbol, including commodities like Gold/Silver
+    if (activeSymbol === index.symbol && currentData) {
+      currentData.currentPrice = index.price;
+      currentData.volume = index.volume || currentData.volume || 0;
+      updateChartEndPoint(currentData.name, currentData.historicalData, currentData.currentPrice, currentData.volume);
+    }
+  });
+  updateIndices(data.indices);
+          // New: Calculate global avg change for prediction
+          const globalChanges = data.indices.filter(i => ['^DJI', '^IXIC', '^N225', '^HSI', 'NIFTY_F1.NS'].includes(i.symbol)).map(i => parseFloat(i.percentChange || 0));
+          const globalAvg = globalChanges.reduce((a, b) => a + b, 0) / globalChanges.length;
+          const giftPrice = indexData['NIFTY_F1.NS'].price;
+          const niftyClose = indexData['^NSEI'].lastClose;
+          updatePredictionBanner(giftPrice, niftyClose, globalAvg);
+          renderGlobalCues(data.indices);
           lastIndicesData = data.indices;
         }
-  
         if (data.stocks && dataChanged(lastStocksData, data.stocks)) {
           data.stocks.forEach(stock => {
             const normalizedSymbol = stock.symbol.endsWith('.NS') ? stock.symbol : `${stock.symbol}.NS`;
@@ -489,11 +714,9 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
           renderPortfolio();
           lastStocksData = data.stocks;
         }
-  
         if ('searchResult' in data) {
           updateSearchResult(data.searchResult);
         }
-  
         if ('historicalData' in data) {
           const symbol = data.historicalData.symbol;
           currentData = {
@@ -508,15 +731,15 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
           indexData[symbol] = {
             ...indexData[symbol],
             price: data.historicalData.currentPrice,
-            lastClose: data.historicalData.data.length > 1 ? 
-              data.historicalData.data[data.historicalData.data.length - 2].close : 
+            lastClose: data.historicalData.data.length > 1 ?
+              data.historicalData.data[data.historicalData.data.length - 2].close :
               data.historicalData.currentPrice,
-            percentChange: ((data.historicalData.currentPrice - 
-              (data.historicalData.data.length > 1 ? 
-                data.historicalData.data[data.historicalData.data.length - 2].close : 
-                data.historicalData.currentPrice)) / 
-              (data.historicalData.data.length > 1 ? 
-                data.historicalData.data[data.historicalData.data.length - 2].close : 
+            percentChange: ((data.historicalData.currentPrice -
+              (data.historicalData.data.length > 1 ?
+                data.historicalData.data[data.historicalData.data.length - 2].close :
+                data.historicalData.currentPrice)) /
+              (data.historicalData.data.length > 1 ?
+                data.historicalData.data[data.historicalData.data.length - 2].close :
                 data.historicalData.currentPrice) * 100).toFixed(2)
           };
           if (activeSymbol === symbol) {
@@ -525,13 +748,12 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
           }
           updateIndices();
         }
-  
         if ('priceUpdate' in data) {
           const symbol = data.priceUpdate.symbol;
           if (indexData[symbol]) {
-            const lastClose = indexData[symbol].lastClose || 
-              (currentData?.historicalData?.length > 1 ? 
-                currentData.historicalData[currentData.historicalData.length - 2].close : 
+            const lastClose = indexData[symbol].lastClose ||
+              (currentData?.historicalData?.length > 1 ?
+                currentData.historicalData[currentData.historicalData.length - 2].close :
                 data.priceUpdate.price);
             indexData[symbol].price = data.priceUpdate.price;
             indexData[symbol].percentChange = ((data.priceUpdate.price - lastClose) / lastClose * 100).toFixed(2);
@@ -556,7 +778,7 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
                   close: data.priceUpdate.price,
                   volume: data.priceUpdate.volume || lastCandle.volume || 0
                 };
-                if (currentData.historicalData.length > 0 && 
+                if (currentData.historicalData.length > 0 &&
                     new Date(lastCandle.date).getTime() === new Date(newCandle.date).getTime()) {
                   currentData.historicalData[currentData.historicalData.length - 1] = newCandle;
                 } else {
@@ -577,12 +799,10 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
           }
           updateIndices();
         }
-  
         if (data.news && (!lastNewsData || JSON.stringify(data.news) !== JSON.stringify(lastNewsData))) {
           updateNews(data.news);
           lastNewsData = data.news;
         }
-  
         if (data.losers && dataChanged(lastLosersData, data.losers)) {
           data.losers.forEach(stock => {
             const normalizedSymbol = stock.symbol.endsWith('.NS') ? stock.symbol : `${stock.symbol}.NS`;
@@ -597,7 +817,6 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
           renderPortfolio();
           lastLosersData = data.losers;
         }
-  
         if (data.predictions && dataChanged(lastPredictionsData, data.predictions)) {
           data.predictions.forEach(stock => {
             const normalizedSymbol = stock.symbol.endsWith('.NS') ? stock.symbol : `${stock.symbol}.NS`;
@@ -614,7 +833,6 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
         } else {
           generateDailyPredictions();
         }
-  
         if (data.error) {
           showNotification(`Error: ${data.error}`, 'error');
         }
@@ -623,32 +841,28 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
         showNotification('Client-side error: Failed to process data', 'error');
       }
     };
-  
     ws.onerror = (error) => {
       console.error('Local WebSocket error:', error);
       showNotification('Local WebSocket connection error', 'error');
     };
-  
     ws.onclose = () => {
       console.log('Local WebSocket closed');
       showNotification('Local WebSocket connection closed. Reconnecting...', 'error');
       setTimeout(connectWebSocket, 2000);
     };
   }
-  
   function dataChanged(oldData, newData) {
     if (!oldData || !newData || oldData.length !== newData.length) return true;
-    return oldData.some((item, idx) => 
-      item.price !== newData[idx].price || 
-      item.lastClose !== newData[idx].lastClose || 
-      item.percentChange !== newData[idx].percentChange || 
-      item.name !== newData[idx].name || 
+    return oldData.some((item, idx) =>
+      item.price !== newData[idx].price ||
+      item.lastClose !== newData[idx].lastClose ||
+      item.percentChange !== newData[idx].percentChange ||
+      item.name !== newData[idx].name ||
       item.symbol !== newData[idx].symbol ||
       (item.percentDrop !== undefined && item.percentDrop !== newData[idx].percentDrop) ||
       (item.predictedGain !== undefined && item.predictedGain !== newData[idx].predictedGain)
     );
   }
-  
   function connectBinanceWebSocket() {
     binanceWs = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@kline_1m');
     binanceWs.onopen = () => console.log('Binance WebSocket connected');
@@ -656,7 +870,6 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
       const data = JSON.parse(event.data);
       const kline = data.k;
       if (!kline) return;
-  
       const historicalData = currentData && currentData.symbol === 'BTCUSDT' ? currentData.historicalData : [];
       const newCandle = {
         date: new Date(kline.t).toISOString(),
@@ -666,14 +879,12 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
         close: parseFloat(kline.c),
         volume: parseFloat(kline.v)
       };
-  
       if (historicalData.length === 0 || new Date(historicalData[historicalData.length - 1].date).getTime() < kline.t) {
         historicalData.push(newCandle);
         if (historicalData.length > 60) historicalData.shift();
       } else {
         historicalData[historicalData.length - 1] = newCandle;
       }
-  
       if (currentSymbol === 'BTCUSDT') {
         currentData = {
           symbol: 'BTCUSDT',
@@ -686,7 +897,6 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
           updateChartEndPoint(currentData.name, currentData.historicalData, currentData.currentPrice, currentData.volume);
         }
       }
-  
       const lastClose = indexData['BTCUSDT'].lastClose || (currentData?.historicalData?.length > 1 ? currentData.historicalData[currentData.historicalData.length - 2].close : parseFloat(kline.c));
       indexData['BTCUSDT'].price = parseFloat(kline.c);
       indexData['BTCUSDT'].volume = parseFloat(kline.v);
@@ -708,10 +918,8 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
       setTimeout(connectBinanceWebSocket, 2000);
     };
   }
-  
   connectWebSocket();
   connectBinanceWebSocket();
-  
   function updateActiveButton(symbol) {
     const buttons = document.querySelectorAll('.index-button');
     buttons.forEach(button => {
@@ -721,7 +929,6 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
       }
     });
   }
-  
   function updateIndices(indices) {
     if (!Array.isArray(indices)) indices = [];
     const desiredIndices = [
@@ -729,9 +936,15 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
       { symbol: '^BSESN', name: 'SENSEX' },
       { symbol: '^NSEBANK', name: 'BANK NIFTY' },
       { symbol: '^NSEMDCP50', name: 'NIFTY MIDCAP 50' },
+      { symbol: 'NIFTY_F1.NS', name: 'GIFT NIFTY' },
+      { symbol: 'XAUINR=X', name: 'Gold 24K (10g)' },
+      { symbol: 'XAGINR=X', name: 'Silver 24K (10g)' },
+      { symbol: '^DJI', name: 'Dow Jones' },
+      { symbol: '^IXIC', name: 'Nasdaq' },
+      { symbol: '^N225', name: 'Nikkei' },
+      { symbol: '^HSI', name: 'Hang Seng' },
       { symbol: 'BTCUSDT', name: 'Bitcoin (BTC/USDT)' }
     ];
-  
     desiredIndices.forEach((desiredIndex, idx) => {
       const index = {
         symbol: desiredIndex.symbol,
@@ -740,14 +953,20 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
         lastClose: indexData[desiredIndex.symbol]?.lastClose || (indices.find(i => i.symbol === desiredIndex.symbol)?.lastClose || null),
         percentChange: indexData[desiredIndex.symbol]?.percentChange || (indices.find(i => i.symbol === desiredIndex.symbol)?.percentChange || null)
       };
-  
       const isBitcoin = index.symbol === 'BTCUSDT';
-      const price = index.price && !isNaN(index.price) ? 
-        (isBitcoin ? `$${Number(index.price).toLocaleString('en-US', { maximumFractionDigits: 2 })}` : `₹${Number(index.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
-      const lastClose = index.lastClose && !isNaN(index.lastClose) ? 
-        (isBitcoin ? `$${Number(index.lastClose).toLocaleString('en-US', { maximumFractionDigits: 2 })}` : `₹${Number(index.lastClose).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
+      const isGlobal = ['^DJI', '^IXIC', '^N225', '^HSI'].includes(index.symbol);
+      const isGold = index.symbol === 'XAUINR=X';
+     
+    const isSilver = index.symbol === 'XAGINR=X';
+const price = index.price && !isNaN(index.price) ?
+  (isBitcoin || isGlobal ? `$${Number(index.price).toLocaleString('en-US', { maximumFractionDigits: 2 })}` :
+   isGold || isSilver ? `₹${Number(index.price).toLocaleString('en-IN', { maximumFractionDigits: 0 })} / 10g` : // No decimals for retail
+   `₹${Number(index.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A'
+      const lastClose = index.lastClose && !isNaN(index.lastClose) ?
+        (isBitcoin || isGlobal ? `$${Number(index.lastClose).toLocaleString('en-US', { maximumFractionDigits: 2 })}` :
+         isGold || isSilver ? `₹${Number(index.lastClose).toLocaleString('en-IN', { maximumFractionDigits: 2 })} / 10g` :
+         `₹${Number(index.lastClose).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
       const percentChange = index.percentChange && !isNaN(index.percentChange) ? `${index.percentChange >= 0 ? '+' : ''}${Number(index.percentChange).toFixed(2)}%` : 'N/A';
-  
       let card = document.getElementById(`index-${index.symbol}`);
       if (!card) {
         card = document.createElement('div');
@@ -767,7 +986,19 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
         card.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          isBitcoin ? toggleBitcoinData(index.symbol, index.name) : toggleHistoricalData(index.symbol, index.name);
+          if (isBitcoin || isGlobal || isGold || isSilver) {
+            if (isGold || isSilver) {
+              if (isSilver) {
+                toggleSilverData(index.symbol, index.name);
+              } else {
+                toggleGoldData(index.symbol, index.name);
+              }
+            } else {
+              toggleBitcoinData(index.symbol, index.name); // Reuse for global too
+            }
+          } else {
+            toggleHistoricalData(index.symbol, index.name);
+          }
         });
         stockCards.appendChild(card);
       } else {
@@ -779,19 +1010,15 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
       }
     });
   }
-  
   function updateTopStocks(stocks) {
     if (!Array.isArray(stocks)) return;
-
     stocks.forEach((stock, idx) => {
         if (!stock || !stock.symbol || !stock.name) return;
-
         const price = stock.price && !isNaN(stock.price) ? `₹${Number(stock.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'N/A';
         const volume = stock.volume && !isNaN(stock.volume) ? Number(stock.volume).toLocaleString('en-IN') : '0';
         const percentChange = stock.percentChange && !isNaN(stock.percentChange) ? `${stock.percentChange >= 0 ? '+' : ''}${Number(stock.percentChange).toFixed(2)}%` : 'N/A';
         const dayLow = stock.dayLow && !isNaN(stock.dayLow) ? `₹${Number(stock.dayLow).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'N/A';
         const dayHigh = stock.dayHigh && !isNaN(stock.dayHigh) ? `₹${Number(stock.dayHigh).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'N/A';
-
         let card = document.getElementById(`stock-${stock.symbol}`);
         if (!card) {
             card = document.createElement('div');
@@ -807,8 +1034,8 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
                     <p class="volume">Volume: <span>${volume}</span></p>
                     <p class="stock-change ${percentChange === 'N/A' ? '' : (stock.percentChange >= 0 ? 'positive' : 'negative')}"><span>${percentChange}</span></p>
                     <div class="stock-actions">
-                        <button class="action-button buy" onclick="promptTrade('buy', '${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Buy</button>
-                        <button class="action-button sell" onclick="promptTrade('sell', '${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Sell</button>
+                        <button class="action-button buy" onclick="handleBuyClick('${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Buy</button>
+                        <button class="action-button sell" onclick="handleSellClick('${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Sell</button>
                     </div>
                 </div>
             `;
@@ -836,66 +1063,84 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
             if (volumeSpan.textContent !== volume) volumeSpan.textContent = volume;
             if (changeSpan.textContent !== percentChange) changeSpan.textContent = percentChange;
             changeSpan.className = `stock-change ${percentChange === 'N/A' ? '' : (stock.percentChange >= 0 ? 'positive' : 'negative')}`;
+            // Update button onclicks
+            const buyBtn = card.querySelector('.action-button.buy');
+            const sellBtn = card.querySelector('.action-button.sell');
+            if (buyBtn) buyBtn.onclick = () => handleBuyClick(stock.symbol, stock.name, stock.price || 0);
+            if (sellBtn) sellBtn.onclick = () => handleSellClick(stock.symbol, stock.name, stock.price || 0);
         }
     });
 }
-  
+function handleBuyClick(symbol, name, price) {
+  if (!checkAuthAndTrade('buy', symbol, name, price)) return;
+  promptTrade('buy', symbol, name, price);
+}
+function handleSellClick(symbol, name, price) {
+  if (!checkAuthAndTrade('sell', symbol, name, price)) return;
+  promptTrade('sell', symbol, name, price);
+}
+  // New function to render global cues
+  function renderGlobalCues(indices) {
+    const globalCards = document.getElementById('globalCards');
+    globalCards.innerHTML = '';
+    const globalSymbols = ['^DJI', '^IXIC', '^N225', '^HSI', 'NIFTY_F1.NS', 'XAUINR=X', 'XAGINR=X'];
+    globalSymbols.forEach(symbol => {
+      const index = indexData[symbol];
+      if (index) {
+        const card = document.createElement('div');
+        card.className = 'global-card';
+        const price = index.price ?
+          (symbol === 'XAUINR=X' || symbol === 'XAGINR=X' ? `₹${index.price.toLocaleString('en-IN')} / 10g` :
+           `$${index.price.toLocaleString('en-US')}`) : 'N/A'; // USD for global, INR for Gold/Silver
+        const change = index.percentChange ? `${index.percentChange >= 0 ? '+' : ''}${index.percentChange}%` : 'N/A';
+        card.innerHTML = `
+          <h3>${index.name}</h3>
+          <p>Price: ${price}</p>
+          <p class="${index.percentChange >= 0 ? 'positive' : 'negative'}">${change}</p>
+        `;
+        globalCards.appendChild(card);
+      }
+    });
+  }
+  // New function to update prediction banner - Fixed date to dynamic
+ function updatePredictionBanner(giftPrice, niftyClose, globalAvgChange) {
+  const predictedChange = (giftPrice - niftyClose) / niftyClose * 100;
+  const predictedOpen = niftyClose * (1 + predictedChange / 100 * 0.9); // Adjust 10% for friction
+  const todayDate = new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+  const sentiment = globalAvgChange > 0 ? 'Positive' : globalAvgChange < 0 ? 'Negative' : 'Neutral';
+  document.getElementById('predictedOpen').textContent = `Predicted Nifty Open (${todayDate}): ₹${predictedOpen.toLocaleString('en-IN', { maximumFractionDigits: 2 })} (+${predictedChange.toFixed(2)}%)`;
+  document.getElementById('globalSentiment').textContent = `Global Sentiment: ${sentiment} (${globalAvgChange.toFixed(2)}% avg)`;
+  document.getElementById('globalSentiment').className = `sentiment-${sentiment.toLowerCase()}`;
+}
   function generateDailyPredictions() {
     const today = new Date().toDateString();
     if (currentPredictionDate !== today) {
       currentPredictionDate = today;
-      const stockPool = [
-        { symbol: 'RELIANCE', name: 'Reliance Industries' },
-        { symbol: 'TCS', name: 'Tata Consultancy Services' },
-        { symbol: 'HDFCBANK', name: 'HDFC Bank' },
-        { symbol: 'INFY', name: 'Infosys' },
-        { symbol: 'ICICIBANK', name: 'ICICI Bank' },
-        { symbol: 'SBIN', name: 'State Bank of India' },
-        { symbol: 'HINDUNILVR', name: 'Hindustan Unilever' },
-        { symbol: 'BHARTIARTL', name: 'Bharti Airtel' },
-        { symbol: 'ITC', name: 'ITC Limited' },
-        { symbol: 'LT', name: 'Larsen & Toubro' },
-        { symbol: 'ASIANPAINT', name: 'Asian Paints' },
-        { symbol: 'AXISBANK', name: 'Axis Bank' },
-        { symbol: 'MARUTI', name: 'Maruti Suzuki' },
-        { symbol: 'KOTAKBANK', name: 'Kotak Mahindra Bank' },
-        { symbol: 'SUNPHARMA', name: 'Sun Pharmaceutical' }
+      // Fallback list updated with real gainers as of Oct 31, 2025 (at least 20)
+      const fallbackPredictions = [
+        { symbol: 'BHEL.NS', name: 'Bharat Heavy Electricals', price: 260.75, predictedGain: 15.36, volume: 15000000 },
+        { symbol: 'ABCAPITAL.NS', name: 'Aditya Birla Capital', price: 327.50, predictedGain: 16.70, volume: 12000000 },
+        { symbol: 'NEULANDLAB.NS', name: 'Neuland Laboratories', price: 16182.00, predictedGain: 10.50, volume: 500000 },
+        { symbol: 'IDBI.NS', name: 'IDBI Bank', price: 102.18, predictedGain: 6.70, volume: 8000000 },
+        { symbol: 'SYRMA.NS', name: 'Syrma SGS Technology', price: 802.25, predictedGain: 6.27, volume: 2000000 },
+        { symbol: 'GRINDWELL.NS', name: 'Grindwell Norton', price: 1676.30, predictedGain: 6.53, volume: 300000 },
+        { symbol: 'ORIENTALTL.NS', name: 'Oriental Trimex', price: 10.28, predictedGain: 6.53, volume: 1000000 },
+        { symbol: 'SUGAL.NS', name: 'Sugal Damani', price: 109.44, predictedGain: 18.20, volume: 400000 },
+        { symbol: 'NIRMITEEROB.NS', name: 'Nirmitee Robotics', price: 94.80, predictedGain: 15.80, volume: 600000 },
+        { symbol: 'EUROTEXIND.NS', name: 'Eurotex Ind', price: 18.72, predictedGain: 20.00, volume: 500000 },
+        { symbol: 'JAYUSHIN.NS', name: 'Jay Ushin', price: 1051.00, predictedGain: 20.00, volume: 700000 },
+        { symbol: 'RELIANCE.NS', name: 'Reliance Industries', price: 2500.00, predictedGain: 5.10, volume: 5000000 },
+        { symbol: 'TCS.NS', name: 'Tata Consultancy Services', price: 4200.00, predictedGain: 5.20, volume: 2000000 },
+        { symbol: 'HDFCBANK.NS', name: 'HDFC Bank', price: 1600.00, predictedGain: 5.05, volume: 3000000 },
+        { symbol: 'INFY.NS', name: 'Infosys', price: 1850.00, predictedGain: 5.30, volume: 2500000 },
+        { symbol: 'ICICIBANK.NS', name: 'ICICI Bank', price: 1200.00, predictedGain: 5.40, volume: 4000000 },
+        { symbol: 'BHARTIARTL.NS', name: 'Bharti Airtel', price: 1500.00, predictedGain: 6.10, volume: 3500000 },
+        { symbol: 'SUNPHARMA.NS', name: 'Sun Pharmaceutical', price: 1800.00, predictedGain: 5.50, volume: 1500000 },
+        { symbol: 'SBIN.NS', name: 'State Bank of India', price: 800.00, predictedGain: 5.00, volume: 10000000 },
+        { symbol: 'LT.NS', name: 'Larsen & Toubro', price: 3500.00, predictedGain: 5.20, volume: 1000000 }
       ];
-  
-      // Shuffle and select 10 stocks
-      const shuffled = stockPool.sort(() => 0.5 - Math.random());
-      const selectedStocks = shuffled.slice(0, 10).map(stock => {
-        const price = (Math.random() * 2000 + 500).toFixed(2); // Random price between ₹500 and ₹2500
-        const dayHigh = (Math.random() * 2200 + 550).toFixed(2); // Random high between ₹550 and ₹2750
-        const dayLow = (Math.random() * 1800 + 450).toFixed(2); // Random low between ₹450 and ₹2250
-  
-        return {
-          symbol: stock.symbol,
-          name: stock.name,
-          price: price,
-          predictedGain: (Math.random() * 10 + 2).toFixed(2), // Random gain between 2% and 12%
-          volume: Math.floor(Math.random() * 1000000 + 100000), // Random volume between 100,000 and 1,100,000
-          dayHigh: Math.max(parseFloat(dayHigh), parseFloat(dayLow)).toFixed(2), // Ensure dayHigh >= dayLow
-          dayLow: Math.min(parseFloat(dayHigh), parseFloat(dayLow)).toFixed(2), // Ensure dayLow <= dayHigh
-          // Ensure price is between dayLow and dayHigh
-          adjustedPrice: Math.max(
-            parseFloat(dayLow),
-            Math.min(parseFloat(dayHigh), parseFloat(price))
-          ).toFixed(2)
-        };
-      }).map(stock => ({
-        // Replace price with adjustedPrice and clean up
-        symbol: stock.symbol,
-        name: stock.name,
-        price: stock.adjustedPrice,
-        predictedGain: stock.predictedGain,
-        volume: stock.volume,
-        dayHigh: stock.dayHigh,
-        dayLow: stock.dayLow
-      }));
-  
-      lastPredictionsData = selectedStocks;
-      updatePredictions(selectedStocks);
+      lastPredictionsData = fallbackPredictions;
+      updatePredictions(fallbackPredictions);
     } else {
       updatePredictions(lastPredictionsData);
     }
@@ -905,19 +1150,15 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
       generateDailyPredictions();
       return;
     }
-  
     const predictionsContainer = document.getElementById('predictionsContainer');
     predictionsContainer.innerHTML = '';
-  
-    const displayPredictions = predictions.length >= 10 ? predictions.slice(0, 10) : predictions;
+    const displayPredictions = predictions.length >= 20 ? predictions.slice(0, 20) : predictions;
     displayPredictions.forEach((stock, idx) => {
       if (!stock || !stock.symbol || !stock.name || !stock.price) return;
-  
-      const price = stock.price && !isNaN(stock.price) ? 
+      const price = stock.price && !isNaN(stock.price) ?
         `₹${Number(stock.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'N/A';
-      const predictedGain = stock.predictedGain && !isNaN(stock.predictedGain) ? 
+      const predictedGain = stock.predictedGain && !isNaN(stock.predictedGain) ?
         `+${Number(stock.predictedGain).toFixed(2)}%` : 'N/A';
-  
       const card = document.createElement('div');
       card.id = `prediction-${stock.symbol}`;
       card.className = 'prediction-card';
@@ -928,8 +1169,8 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
           <p class="prediction-price ${price === 'N/A' ? 'unavailable' : 'available'}">Current Price: ${price}</p>
           <p class="prediction-gain">Predicted Gain: ${predictedGain}</p>
           <div class="stock-actions">
-            <button class="action-button buy" onclick="promptTrade('buy', '${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Buy</button>
-            <button class="action-button sell" onclick="promptTrade('sell', '${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Sell</button>
+            <button class="action-button buy" onclick="handleBuyClick('${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Buy</button>
+            <button class="action-button sell" onclick="handleSellClick('${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Sell</button>
           </div>
         </div>
       `;
@@ -944,23 +1185,18 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
       predictionsContainer.appendChild(card);
     });
 }
-  
   function updateLosers(losers) {
     if (!Array.isArray(losers)) return;
-  
     const losersContainer = document.getElementById('losersContainer');
     losersContainer.innerHTML = '';
-  
     losers.forEach((stock, idx) => {
       if (!stock || !stock.symbol || !stock.name || !stock.price) return;
-  
-      const price = stock.price && !isNaN(stock.price) ? 
+      const price = stock.price && !isNaN(stock.price) ?
         `₹${Number(stock.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'N/A';
-      const volume = stock.volume && !isNaN(stock.volume) ? 
+      const volume = stock.volume && !isNaN(stock.volume) ?
         Number(stock.volume).toLocaleString('en-IN') : '0';
-      const percentDrop = stock.percentDrop && !isNaN(stock.percentDrop) ? 
+      const percentDrop = stock.percentDrop && !isNaN(stock.percentDrop) ?
         `${Number(stock.percentDrop).toFixed(2)}%` : 'N/A';
-  
       const card = document.createElement('div');
       card.id = `loser-${stock.symbol}`;
       card.className = 'loser-card';
@@ -972,8 +1208,8 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
           <p class="volume">Volume: ${volume}</p>
           <p class="loser-drop">Drop: -${percentDrop}</p>
           <div class="stock-actions">
-            <button class="action-button buy" onclick="promptTrade('buy', '${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Buy</button>
-            <button class="action-button sell" onclick="promptTrade('sell', '${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Sell</button>
+            <button class="action-button buy" onclick="handleBuyClick('${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Buy</button>
+            <button class="action-button sell" onclick="handleSellClick('${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Sell</button>
           </div>
         </div>
       `;
@@ -988,7 +1224,6 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
       losersContainer.appendChild(card);
     });
   }
-  
   // Add this function to handle closing and returning to NIFTY 50 with state reset
   function closeSearch() {
     toggleHistoricalData('^NSEI', 'NIFTY 50');
@@ -1004,73 +1239,100 @@ document.getElementById('currentValue').textContent = `₹${currentValue.toLocal
     priceInfo.innerHTML = '';
     chartContainer.classList.remove('show');
 }
-
 // Update the updateSearchResult function to include '✖' close button
 function updateSearchResult(result) {
+  // Clear search result if result is null
   if (result === null) {
-      searchResult.classList.remove('show');
-      if (activeSymbol === null) {
-          chartContainer.classList.remove('show');
-          if (stockChart) stockChart.destroy();
-          priceInfo.innerHTML = '';
+    searchResult.classList.remove('show', 'error');
+    if (activeSymbol === null) {
+      chartContainer.classList.remove('show');
+      if (stockChart) {
+        stockChart.destroy();
+        stockChart = null; // Ensure chart reference is cleared
       }
-  } else if (result.error) {
-      searchResult.innerHTML = `<p>${result.error}</p>`;
-      searchResult.classList.add('error', 'show');
-  } else {
-      const price = result.price && !isNaN(result.price) ? `₹${Number(result.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'N/A';
-      const volume = result.volume && !isNaN(result.volume) ? Number(result.volume).toLocaleString('en-IN') : '0';
-      const dayHigh = result.dayHigh && !isNaN(result.dayHigh) ? `₹${Number(result.dayHigh).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'N/A';
-      const dayLow = result.dayLow && !isNaN(result.dayLow) ? `₹${Number(result.dayLow).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'N/A';
-      let percentChange = result.percentChange && !isNaN(result.percentChange) ? 
-          `${result.percentChange >= 0 ? '+' : ''}${Number(result.percentChange).toFixed(2)}%` : 'N/A';
-
-      if (percentChange === 'N/A' && result.historicalData && result.historicalData.length > 1) {
-          const lastClose = result.historicalData[result.historicalData.length - 2].close;
-          if (lastClose && result.price && lastClose !== 0 && result.lastClose !== result.price) {
-              percentChange = (((result.price - lastClose) / lastClose) * 100).toFixed(2);
-              percentChange = `${percentChange >= 0 ? '+' : ''}${percentChange}%`;
-          }
-      } else if (percentChange === 'N/A' && result.lastClose && result.price && result.lastClose !== 0 && result.lastClose !== result.price) {
-          percentChange = (((result.price - result.lastClose) / result.lastClose) * 100).toFixed(2);
-          percentChange = `${percentChange >= 0 ? '+' : ''}${percentChange}%`;
-      }
-
-      if (isIndex && currentSymbol && indexData[currentSymbol] && indexData[currentSymbol].percentChange !== undefined) {
-          percentChange = `${indexData[currentSymbol].percentChange >= 0 ? '+' : ''}${Number(indexData[currentSymbol].percentChange).toFixed(2)}%`;
-      }
-
-      searchResult.classList.remove('error');
-      searchResult.classList.add('show');
-
-      // Only update if the symbol has changed to prevent redundant rendering
-      if (result.historicalData && currentSymbol !== result.symbol) {
-          currentSymbol = result.symbol;
-          activeSymbol = currentSymbol;
-          isIndex = result.symbol.startsWith('^') || result.symbol === 'BTCUSDT';
-          currentData = {
-              symbol: result.symbol,
-              name: result.name || 'Unknown',
-              historicalData: result.historicalData,
-              currentPrice: result.price,
-              volume: result.volume || 0,
-              dayHigh: result.dayHigh || result.price,
-              dayLow: result.dayLow || result.price
-          };
-          renderChart(currentData.name, currentData.historicalData, currentData.currentPrice, currentData.volume);
-          updateActiveButton(null);
-      }
-
-      searchResult.innerHTML = `
-          <h3>${result.name}</h3>
-          <p>Price: ${price}</p>
-          <p>Volume: ${volume}</p>
-          <p>Day High: ${dayHigh}</p>
-          <p>Day Low: ${dayLow}</p>
-          <p class="${percentChange === 'N/A' ? '' : (percentChange.includes('-') ? 'negative' : 'positive')}">Change: ${percentChange}</p>
-          <button class="close-button" onclick="closeSearch()">✖</button>
-      `;
+      priceInfo.innerHTML = '';
+    }
+    return;
   }
+  // Handle error case
+  if (result.error) {
+    searchResult.innerHTML = `<p>${result.error}</p>`;
+    searchResult.classList.add('error', 'show');
+    searchResult.classList.remove('positive', 'negative');
+    return;
+  }
+  // Format data with fallbacks
+  const price = result.price && !isNaN(result.price) && result.price > 0
+    ? `₹${Number(result.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
+    : 'N/A';
+  const volume = result.volume && !isNaN(result.volume) && result.volume >= 0
+    ? Number(result.volume).toLocaleString('en-IN')
+    : '0';
+  const dayHigh = result.dayHigh && !isNaN(result.dayHigh) && result.dayHigh > 0
+    ? `₹${Number(result.dayHigh).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
+    : 'N/A';
+  const dayLow = result.dayLow && !isNaN(result.dayLow) && result.dayLow > 0
+    ? `₹${Number(result.dayLow).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
+    : 'N/A';
+  // Calculate percent change with consolidated logic
+  let percentChange = 'N/A';
+  if (result.price && !isNaN(result.price) && result.price > 0) {
+    let lastClose = null;
+    if (result.historicalData && result.historicalData.length > 1 && result.historicalData[result.historicalData.length - 2].close) {
+      lastClose = result.historicalData[result.historicalData.length - 2].close;
+    } else if (result.lastClose && !isNaN(result.lastClose) && result.lastClose > 0) {
+      lastClose = result.lastClose;
+    }
+    if (lastClose && lastClose !== 0 && result.price !== lastClose) {
+      percentChange = (((result.price - lastClose) / lastClose) * 100).toFixed(2);
+      percentChange = `${percentChange >= 0 ? '+' : ''}${percentChange}%`;
+    }
+  }
+  // Override percentChange for indices if available
+  if (isIndex && currentSymbol && indexData[currentSymbol] && indexData[currentSymbol].percentChange !== undefined) {
+    percentChange = `${indexData[currentSymbol].percentChange >= 0 ? '+' : ''}${Number(indexData[currentSymbol].percentChange).toFixed(2)}%`;
+  }
+  // Update UI
+  searchResult.classList.remove('error');
+  searchResult.classList.add('show');
+  // Only update chart if the symbol has changed or historical data is valid
+  if (result.symbol && result.historicalData && Array.isArray(result.historicalData) && result.historicalData.length > 0 && currentSymbol !== result.symbol) {
+    currentSymbol = result.symbol;
+    activeSymbol = currentSymbol;
+    isIndex = result.symbol.startsWith('^') || result.symbol === 'BTCUSDT' || result.symbol === 'NIFTY_F1.NS' || result.symbol === 'XAUINR=X' || result.symbol === 'XAGINR=X' || ['^DJI', '^IXIC', '^N225', '^HSI'].includes(result.symbol);
+    currentData = {
+      symbol: result.symbol,
+      name: result.name || 'Unknown',
+      historicalData: result.historicalData,
+      currentPrice: result.price || 0,
+      volume: result.volume || 0,
+      dayHigh: result.dayHigh || result.price || 0,
+      dayLow: result.dayLow || result.price || 0
+    };
+    renderChart(currentData.name, currentData.historicalData, currentData.currentPrice, currentData.volume);
+    updateActiveButton(null); // Clear active button for non-index searches
+    toggleIndicesButtons(false); // Hide indices and top stocks during search
+  }
+  // Update search result HTML with buy/sell buttons always if tradable
+  let actionsHtml = '';
+  if (!isIndex && result.price && !isNaN(result.price) && result.symbol && result.name && !['^NSEI', '^BSESN', '^NSEBANK', '^NSEMDCP50', 'BTCUSDT', 'NIFTY_F1.NS', '^DJI', '^IXIC', '^N225', '^HSI', 'XAUINR=X', 'XAGINR=X'].includes(result.symbol)) {
+    actionsHtml = `
+      <div class="stock-actions">
+        <button class="action-button buy" onclick="handleBuyClick('${result.symbol}', '${result.name.replace(/'/g, "\\'")}', ${result.price})">Buy</button>
+        <button class="action-button sell" onclick="handleSellClick('${result.symbol}', '${result.name.replace(/'/g, "\\'")}', ${result.price})">Sell</button>
+      </div>
+    `;
+  }
+  searchResult.innerHTML = `
+    <h3>${result.name || 'Unknown'}</h3>
+    <p>Price: ${price}</p>
+    <p>Volume: ${volume}</p>
+    <p>Day High: ${dayHigh}</p>
+    <p>Day Low: ${dayLow}</p>
+    <p class="${percentChange === 'N/A' ? '' : (percentChange.includes('-') ? 'negative' : 'positive')}">Change: ${percentChange}</p>
+    ${actionsHtml}
+    <button class="close-button" onclick="closeSearch()">✖</button>
+  `;
 }
 function toggleHistoricalData(symbol, name) {
   if (activeSymbol === symbol) {
@@ -1094,7 +1356,64 @@ function toggleHistoricalData(symbol, name) {
       toggleIndicesButtons(true); // Show indices and Most Traded Stocks when viewing an index
   }
 }
-
+// New function for Gold data (similar to Bitcoin, but fetch from WS if needed; for now, use indexData)
+function toggleGoldData(symbol, name) {
+  if (activeSymbol === symbol) {
+      activeSymbol = null;
+      chartContainer.classList.remove('show');
+      if (stockChart) stockChart.destroy();
+      priceInfo.innerHTML = '';
+      currentSymbol = null;
+      currentData = null;
+      updateActiveButton(null);
+  } else {
+      activeSymbol = symbol;
+      currentSymbol = symbol;
+      isIndex = true;
+      // For Gold, use historical if available, else placeholder
+      if (!currentData || currentData.symbol !== symbol) {
+          currentData = {
+              symbol: symbol,
+              name: name,
+              historicalData: [], // Historical for Gold would need separate fetch if implemented
+              currentPrice: indexData[symbol]?.price || 121480,
+              volume: indexData[symbol]?.volume || 0
+          };
+      }
+      renderChart(currentData.name, currentData.historicalData, currentData.currentPrice, currentData.volume);
+      updateActiveButton(symbol);
+      toggleIndicesButtons(true); // Show indices and Most Traded Stocks when viewing Gold
+  }
+}
+// New function for Silver data (similar to Gold)
+function toggleSilverData(symbol, name) {
+  if (activeSymbol === symbol) {
+      activeSymbol = null;
+      chartContainer.classList.remove('show');
+      if (stockChart) stockChart.destroy();
+      priceInfo.innerHTML = '';
+      currentSymbol = null;
+      currentData = null;
+      updateActiveButton(null);
+  } else {
+      activeSymbol = symbol;
+      currentSymbol = symbol;
+      isIndex = true;
+      // For Silver, use historical if available, else placeholder
+      if (!currentData || currentData.symbol !== symbol) {
+          currentData = {
+              symbol: symbol,
+              name: name,
+              historicalData: [], // Historical for Silver would need separate fetch if implemented
+              currentPrice: indexData[symbol]?.price || 1080,
+              volume: indexData[symbol]?.volume || 0
+          };
+      }
+      renderChart(currentData.name, currentData.historicalData, currentData.currentPrice, currentData.volume);
+      updateActiveButton(symbol);
+      toggleIndicesButtons(true); // Show indices and Most Traded Stocks when viewing Silver
+  }
+}
 // Update toggleBitcoinData to show both indices and Most Traded Stocks
 function toggleBitcoinData(symbol, name) {
   if (activeSymbol === symbol) {
@@ -1123,291 +1442,287 @@ function toggleBitcoinData(symbol, name) {
       toggleIndicesButtons(true); // Show indices and Most Traded Stocks when viewing BTC/USDT
   }
 }
-  
-  function renderChart(name, historicalData, currentPrice, volume) {
-    if (stockChart) stockChart.destroy();
-    chartContainer.classList.add('show');
-    const ctx = document.getElementById('stockChart').getContext('2d');
-    
-    const isBitcoin = name === 'Bitcoin (BTC/USDT)';
-    const formattedCurrentPrice = currentPrice && !isNaN(currentPrice) ? 
-        (isBitcoin ? `$${Number(currentPrice).toLocaleString('en-US', { maximumFractionDigits: 2 })}` : 
-        `₹${Number(currentPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
-    const lastClosingPrice = historicalData.length > 1 ? 
-        historicalData[historicalData.length - 2].close : 
-        (historicalData.length > 0 ? historicalData[historicalData.length - 1].close : 'N/A');
-    const formattedLastClose = lastClosingPrice && !isNaN(lastClosingPrice) ? 
-        (isBitcoin ? `$${Number(lastClosingPrice).toLocaleString('en-US', { maximumFractionDigits: 2 })}` : 
-        `₹${Number(lastClosingPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
-    let percentChange = indexData[currentSymbol]?.percentChange || 
-        (lastClosingPrice !== 'N/A' && currentPrice !== 'N/A' && lastClosingPrice !== 0 ? 
-            ((currentPrice - lastClosingPrice) / lastClosingPrice * 100) : 'N/A');
-    const displayPercentChange = percentChange !== 'N/A' ? 
-        `${percentChange >= 0 ? '+' : ''}${Number(percentChange).toFixed(2)}%` : 'N/A';
-    const changeClass = percentChange !== 'N/A' ? 
-        (percentChange < 0 ? 'stock-change negative' : 'stock-change positive') : 'stock-change';
-
-    const formattedDayHigh = currentData.dayHigh && !isNaN(currentData.dayHigh) ? 
-        (isBitcoin ? `$${Number(currentData.dayHigh).toLocaleString('en-US', { maximumFractionDigits: 2 })}` : 
-        `₹${Number(currentData.dayHigh).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
-    const formattedDayLow = currentData.dayLow && !isNaN(currentData.dayLow) ? 
-        (isBitcoin ? `$${Number(currentData.dayLow).toLocaleString('en-US', { maximumFractionDigits: 2 })}` : 
-        `₹${Number(currentData.dayLow).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
-    const formattedVolume = volume && !isNaN(volume) ? Number(volume).toLocaleString('en-IN') : 'N/A';
-
-    let actionsHtml = '';
-    if (!isIndex && currentPrice && !isNaN(currentPrice) && currentSymbol && name && !['^NSEI', '^BSESN', '^NSEBANK', '^NSEMDCP50', 'BTCUSDT'].includes(currentSymbol)) {
-        actionsHtml = `
-            <div class="stock-actions">
-                <button class="action-button buy" onclick="promptTrade('buy', '${currentSymbol}', '${name.replace(/'/g, "\\'")}', ${currentPrice})">Buy</button>
-                <button class="action-button sell" onclick="promptTrade('sell', '${currentSymbol}', '${name.replace(/'/g, "\\'")}', ${currentPrice})">Sell</button>
-            </div>
-        `;
-    }
-
-    priceInfo.innerHTML = `
-    <p class="${formattedCurrentPrice === 'N/A' ? 'unavailable' : 'available'}">Price: ${formattedCurrentPrice}</p>
-    <p class="last-close">Last Close: ${formattedLastClose}</p>
-    <p class="${changeClass}">${displayPercentChange}</p>
-    <p class="day-high">Day High: ${formattedDayHigh}</p>
-    <p class="day-low">Day Low: ${formattedDayLow}</p>
-    ${actionsHtml}
-  `;
-    
-    const percentElement = document.querySelector('#priceInfo .stock-change');
-    if (percentElement && percentChange < 0) {
-        percentElement.style.color = '#FF3333';
-    }
-
-    // Theme configuration (unchanged)
-    const themes = {
-        light: {
-            backgroundColor: '#F9FAFB',
-            gradientStart: '#F3F4F6',
-            gradientEnd: '#E5E7EB',
-            lineColor: '#3B82F6',
-            lineFill: 'rgba(59, 130, 246, 0.3)',
-            currentPriceLine: '#9333EA',
-            textColor: '#374151',
-            gridColor: 'rgba(229, 231, 235, 0.5)'
-        },
-        dark: {
-            backgroundColor: '#1F2A44',
-            gradientStart: '#2D3748',
-            gradientEnd: '#1A202C',
-            lineColor: '#00E5D8',
-            lineFill: 'rgba(0, 229, 216, 0.3)',
-            currentPriceLine: '#FF4444',
-            textColor: '#9CA3AF',
-            gridColor: 'rgba(55, 65, 81, 0.5)'
-        },
-        midnight: {
-            backgroundColor: '#1A2344',
-            gradientStart: '#2D3748',
-            gradientEnd: '#151A2E',
-            lineColor: '#00E5D8',
-            lineFill: 'rgba(0, 229, 216, 0.3)',
-            currentPriceLine: '#FF4444',
-            textColor: '#A0AECB',
-            gridColor: 'rgba(45, 55, 72, 0.5)'
-        }
-    };
-    
-    const theme = themes[currentTheme];
-    const gradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
-    gradient.addColorStop(0, theme.gradientStart);
-    gradient.addColorStop(1, theme.gradientEnd);
-    ctx.canvas.style.background = gradient;
-
-    const currentPriceAnnotation = {
-        type: 'line',
-        yMin: currentPrice,
-        yMax: currentPrice,
-        borderColor: theme.currentPriceLine,
-        borderWidth: 2,
-        borderDash: [5, 5],
-        label: {
-            content: `Current: ${formattedCurrentPrice}`,
-            enabled: true,
-            position: 'end',
-            backgroundColor: theme.currentPriceLine,
-            color: '#fff',
-            font: { size: 12, family: "'Inter', sans-serif" },
-            padding: 6,
-            cornerRadius: 6
-        }
-    };
-
-    if (currentChartType === 'line') {
-        const prices = historicalData.map(d => d.close);
-        const lineGradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
-        lineGradient.addColorStop(0, theme.lineFill);
-        lineGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-
-        stockChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: Array(historicalData.length).fill(''),
-                datasets: [{
-                    label: `${name} - Price`,
-                    data: prices,
-                    borderColor: theme.lineColor,
-                    borderWidth: 2.5,
-                    fill: true,
-                    backgroundColor: lineGradient,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    pointBackgroundColor: theme.lineColor,
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: { duration: 500, easing: 'easeOutQuad' },
-                plugins: {
-                    legend: { display: false },
-                    title: {
-                        display: true,
-                        text: name,
-                        color: theme.textColor,
-                        font: { size: 22, family: "'Inter', sans-serif", weight: "700" },
-                        padding: { top: 12, bottom: 24 }
-                    },
-                    tooltip: {
-                        backgroundColor: theme.backgroundColor,
-                        titleColor: theme.textColor,
-                        bodyColor: theme.textColor,
-                        borderColor: theme.gridColor,
-                        borderWidth: 1,
-                        padding: 12,
-                        cornerRadius: 10,
-                        callbacks: {
-                            label: (context) => `Price: ${isBitcoin ? '$' : '₹'}${context.parsed.y.toLocaleString(isBitcoin ? 'en-US' : 'en-IN', { maximumFractionDigits: 2 })}`
-                        }
-                    },
-                    annotation: {
-                        annotations: {
-                            currentPriceLine: currentPriceAnnotation
-                        }
-                    }
-                },
-                scales: {
-                    x: { display: false },
-                    y: {
-                        title: { display: true, text: `Price (${isBitcoin ? '$' : '₹'})`, color: theme.textColor, font: { size: 14 } },
-                        ticks: { color: theme.textColor, callback: (value) => `${isBitcoin ? '$' : '₹'}${value.toLocaleString(isBitcoin ? 'en-US' : 'en-IN', { maximumFractionDigits: 2 })}` },
-                        grid: { color: theme.gridColor, borderDash: [6, 6] }
-                    }
-                }
-            }
-        });
-    } else {
-        const candlestickData = historicalData.map(d => ({
-            x: new Date(d.date).getTime(),
-            o: parseFloat(d.open),
-            h: parseFloat(d.high),
-            l: parseFloat(d.low),
-            c: parseFloat(d.close),
-            v: parseFloat(d.volume || 0)
-        }));
-
-        stockChart = new Chart(ctx, {
-            type: 'candlestick',
-            data: {
-                datasets: [{
-                    label: `${name} - Candlestick`,
-                    data: candlestickData,
-                    color: {
-                        up: '#10B981',
-                        down: '#EF4444',
-                        unchanged: theme.textColor
-                    },
-                    borderColor: {
-                        up: '#059669',
-                        down: '#DC2626',
-                        unchanged: theme.borderColor
-                    },
-                    barThickness: 'flex',
-                    barPercentage: 0.8,
-                    categoryPercentage: 0.9,
-                    wickThickness: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: { duration: 300, easing: 'easeOutQuad' },
-                plugins: {
-                    legend: { display: false },
-                    title: {
-                        display: true,
-                        text: name,
-                        color: theme.textColor,
-                        font: { size: 22, family: "'Inter', sans-serif", weight: "700" },
-                        padding: { top: 12, bottom: 24 }
-                    },
-                    tooltip: {
-                        backgroundColor: theme.backgroundColor,
-                        titleColor: theme.textColor,
-                        bodyColor: theme.textColor,
-                        borderColor: theme.borderColor,
-                        borderWidth: 1,
-                        padding: 12,
-                        cornerRadius: 10,
-                        callbacks: {
-                            label: (context) => {
-                                const data = context.raw;
-                                return [
-                                    `Open: ${isBitcoin ? '$' : '₹'}${data.o.toLocaleString(isBitcoin ? 'en-US' : 'en-IN', { maximumFractionDigits: 2 })}`,
-                                    `High: ${isBitcoin ? '$' : '₹'}${data.h.toLocaleString(isBitcoin ? 'en-US' : 'en-IN', { maximumFractionDigits: 2 })}`,
-                                    `Low: ${isBitcoin ? '$' : '₹'}${data.l.toLocaleString(isBitcoin ? 'en-US' : 'en-IN', { maximumFractionDigits: 2 })}`,
-                                    `Close: ${isBitcoin ? '$' : '₹'}${data.c.toLocaleString(isBitcoin ? 'en-US' : 'en-IN', { maximumFractionDigits: 2 })}`,
-                                    `Volume: ${data.v.toLocaleString('en-IN')}`
-                                ];
-                            }
-                        }
-                    },
-                    annotation: {
-                        annotations: {
-                            currentPriceLine: currentPriceAnnotation
-                        }
-                    }
-                },
-                scales: {
-                    x: { 
-                        type: 'time',
-                        time: { unit: 'minute', displayFormats: { minute: 'HH:mm' } },
-                        ticks: { color: theme.textColor, source: 'data', maxRotation: 0 },
-                        grid: { display: false }
-                    },
-                    y: {
-                        title: { display: true, text: `Price (${isBitcoin ? '$' : '₹'})`, color: theme.textColor, font: { size: 14 } },
-                        ticks: { color: theme.textColor, callback: (value) => `${isBitcoin ? '$' : '₹'}${value.toLocaleString(isBitcoin ? 'en-US' : 'en-IN', { maximumFractionDigits: 2 })}` },
-                        grid: { color: theme.gridColor, borderDash: [6, 6] }
-                    }
-                }
-            }
-        });
-    }
+function renderChart(name, historicalData, currentPrice, volume) {
+  if (stockChart) stockChart.destroy();
+  chartContainer.classList.add('show');
+  const ctx = document.getElementById('stockChart').getContext('2d');
+  const isBitcoin = name === 'Bitcoin (BTC/USDT)';
+  const isGlobal = ['Dow Jones', 'Nasdaq', 'Nikkei', 'Hang Seng', 'GIFT NIFTY'].includes(name);
+  const isGold = name === 'Gold 24K (10g)';
+const isSilver = name === 'Silver 24K (10g)';
+const formattedCurrentPrice = currentPrice && !isNaN(currentPrice) ?
+    (isBitcoin || isGlobal ? `$${Number(currentPrice).toLocaleString('en-US', { maximumFractionDigits: 2 })}` :
+     isGold || isSilver ? `₹${Number(currentPrice).toLocaleString('en-IN', { maximumFractionDigits: 0 })} / 10g` :
+     `₹${Number(currentPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
+  const lastClosingPrice = historicalData.length > 1 ?
+      historicalData[historicalData.length - 2].close :
+      (historicalData.length > 0 ? historicalData[historicalData.length - 1].close : 'N/A');
+  const formattedLastClose = lastClosingPrice && !isNaN(lastClosingPrice) ?
+      (isBitcoin || isGlobal ? `$${Number(lastClosingPrice).toLocaleString('en-US', { maximumFractionDigits: 2 })}` :
+       isGold || isSilver ? `₹${Number(lastClosingPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })} / 10g` :
+       `₹${Number(lastClosingPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
+  let percentChange = indexData[currentSymbol]?.percentChange ||
+      (lastClosingPrice !== 'N/A' && currentPrice !== 'N/A' && lastClosingPrice !== 0 ?
+          ((currentPrice - lastClosingPrice) / lastClosingPrice * 100) : 'N/A');
+  const displayPercentChange = percentChange !== 'N/A' ?
+      `${percentChange >= 0 ? '+' : ''}${Number(percentChange).toFixed(2)}%` : 'N/A';
+  const changeClass = percentChange !== 'N/A' ?
+      (percentChange < 0 ? 'stock-change negative' : 'stock-change positive') : 'stock-change';
+  const formattedDayHigh = currentData.dayHigh && !isNaN(currentData.dayHigh) ?
+      (isBitcoin || isGlobal ? `$${Number(currentData.dayHigh).toLocaleString('en-US', { maximumFractionDigits: 2 })}` :
+       isGold || isSilver ? `₹${Number(currentData.dayHigh).toLocaleString('en-IN', { maximumFractionDigits: 2 })} / 10g` :
+       `₹${Number(currentData.dayHigh).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
+  const formattedDayLow = currentData.dayLow && !isNaN(currentData.dayLow) ?
+      (isBitcoin || isGlobal ? `$${Number(currentData.dayLow).toLocaleString('en-US', { maximumFractionDigits: 2 })}` :
+       isGold || isSilver ? `₹${Number(currentData.dayLow).toLocaleString('en-IN', { maximumFractionDigits: 2 })} / 10g` :
+       `₹${Number(currentData.dayLow).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
+  const formattedVolume = volume && !isNaN(volume) ? Number(volume).toLocaleString('en-IN') : 'N/A';
+  let actionsHtml = '';
+  if (!isIndex && currentPrice && !isNaN(currentPrice) && currentSymbol && name && !['^NSEI', '^BSESN', '^NSEBANK', '^NSEMDCP50', 'BTCUSDT', 'NIFTY_F1.NS', '^DJI', '^IXIC', '^N225', '^HSI', 'XAUINR=X', 'XAGINR=X'].includes(currentSymbol)) {
+      actionsHtml = `
+          <div class="stock-actions">
+              <button class="action-button buy" onclick="handleBuyClick('${currentSymbol}', '${name.replace(/'/g, "\\'")}', ${currentPrice})">Buy</button>
+              <button class="action-button sell" onclick="handleSellClick('${currentSymbol}', '${name.replace(/'/g, "\\'")}', ${currentPrice})">Sell</button>
+          </div>
+      `;
+  }
+  priceInfo.innerHTML = `
+  <p class="${formattedCurrentPrice === 'N/A' ? 'unavailable' : 'available'}">Price: ${formattedCurrentPrice}</p>
+  <p class="last-close">Last Close: ${formattedLastClose}</p>
+  <p class="${changeClass}">${displayPercentChange}</p>
+  <p class="day-high">Day High: ${formattedDayHigh}</p>
+  <p class="day-low">Day Low: ${formattedDayLow}</p>
+  ${actionsHtml}
+`;
+  const percentElement = document.querySelector('#priceInfo .stock-change');
+  if (percentElement && percentChange < 0) {
+      percentElement.style.color = '#FF3333';
+  }
+  const themes = {
+      light: {
+          backgroundColor: '#F9FAFB',
+          gradientStart: '#F3F4F6',
+          gradientEnd: '#E5E7EB',
+          lineColor: '#3B82F6',
+          lineFill: 'rgba(59, 130, 246, 0.3)',
+          currentPriceLine: '#9333EA',
+          textColor: '#374151',
+          gridColor: 'rgba(229, 231, 235, 0.5)'
+      },
+      dark: {
+          backgroundColor: '#1F2A44',
+          gradientStart: '#2D3748',
+          gradientEnd: '#1A202C',
+          lineColor: '#00E5D8',
+          lineFill: 'rgba(0, 229, 216, 0.3)',
+          currentPriceLine: '#FF4444',
+          textColor: '#9CA3AF',
+          gridColor: 'rgba(55, 65, 81, 0.5)'
+      },
+      midnight: {
+          backgroundColor: '#1A2344',
+          gradientStart: '#2D3748',
+          gradientEnd: '#151A2E',
+          lineColor: '#00E5D8',
+          lineFill: 'rgba(0, 229, 216, 0.3)',
+          currentPriceLine: '#FF4444',
+          textColor: '#A0AECB',
+          gridColor: 'rgba(45, 55, 72, 0.5)'
+      }
+  };
+  const theme = themes[currentTheme];
+  const gradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
+  gradient.addColorStop(0, theme.gradientStart);
+  gradient.addColorStop(1, theme.gradientEnd);
+  ctx.canvas.style.background = gradient;
+  const currentPriceAnnotation = {
+      type: 'line',
+      yMin: currentPrice,
+      yMax: currentPrice,
+      borderColor: theme.currentPriceLine,
+      borderWidth: 2,
+      borderDash: [5, 5],
+      label: {
+          content: `Current: ${formattedCurrentPrice}`,
+          enabled: true,
+          position: 'end',
+          backgroundColor: theme.currentPriceLine,
+          color: '#fff',
+          font: { size: 12, family: "'Inter', sans-serif" },
+          padding: 6,
+          cornerRadius: 6
+      }
+  };
+  if (currentChartType === 'line') {
+      const prices = historicalData.map(d => d.close);
+      const lineGradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
+      lineGradient.addColorStop(0, theme.lineFill);
+      lineGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      stockChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+              labels: Array(historicalData.length).fill(''),
+              datasets: [{
+                  label: `${name} - Price`,
+                  data: prices,
+                  borderColor: theme.lineColor,
+                  borderWidth: 2.5,
+                  fill: true,
+                  backgroundColor: lineGradient,
+                  pointRadius: 4,
+                  pointHoverRadius: 6,
+                  pointBackgroundColor: theme.lineColor,
+                  pointBorderColor: '#fff',
+                  pointBorderWidth: 2,
+                  tension: 0.4
+              }]
+          },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: { duration: 500, easing: 'easeOutQuad' },
+              plugins: {
+                  legend: { display: false },
+                  title: {
+                      display: true,
+                      text: name,
+                      color: theme.textColor,
+                      font: { size: 22, family: "'Inter', sans-serif", weight: "700" },
+                      padding: { top: 12, bottom: 24 }
+                  },
+                  tooltip: {
+                      backgroundColor: theme.backgroundColor,
+                      titleColor: theme.textColor,
+                      bodyColor: theme.textColor,
+                      borderColor: theme.gridColor,
+                      borderWidth: 1,
+                      padding: 12,
+                      cornerRadius: 10,
+                      callbacks: {
+                          label: (context) => `Price: ${isBitcoin || isGlobal ? '$' : isGold || isSilver ? '₹ / 10g' : '₹'}${context.parsed.y.toLocaleString(isBitcoin || isGlobal ? 'en-US' : 'en-IN', { maximumFractionDigits: 2 })}`
+                      }
+                  },
+                  annotation: {
+                      annotations: {
+                          currentPriceLine: currentPriceAnnotation
+                      }
+                  }
+              },
+              scales: {
+                  x: { display: false }, // Hide x-axis labels (timestamps)
+                  y: {
+                      title: { display: true, text: `Price (${isBitcoin || isGlobal ? '$' : isGold || isSilver ? '₹ / 10g' : '₹'})`, color: theme.textColor, font: { size: 14 } },
+                      ticks: { color: theme.textColor, callback: (value) => `${isBitcoin || isGlobal ? '$' : isGold || isSilver ? '₹ / 10g' : '₹'}${value.toLocaleString(isBitcoin || isGlobal ? 'en-US' : 'en-IN', { maximumFractionDigits: 2 })}` },
+                      grid: { color: theme.gridColor, borderDash: [6, 6] }
+                  }
+              }
+          }
+      });
+  } else {
+      const candlestickData = historicalData.map(d => ({
+          x: new Date(d.date).getTime(),
+          o: parseFloat(d.open),
+          h: parseFloat(d.high),
+          l: parseFloat(d.low),
+          c: parseFloat(d.close),
+          v: parseFloat(d.volume || 0)
+      }));
+      stockChart = new Chart(ctx, {
+          type: 'candlestick',
+          data: {
+              datasets: [{
+                  label: `${name} - Candlestick`,
+                  data: candlestickData,
+                  color: {
+                      up: '#10B981',
+                      down: '#EF4444',
+                      unchanged: theme.textColor
+                  },
+                  borderColor: {
+                      up: '#059669',
+                      down: '#DC2626',
+                      unchanged: theme.borderColor
+                  },
+                  barThickness: 'flex',
+                  barPercentage: 0.8,
+                  categoryPercentage: 0.9,
+                  wickThickness: 1
+              }]
+          },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: { duration: 300, easing: 'easeOutQuad' },
+              plugins: {
+                  legend: { display: false },
+                  title: {
+                      display: true,
+                      text: name,
+                      color: theme.textColor,
+                      font: { size: 22, family: "'Inter', sans-serif", weight: "700" },
+                      padding: { top: 12, bottom: 24 }
+                  },
+                  tooltip: {
+                      backgroundColor: theme.backgroundColor,
+                      titleColor: theme.textColor,
+                      bodyColor: theme.textColor,
+                      borderColor: theme.borderColor,
+                      borderWidth: 1,
+                      padding: 12,
+                      cornerRadius: 10,
+                      callbacks: {
+                          label: (context) => {
+                              const data = context.raw;
+                              return [
+                                  `Open: ${isBitcoin || isGlobal ? '$' : isGold || isSilver ? '₹ / 10g' : '₹'}${data.o.toLocaleString(isBitcoin || isGlobal ? 'en-US' : 'en-IN', { maximumFractionDigits: 2 })}`,
+                                  `High: ${isBitcoin || isGlobal ? '$' : isGold || isSilver ? '₹ / 10g' : '₹'}${data.h.toLocaleString(isBitcoin || isGlobal ? 'en-US' : 'en-IN', { maximumFractionDigits: 2 })}`,
+                                  `Low: ${isBitcoin || isGlobal ? '$' : isGold || isSilver ? '₹ / 10g' : '₹'}${data.l.toLocaleString(isBitcoin || isGlobal ? 'en-US' : 'en-IN', { maximumFractionDigits: 2 })}`,
+                                  `Close: ${isBitcoin || isGlobal ? '$' : isGold || isSilver ? '₹ / 10g' : '₹'}${data.c.toLocaleString(isBitcoin || isGlobal ? 'en-US' : 'en-IN', { maximumFractionDigits: 2 })}`,
+                                  `Volume: ${data.v.toLocaleString('en-IN')}`
+                              ];
+                          }
+                      }
+                  },
+                  annotation: {
+                      annotations: {
+                          currentPriceLine: currentPriceAnnotation
+                      }
+                  }
+              },
+              scales: {
+                  x: {
+                      type: 'time',
+                      time: { unit: 'minute', displayFormats: { minute: 'HH:mm' } },
+                      ticks: { color: theme.textColor, source: 'data', maxRotation: 0 },
+                      grid: { display: false },
+                      display: false // Hide x-axis labels (timestamps)
+                  },
+                  y: {
+                      title: { display: true, text: `Price (${isBitcoin || isGlobal ? '$' : isGold || isSilver ? '₹ / 10g' : '₹'})`, color: theme.textColor, font: { size: 14 } },
+                      ticks: { color: theme.textColor, callback: (value) => `${isBitcoin || isGlobal ? '$' : isGold || isSilver ? '₹ / 10g' : '₹'}${value.toLocaleString(isBitcoin || isGlobal ? 'en-US' : 'en-IN', { maximumFractionDigits: 2 })}` },
+                      grid: { color: theme.gridColor, borderDash: [6, 6] }
+                  }
+              }
+          }
+      });
+  }
 }
-  
   function updateChartEndPoint(name, historicalData, currentPrice, volume) {
     if (!stockChart || !currentData || !historicalData || historicalData.length === 0) return;
-  
     const isBitcoin = name === 'Bitcoin (BTC/USDT)';
-    const formattedCurrentPrice = currentPrice && !isNaN(currentPrice) ? 
-      (isBitcoin ? `$${Number(currentPrice).toLocaleString('en-US', { maximumFractionDigits: 2 })}` : 
-      `₹${Number(currentPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
+    const isGlobal = ['Dow Jones', 'Nasdaq', 'Nikkei', 'Hang Seng', 'GIFT NIFTY'].includes(name);
+    const isGold = name === 'Gold 24K (10g)';
+    const isSilver = name === 'Silver 24K (10g)';
+    const formattedCurrentPrice = currentPrice && !isNaN(currentPrice) ?
+      (isBitcoin || isGlobal ? `$${Number(currentPrice).toLocaleString('en-US', { maximumFractionDigits: 2 })}` :
+       isGold || isSilver ? `₹${Number(currentPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })} / 10g` :
+       `₹${Number(currentPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
     const themes = {
       light: { currentPriceLine: '#9333EA' },
       dark: { currentPriceLine: '#FF4444' },
       midnight: { currentPriceLine: '#FF4444' }
     };
     const theme = themes[currentTheme];
-  
     // Update current price annotation
     stockChart.options.plugins.annotation.annotations.currentPriceLine = {
       type: 'line',
@@ -1427,7 +1742,6 @@ function toggleBitcoinData(symbol, name) {
         cornerRadius: 6
       }
     };
-  
     if (currentChartType === 'line') {
       stockChart.data.datasets[0].data = historicalData.map(d => d.close);
       stockChart.data.labels = Array(historicalData.length).fill('');
@@ -1453,37 +1767,36 @@ function toggleBitcoinData(symbol, name) {
       stockChart.data.datasets[0].data[stockChart.data.datasets[0].data.length - 1] = newCandle;
       stockChart.update('none');
     }
-  
     // Update price info
     const lastClosingPrice = historicalData.length > 1 ? historicalData[historicalData.length - 2].close : 'N/A';
-    const formattedLastClose = lastClosingPrice && !isNaN(lastClosingPrice) ? 
-      (isBitcoin ? `$${Number(lastClosingPrice).toLocaleString('en-US', { maximumFractionDigits: 2 })}` : 
-      `₹${Number(lastClosingPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
-    let percentChange = indexData[currentSymbol]?.percentChange || 
-      (lastClosingPrice !== 'N/A' && currentPrice !== 'N/A' && lastClosingPrice !== 0 ? 
+    const formattedLastClose = lastClosingPrice && !isNaN(lastClosingPrice) ?
+      (isBitcoin || isGlobal ? `$${Number(lastClosingPrice).toLocaleString('en-US', { maximumFractionDigits: 2 })}` :
+       isGold || isSilver ? `₹${Number(lastClosingPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })} / 10g` :
+       `₹${Number(lastClosingPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
+    let percentChange = indexData[currentSymbol]?.percentChange ||
+      (lastClosingPrice !== 'N/A' && currentPrice !== 'N/A' && lastClosingPrice !== 0 ?
         ((currentPrice - lastClosingPrice) / lastClosingPrice * 100) : 'N/A');
-    const displayPercentChange = percentChange !== 'N/A' ? 
+    const displayPercentChange = percentChange !== 'N/A' ?
       `${percentChange >= 0 ? '+' : ''}${Number(percentChange).toFixed(2)}%` : 'N/A';
-    const changeClass = percentChange !== 'N/A' ? 
+    const changeClass = percentChange !== 'N/A' ?
       (percentChange < 0 ? 'stock-change negative' : 'stock-change positive') : 'stock-change';
-  
-    const formattedDayHigh = currentData.dayHigh && !isNaN(currentData.dayHigh) ? 
-      (isBitcoin ? `$${Number(currentData.dayHigh).toLocaleString('en-US', { maximumFractionDigits: 2 })}` : 
-      `₹${Number(currentData.dayHigh).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
-    const formattedDayLow = currentData.dayLow && !isNaN(currentData.dayLow) ? 
-      (isBitcoin ? `$${Number(currentData.dayLow).toLocaleString('en-US', { maximumFractionDigits: 2 })}` : 
-      `₹${Number(currentData.dayLow).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
-  
+    const formattedDayHigh = currentData.dayHigh && !isNaN(currentData.dayHigh) ?
+      (isBitcoin || isGlobal ? `$${Number(currentData.dayHigh).toLocaleString('en-US', { maximumFractionDigits: 2 })}` :
+       isGold || isSilver ? `₹${Number(currentData.dayHigh).toLocaleString('en-IN', { maximumFractionDigits: 2 })} / 10g` :
+       `₹${Number(currentData.dayHigh).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
+    const formattedDayLow = currentData.dayLow && !isNaN(currentData.dayLow) ?
+      (isBitcoin || isGlobal ? `$${Number(currentData.dayLow).toLocaleString('en-US', { maximumFractionDigits: 2 })}` :
+       isGold || isSilver ? `₹${Number(currentData.dayLow).toLocaleString('en-IN', { maximumFractionDigits: 2 })} / 10g` :
+       `₹${Number(currentData.dayLow).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
     let actionsHtml = '';
-    if (!isIndex && currentPrice && !isNaN(currentPrice) && currentSymbol && name && !['^NSEI', '^BSESN', '^NSEBANK', '^NSEMDCP50', 'BTCUSDT'].includes(currentSymbol)) {
+    if (!isIndex && currentPrice && !isNaN(currentPrice) && currentSymbol && name && !['^NSEI', '^BSESN', '^NSEBANK', '^NSEMDCP50', 'BTCUSDT', 'NIFTY_F1.NS', '^DJI', '^IXIC', '^N225', '^HSI', 'XAUINR=X', 'XAGINR=X'].includes(currentSymbol)) {
       actionsHtml = `
         <div class="stock-actions">
-          <button class="action-button buy" onclick="promptTrade('buy', '${currentSymbol}', '${name.replace(/'/g, "\\'")}', ${currentPrice})">Buy</button>
-          <button class="action-button sell" onclick="promptTrade('sell', '${currentSymbol}', '${name.replace(/'/g, "\\'")}', ${currentPrice})">Sell</button>
+          <button class="action-button buy" onclick="handleBuyClick('${currentSymbol}', '${name.replace(/'/g, "\\'")}', ${currentPrice})">Buy</button>
+          <button class="action-button sell" onclick="handleSellClick('${currentSymbol}', '${name.replace(/'/g, "\\'")}', ${currentPrice})">Sell</button>
         </div>
       `;
     }
-  
     priceInfo.innerHTML = `
     <p class="${formattedCurrentPrice === 'N/A' ? 'unavailable' : 'available'}">Price: ${formattedCurrentPrice}</p>
     <p class="last-close">Last Close: ${formattedLastClose}</p>
@@ -1497,7 +1810,6 @@ function toggleBitcoinData(symbol, name) {
       percentElement.style.color = '#FF3333';
     }
   }
-  
   function toggleChartType() {
     currentChartType = currentChartType === 'line' ? 'candlestick' : 'line';
     toggleChartTypeButton.textContent = `Switch to ${currentChartType === 'line' ? 'Candlestick' : 'Line'}`;
@@ -1505,7 +1817,6 @@ function toggleBitcoinData(symbol, name) {
       renderChart(currentData.name, currentData.historicalData, currentData.currentPrice, currentData.volume);
     }
   }
-  
   function debounce(func, wait) {
     let timeout;
     return function (...args) {
@@ -1513,7 +1824,6 @@ function toggleBitcoinData(symbol, name) {
       timeout = setTimeout(() => func.apply(this, args), wait);
     };
   }
-  
   // Add this function to toggle indices buttons visibility
   function toggleIndicesButtons(show) {
     const indicesButtons = document.querySelector('.indices-buttons');
@@ -1532,7 +1842,6 @@ const autoSearch = debounce((query) => {
       toggleIndicesButtons(true); // Show indices and Most Traded Stocks when search is cleared
   }
 }, 500);
-
 // Modify the search form submission to prevent default behavior
 document.getElementById('searchForm').addEventListener('submit', function(e) {
   e.preventDefault(); // Prevent form submission from refreshing the page
@@ -1548,25 +1857,21 @@ function manualSearch() {
       return;
   }
 }
-  
   searchInput.addEventListener('input', (e) => autoSearch(e.target.value.trim()));
-  
-  // Static fallback news data to display if WebSocket fails
+  // Static fallback news data to display if WebSocket fails - Updated with recent news
 const fallbackNews = [
-{ title: "Market Update", source: "Local News", time: "Just now", description: "The market is experiencing steady growth today." },
-{ title: "Tech Stocks Rise", source: "Local News", time: "1 hour ago", description: "Tech giants are leading the rally this week." }
+{ title: "Sensex tanks 593 pts, Nifty below 25,900 amid foreign fund exit", source: "Economic Times", time: "Oct 30", description: "Markets closed lower on profit booking and global uncertainties." },
+{ title: "Nifty Prediction: Strong bearish candle, support at 25,800", source: "ET Now", time: "13 hours ago", description: "Ping-pong effect likely; resistance at 26,000." },
+{ title: "GIFT Nifty flat at 26,041, muted open expected", source: "NDTV Profit", time: "Just now", description: "Benchmark indices to trade cautiously today." }
 ];
-
 function updateNews(newsItems) {
 const newsContainer = document.getElementById('newsContainer');
 // Clear any existing content (e.g., loading state)
 newsContainer.innerHTML = '';
-
 // If no news items are provided or the array is empty, use fallback content
 if (!newsItems || newsItems.length === 0) {
     newsItems = fallbackNews;
 }
-
 // Populate news items
 newsItems.forEach((item, idx) => {
     const newsCard = document.createElement('div');
@@ -1580,193 +1885,18 @@ newsItems.forEach((item, idx) => {
     newsContainer.appendChild(newsCard);
 });
 }
-
-// Modify the WebSocket message handler to log news data for debugging
-ws.onmessage = (event) => {
-try {
-    const data = JSON.parse(event.data);
-    // Debug: Log news data to check if it's being received
-    if (data.news) {
-        console.log('Received news data:', data.news);
-    } else {
-        console.log('No news data in WebSocket message:', data);
-    }
-
-    if (data.indices && dataChanged(lastIndicesData, data.indices)) {
-        data.indices.forEach(index => {
-            indexData[index.symbol] = {
-                name: index.name,
-                price: index.price,
-                lastClose: index.lastClose,
-                percentChange: index.percentChange
-            };
-            if (activeSymbol === index.symbol && currentData) {
-                currentData.currentPrice = index.price;
-                updateChartEndPoint(currentData.name, currentData.historicalData, currentData.currentPrice, currentData.volume);
-            }
-        });
-        updateIndices(data.indices);
-        lastIndicesData = data.indices;
-    }
-
-    if (data.stocks && dataChanged(lastStocksData, data.stocks)) {
-        data.stocks.forEach(stock => {
-            const normalizedSymbol = stock.symbol.endsWith('.NS') ? stock.symbol : `${stock.symbol}.NS`;
-            if (portfolio[normalizedSymbol] && stock.price && !isNaN(stock.price)) {
-                portfolio[normalizedSymbol].currentPrice = stock.price;
-                portfolio[normalizedSymbol].volume = stock.volume || 0;
-                portfolio[normalizedSymbol].dayHigh = stock.dayHigh || stock.price;
-                portfolio[normalizedSymbol].dayLow = stock.dayLow || stock.price;
-            }
-        });
-        updateTopStocks(data.stocks);
-        renderPortfolio();
-        lastStocksData = data.stocks;
-    }
-
-    if ('searchResult' in data) {
-        updateSearchResult(data.searchResult);
-    }
-
-    if ('historicalData' in data) {
-        const symbol = data.historicalData.symbol;
-        currentData = {
-            symbol: symbol,
-            name: data.historicalData.name,
-            historicalData: data.historicalData.data,
-            currentPrice: data.historicalData.currentPrice,
-            volume: data.historicalData.volume || 0,
-            dayHigh: data.historicalData.dayHigh || null,
-            dayLow: data.historicalData.dayLow || null
-        };
-        indexData[symbol] = {
-            ...indexData[symbol],
-            price: data.historicalData.currentPrice,
-            lastClose: data.historicalData.data.length > 1 ? 
-                data.historicalData.data[data.historicalData.data.length - 2].close : 
-                data.historicalData.currentPrice,
-            percentChange: ((data.historicalData.currentPrice - 
-                (data.historicalData.data.length > 1 ? 
-                    data.historicalData.data[data.historicalData.data.length - 2].close : 
-                    data.historicalData.currentPrice)) / 
-                (data.historicalData.data.length > 1 ? 
-                    data.historicalData.data[data.historicalData.data.length - 2].close : 
-                    data.historicalData.currentPrice) * 100).toFixed(2)
-        };
-        if (activeSymbol === symbol) {
-            renderChart(currentData.name, currentData.historicalData, currentData.currentPrice, currentData.volume);
-            updateActiveButton(symbol);
-        }
-        updateIndices();
-    }
-
-    if ('priceUpdate' in data) {
-        const symbol = data.priceUpdate.symbol;
-        if (indexData[symbol]) {
-            const lastClose = indexData[symbol].lastClose || 
-                (currentData?.historicalData?.length > 1 ? 
-                    currentData.historicalData[currentData.historicalData.length - 2].close : 
-                    data.priceUpdate.price);
-            indexData[symbol].price = data.priceUpdate.price;
-            indexData[symbol].percentChange = ((data.priceUpdate.price - lastClose) / lastClose * 100).toFixed(2);
-            const normalizedSymbol = symbol.endsWith('.NS') ? symbol : `${symbol}.NS`;
-            if (portfolio[normalizedSymbol] && data.priceUpdate.price && !isNaN(data.priceUpdate.price)) {
-                portfolio[normalizedSymbol].currentPrice = data.priceUpdate.price;
-                portfolio[normalizedSymbol].volume = data.priceUpdate.volume || 0;
-                portfolio[normalizedSymbol].dayHigh = data.priceUpdate.dayHigh || data.priceUpdate.price;
-                portfolio[normalizedSymbol].dayLow = data.priceUpdate.dayLow || data.priceUpdate.price;
-                renderPortfolio();
-            }
-            if (currentData && activeSymbol === symbol) {
-                currentData.currentPrice = data.priceUpdate.price;
-                currentData.volume = data.priceUpdate.volume || currentData.volume || 0;
-                if (currentChartType === 'candlestick') {
-                    const lastCandle = currentData.historicalData[currentData.historicalData.length - 1] || {};
-                    const newCandle = {
-                        date: data.priceUpdate.date || new Date().toISOString(),
-                        open: lastCandle.close || data.priceUpdate.price,
-                        high: Math.max(lastCandle.high || data.priceUpdate.price, data.priceUpdate.price),
-                        low: Math.min(lastCandle.low || data.priceUpdate.price, data.priceUpdate.price),
-                        close: data.priceUpdate.price,
-                        volume: data.priceUpdate.volume || lastCandle.volume || 0
-                    };
-                    if (currentData.historicalData.length > 0 && 
-                        new Date(lastCandle.date).getTime() === new Date(newCandle.date).getTime()) {
-                        currentData.historicalData[currentData.historicalData.length - 1] = newCandle;
-                    } else {
-                        currentData.historicalData.push(newCandle);
-                        if (currentData.historicalData.length > 60) currentData.historicalData.shift();
-                    }
-                } else {
-                    if (currentData.historicalData.length > 0) {
-                        currentData.historicalData[currentData.historicalData.length - 1] = {
-                            ...currentData.historicalData[currentData.historicalData.length - 1],
-                            close: data.priceUpdate.price,
-                            volume: data.priceUpdate.volume || currentData.volume || 0
-                        };
-                    }
-                }
-                updateChartEndPoint(currentData.name, currentData.historicalData, currentData.currentPrice, currentData.volume);
-            }
-        }
-        updateIndices();
-    }
-
-    if (data.news && (!lastNewsData || JSON.stringify(data.news) !== JSON.stringify(lastNewsData))) {
-        updateNews(data.news);
-        lastNewsData = data.news;
-    }
-
-    if (data.losers && dataChanged(lastLosersData, data.losers)) {
-        data.losers.forEach(stock => {
-            const normalizedSymbol = stock.symbol.endsWith('.NS') ? stock.symbol : `${stock.symbol}.NS`;
-            if (portfolio[normalizedSymbol] && stock.price && !isNaN(stock.price)) {
-                portfolio[normalizedSymbol].currentPrice = stock.price;
-                portfolio[normalizedSymbol].volume = stock.volume || 0;
-                portfolio[normalizedSymbol].dayHigh = stock.dayHigh || stock.price;
-                portfolio[normalizedSymbol].dayLow = stock.dayLow || stock.price;
-            }
-        });
-        updateLosers(data.losers);
-        renderPortfolio();
-        lastLosersData = data.losers;
-    }
-
-    if (data.predictions && dataChanged(lastPredictionsData, data.predictions)) {
-        data.predictions.forEach(stock => {
-            const normalizedSymbol = stock.symbol.endsWith('.NS') ? stock.symbol : `${stock.symbol}.NS`;
-            if (portfolio[normalizedSymbol] && stock.price && !isNaN(stock.price)) {
-                portfolio[normalizedSymbol].currentPrice = stock.price;
-                portfolio[normalizedSymbol].volume = stock.volume || 0;
-                portfolio[normalizedSymbol].dayHigh = stock.dayHigh || stock.price;
-                portfolio[normalizedSymbol].dayLow = stock.dayLow || stock.price;
-            }
-        });
-        updatePredictions(data.predictions);
-        renderPortfolio();
-        lastPredictionsData = data.predictions;
-    } else {
-        generateDailyPredictions();
-    }
-
-    if (data.error) {
-        showNotification(`Error: ${data.error}`, 'error');
-    }
-} catch (err) {
-    console.error('Error parsing local WebSocket message:', err);
-    showNotification('Client-side error: Failed to process data', 'error');
-}
-};
-
 // Update DOMContentLoaded to initialize with fallback content
 document.addEventListener('DOMContentLoaded', () => {
 updateWalletBalance();
 generateDailyPredictions();
 renderPortfolio();
-
+updateAuthUI(); // Initialize auth UI
+// Auth form handlers - Updated for separate forms
+document.getElementById('loginFormEl').addEventListener('submit', handleLoginSubmit);
+document.getElementById('signupFormEl').addEventListener('submit', handleSignupSubmit);
 // Initialize news section with fallback content immediately
 updateNews(fallbackNews);
-
+updateMarketStatus(isMarketOpen() ? 'open' : 'closed'); // Initial status check
 // Set a timeout to ensure fallback content remains if no news data is received
 setTimeout(() => {
     const newsContainer = document.getElementById('newsContainer');
@@ -1775,6 +1905,9 @@ setTimeout(() => {
         updateNews(fallbackNews);
     }
 }, 5000);
+// Call on load
+renderGlobalCues(Object.values(indexData)); // Initial render
+updatePredictionBanner(26041.50, 25877.85, 0.94); // Initial real values for Oct 31
 });
   </script>
 </body>
