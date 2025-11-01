@@ -4648,3 +4648,1131 @@ body, body.light, body.dark, body.midnight {
     }
 }
 
+/* Existing styles (ensure these are present) */
+.search-result {
+  display: none;
+  padding: 15px;
+  background-color: #1F2A44;
+  border-radius: 8px;
+  margin: 10px 0;
+  color: #F3F4F6;
+  position: relative;
+}
+
+.search-result.show {
+  display: block;
+}
+
+.search-result.error {
+  color: #EF4444;
+}
+
+/* Add pointer cursor on hover for search result and related elements */
+.search-result:hover,
+.portfolio-card:hover,
+.top-stock-card:hover,
+.prediction-card:hover,
+.loser-card:hover {
+  cursor: pointer;
+}
+
+/* Style for market status */
+.market-open {
+  color: #10B981; /* Green for open */
+}
+
+.market-closed {
+  color: #EF4444; /* Red for closed */
+}
+
+/* Ensure close button is styled and clickable */
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: #F3F4F6;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.close-button:hover {
+  color: #EF4444; /* Red on hover for visibility */
+}
+/* Enhanced Modal Styles - Beautiful Dark Theme */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .modal.show {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-content {
+      background: linear-gradient(135deg, #1F2A44 0%, #2D3748 50%, #1A202C 100%);
+      margin: 10% auto;
+      padding: 0;
+      border: none;
+      width: 90%;
+      max-width: 420px;
+      border-radius: 20px;
+      position: relative;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+      transform: scale(0.9);
+      animation: slideUp 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+
+    .modal.show .modal-content {
+      transform: scale(1);
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .modal-content::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    }
+
+    .close {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      color: #9CA3AF;
+      font-size: 24px;
+      font-weight: 300;
+      cursor: pointer;
+      z-index: 10;
+      transition: all 0.2s ease;
+      border-radius: 50%;
+      padding: 4px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .close:hover {
+      color: #FF6B6B;
+      background: rgba(255, 107, 107, 0.1);
+      transform: rotate(90deg);
+    }
+
+    .auth-button {
+      background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      margin-left: 10px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .auth-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .auth-button:hover::before {
+      left: 100%;
+    }
+
+    .auth-button:hover {
+      background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px 0 rgba(59, 130, 246, 0.4);
+    }
+
+    .auth-button:active {
+      transform: translateY(0);
+    }
+
+    #authFormContainer {
+      padding: 40px 30px 30px;
+      text-align: center;
+    }
+
+    #authTitle {
+      font-size: 28px;
+      font-weight: 700;
+      color: #F3F4F6;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    #authForm input {
+      width: 100%;
+      padding: 16px 20px;
+      margin: 12px 0;
+      border: 2px solid transparent;
+      border-radius: 12px;
+      background: rgba(45, 55, 72, 0.8);
+      color: #F3F4F6;
+      font-size: 16px;
+      box-sizing: border-box;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    #authForm input::placeholder {
+      color: #9CA3AF;
+    }
+
+    #authForm input:focus {
+      outline: none;
+      border-color: #3B82F6;
+      background: rgba(59, 130, 246, 0.1);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      transform: scale(1.02);
+    }
+
+    #authForm button {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      margin-top: 16px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    #authForm button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    #authForm button:hover::before {
+      left: 100%;
+    }
+
+    #authForm button:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px 0 rgba(16, 185, 129, 0.4);
+    }
+
+    #authForm button:active {
+      transform: translateY(0);
+    }
+
+    #authToggleLink {
+      margin-top: 20px;
+      color: #9CA3AF;
+      font-size: 14px;
+    }
+
+    #authToggleLink span {
+      color: #3B82F6;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+
+    #authToggleLink span:hover {
+      color: #2563EB;
+    }
+
+    .auth-section {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Disabled button style - Enhanced */
+    .action-button:disabled {
+      background: linear-gradient(135deg, #6B7280 0%, #4B5563 100%);
+      cursor: not-allowed;
+      opacity: 0.5;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    .action-button:disabled:hover {
+      background: linear-gradient(135deg, #6B7280 0%, #4B5563 100%);
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Additional enhancements for stock action buttons */
+    .action-button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .action-button.buy {
+      background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+      color: white;
+      margin-right: 8px;
+    }
+
+    .action-button.buy:hover:not(:disabled) {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .action-button.sell {
+      background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+      color: white;
+    }
+
+    .action-button.sell:hover:not(:disabled) {
+      background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .modal-content {
+        margin: 5% auto;
+        width: 95%;
+      }
+
+      #authFormContainer {
+        padding: 30px 20px 20px;
+      }
+
+
+      .auth-button {
+        padding: 8px 14px;
+        font-size: 13px;
+      }
+    }
+
+    /* Existing CSS for style.css - assuming you have the base, add this at the end */
+
+/* New styles for Global Cues & Prediction */
+.prediction-section-global {
+  margin: 20px 0;
+  padding: 20px;
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  border-radius: 12px;
+  color: #fff;
+}
+
+.global-cues-title {
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.prediction-banner {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+
+.prediction-banner p {
+  margin: 5px 0;
+  font-weight: 600;
+}
+
+.sentiment-positive { color: #10B981 !important; }
+.sentiment-negative { color: #EF4444 !important; }
+.sentiment-neutral { color: #F59E0B !important; }
+
+.global-card {
+  display: inline-block;
+  width: 18%;
+  margin: 1%;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  text-align: center;
+  transition: transform 0.2s;
+}
+
+.global-card:hover {
+  transform: scale(1.05);
+}
+
+.global-card h3 {
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+
+.global-card p {
+  margin: 5px 0;
+  font-size: 0.85rem;
+}
+
+/* Responsive for mobile */
+@media (max-width: 768px) {
+  .global-card { width: 45%; margin: 2.5% 1.5%; }
+  .prediction-section-global { padding: 15px; }
+}
+
+/* Enhanced dark/midnight theme gradients */
+body.dark .prediction-section-global { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+body.midnight .prediction-section-global { background: linear-gradient(135deg, #000711 0%, #0c1428 100%); }
+body.light .prediction-section-global { background: linear-gradient(135deg, #e2e8f0 0%, #f1f5f9 100%); color: #1e293b; }
+
+/* Beautiful Heading Styles for All Themes - Matching Design */
+
+/* Base heading styles - Shared across themes */
+.top-stocks-title,
+.news-title,
+.predictions-title,
+.losers-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    position: relative;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Light Theme Headings */
+body.light .top-stocks-title,
+body.light .news-title,
+body.light .predictions-title,
+body.light .losers-title {
+    color: #1e293b;
+    background: linear-gradient(135deg, rgba(248, 250, 252, 0.8), rgba(241, 245, 249, 0.8));
+    border-color: rgba(226, 232, 240, 0.5);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Dark Theme Headings */
+body.dark .top-stocks-title,
+body.dark .news-title,
+body.dark .predictions-title,
+body.dark .losers-title {
+    color: #f8fafc;
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.6), rgba(51, 65, 85, 0.6));
+    border-color: rgba(71, 85, 105, 0.4);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Midnight Theme Headings */
+body.midnight .top-stocks-title,
+body.midnight .news-title,
+body.midnight .predictions-title,
+body.midnight .losers-title {
+    color: #e2e8f0;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.7), rgba(30, 41, 59, 0.7));
+    border-color: rgba(51, 65, 85, 0.5);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Specific heading enhancements for visual distinction */
+.top-stocks-title::after,
+.news-title::after,
+.predictions-title::after,
+.losers-title::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    border-radius: 2px;
+}
+
+/* Light theme underline */
+body.light .top-stocks-title::after,
+body.light .news-title::after,
+body.light .predictions-title::after,
+body.light .losers-title::after {
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+}
+
+/* Dark theme underline */
+body.dark .top-stocks-title::after,
+body.dark .news-title::after,
+body.dark .predictions-title::after,
+body.dark .losers-title::after {
+    background: linear-gradient(90deg, #00e5d8, #06b6d4);
+}
+
+/* Midnight theme underline */
+body.midnight .top-stocks-title::after,
+body.midnight .news-title::after,
+body.midnight .predictions-title::after,
+body.midnight .losers-title::after {
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .top-stocks-title,
+    .news-title,
+    .predictions-title,
+    .losers-title {
+        font-size: 1.5rem;
+        padding: 0.5rem 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .top-stocks-title,
+    .news-title,
+    .predictions-title,
+    .losers-title {
+        font-size: 1.25rem;
+        padding: 0.25rem 0.5rem;
+    }
+}
+/* Additional CSS Enhancements for Hritik Indian Stock Market */
+
+/* Enhanced Global Cues & Market Prediction Section */
+.prediction-section-global {
+  margin: 2rem 0;
+  padding: 2rem;
+  background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
+  border-radius: 20px;
+  box-shadow: 0 8px 32px var(--shadow-color);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.global-cues-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  background: linear-gradient(90deg, var(--accent-color), var(--accent-hover));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.prediction-banner {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  padding: 1.5rem;
+  border-radius: 16px;
+  margin-bottom: 2rem;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px var(--shadow-color);
+}
+
+.prediction-banner p {
+  margin: 0.5rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+#predictedOpen {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--positive);
+}
+
+#globalSentiment {
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+.sentiment-positive { color: var(--positive) !important; }
+.sentiment-negative { color: var(--negative) !important; }
+.sentiment-neutral { color: var(--warning) !important; }
+
+#globalCards {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.global-card {
+  flex: 1 1 200px;
+  max-width: 220px;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  border-radius: 12px;
+  text-align: center;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px var(--shadow-color);
+}
+
+.global-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 8px 24px var(--shadow-color);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.08));
+}
+
+.global-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+}
+
+.global-card p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.global-card p:last-child {
+  font-weight: 600;
+  color: var(--positive);
+}
+
+.global-card .positive { color: var(--positive); }
+.global-card .negative { color: var(--negative); }
+
+/* Responsive for Global Cards */
+@media (max-width: 768px) {
+  .global-card {
+    flex: 1 1 45%;
+    max-width: none;
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .global-card {
+    flex: 1 1 100%;
+  }
+  .prediction-section-global {
+    padding: 1rem;
+  }
+  .global-cues-title {
+    font-size: 1.25rem;
+  }
+}
+
+/* Theme-Specific Enhancements for Prediction Section */
+body.light .prediction-section-global {
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  color: #1e293b;
+}
+
+body.light .global-card {
+  background: linear-gradient(135deg, rgba(248, 250, 252, 0.8), rgba(241, 245, 249, 0.8));
+  border-color: rgba(226, 232, 240, 0.5);
+}
+
+body.light .global-cues-title {
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+body.dark .prediction-section-global {
+  background: linear-gradient(135deg, #111827, #1f2937);
+}
+
+body.dark .global-card {
+  background: linear-gradient(135deg, rgba(31, 41, 55, 0.8), rgba(55, 65, 81, 0.8));
+  border-color: rgba(75, 85, 99, 0.5);
+}
+
+body.dark .global-cues-title {
+  background: linear-gradient(90deg, #00e5d8, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+body.midnight .prediction-section-global {
+  background: linear-gradient(135deg, #0a0f2a, #141b3d);
+}
+
+body.midnight .global-card {
+  background: linear-gradient(135deg, rgba(26, 35, 68, 0.8), rgba(45, 55, 72, 0.8));
+  border-color: rgba(51, 65, 85, 0.6);
+}
+
+body.midnight .global-cues-title {
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Additional Animation for Prediction Banner */
+@keyframes pulseBanner {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+.prediction-banner {
+  animation: pulseBanner 2s infinite ease-in-out;
+}
+
+/* Ensure smooth transitions for theme changes */
+body * {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Awesome Enhancements for Latest Stock Trading News Section - No Animations */
+
+/* News Section Container - Gradient Background with Glassmorphism */
+.news-section {
+  position: relative;
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
+  border-radius: 20px;
+  padding: 2rem;
+  margin: 2rem 0;
+  box-shadow: 0 20px 40px var(--shadow-color);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.news-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent-color), var(--accent-hover), var(--accent-color));
+}
+
+/* News Title - Gradient Text with Glow */
+.news-title {
+  font-size: 2rem;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 2rem;
+  background: linear-gradient(135deg, var(--accent-color), var(--text-primary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 20px var(--shadow-color);
+  position: relative;
+}
+
+.news-title::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent-color), var(--accent-hover));
+  border-radius: 2px;
+  box-shadow: 0 2px 8px var(--accent-color);
+}
+
+/* News Container - Staggered Layout */
+.news-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  max-height: 600px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-color) transparent;
+}
+
+.news-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.news-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.news-container::-webkit-scrollbar-thumb {
+  background: var(--accent-color);
+  border-radius: 3px;
+}
+
+.news-container::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-hover);
+}
+
+/* News Card - Modern Glassmorphism with Hover Glow */
+.news-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 32px var(--shadow-color);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  position: relative;
+  overflow: hidden;
+  opacity: 1;
+  transform: none;
+}
+
+.news-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+  opacity: 0;
+}
+
+.news-card:hover::before {
+  opacity: 1;
+}
+
+.news-card:hover {
+  transform: none;
+  box-shadow: 0 16px 48px var(--shadow-color);
+  border-color: var(--accent-color);
+}
+
+/* News Headline - Bold with Gradient Accent */
+.news-headline {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+  line-height: 1.4;
+  position: relative;
+}
+
+.news-card:hover .news-headline {
+  color: var(--accent-color);
+  text-shadow: 0 0 10px var(--accent-color);
+}
+
+/* News Source - Subtle with Time Badge */
+.news-source {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.news-source span {
+  background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px var(--shadow-color);
+}
+
+/* News Description - Readable with Fade Effect */
+.news-description {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.news-card:hover .news-description {
+  color: var(--text-primary);
+}
+
+/* Read More Link - Elegant Button Style */
+.news-link {
+  display: inline-block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--accent-color);
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--accent-color);
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.news-link::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+}
+
+.news-link:hover::before {
+  left: 100%;
+}
+
+.news-link:hover {
+  background: var(--accent-color);
+  color: white;
+  box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+/* Theme-Specific News Card Variations */
+body.light .news-section {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
+  border-color: rgba(226, 232, 240, 0.5);
+}
+
+body.light .news-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.9));
+  border-color: rgba(226, 232, 240, 0.3);
+}
+
+body.light .news-headline {
+  color: #1e293b;
+}
+
+body.light .news-description,
+body.light .news-source {
+  color: #64748b;
+}
+
+body.dark .news-section {
+  background: linear-gradient(135deg, #111827 0%, #1f2937 50%, #374151 100%);
+}
+
+body.dark .news-card {
+  background: linear-gradient(145deg, rgba(31, 41, 55, 0.8), rgba(55, 65, 81, 0.8));
+  border-color: rgba(75, 85, 99, 0.3);
+}
+
+body.midnight .news-section {
+  background: linear-gradient(135deg, #0a0f2a 0%, #141b3d 50%, #1a2344 100%);
+}
+
+body.midnight .news-card {
+  background: linear-gradient(145deg, rgba(10, 15, 42, 0.8), rgba(20, 27, 61, 0.8));
+  border-color: rgba(45, 55, 72, 0.3);
+}
+
+/* Responsive Enhancements */
+@media (max-width: 768px) {
+  .news-section {
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+  }
+  .news-title {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .news-container {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    max-height: none;
+  }
+  .news-card {
+    padding: 1.25rem;
+  }
+  .news-headline {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .news-section {
+    padding: 1rem;
+    margin: 1rem 0;
+  }
+  .news-title {
+    font-size: 1.25rem;
+  }
+  .news-card {
+    padding: 1rem;
+  }
+  .news-headline {
+    font-size: 1rem;
+  }
+  .news-description {
+    font-size: 0.9rem;
+  }
+}
+/* Revert News Title to Normal/Previous Style */
+.news-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+  text-transform: none;
+  background: none;
+  -webkit-background-clip: initial;
+  -webkit-text-fill-color: initial;
+  background-clip: initial;
+  text-shadow: none;
+  position: static;
+  letter-spacing: normal;
+}
+
+.news-title::after {
+  content: none;
+}
+
+/* Ensure consistency across themes */
+body.light .news-title {
+  color: #1e293b;
+}
+
+body.dark .news-title,
+body.midnight .news-title {
+  color: #f3f4f6;
+}
+.top-stocks-container {
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  -webkit-scrollbar-thumb: rgba(255, 255, 255, 0.2);
+  animation: slowScroll 600s linear infinite; /* Even slower: 600s full cycle for a bit more relaxed scroll */
+}
+@keyframes slowScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); } /* Adjust % based on content width for seamless loop */
+}
+/* Force all global cards in a single horizontal line */
+#globalCards {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  justify-content: space-evenly !important;
+  gap: 0.5rem !important;
+  overflow-x: auto !important; /* Allow horizontal scroll on very small screens if needed */
+  padding: 0 0.5rem !important;
+}
+
+.global-card {
+  flex: 1 0 calc(14.28% - 0.5rem) !important; /* Equal width for 7 cards: 100%/7 ≈ 14.28%, minus gap */
+  max-width: calc(14.28% - 0.5rem) !important;
+  min-width: calc(14.28% - 0.5rem) !important;
+  width: calc(14.28% - 0.5rem) !important;
+  margin: 0 !important; /* Remove margins for tight fit */
+}
+
+/* Responsive: Allow wrap on smaller screens to prevent overflow */
+@media (max-width: 1024px) {
+  #globalCards {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+  }
+  .global-card {
+    flex: 1 1 calc(33.33% - 0.5rem) !important; /* 3 per row on tablet */
+    max-width: calc(33.33% - 0.5rem) !important;
+    min-width: calc(33.33% - 0.5rem) !important;
+    width: calc(33.33% - 0.5rem) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .global-card {
+    flex: 1 1 calc(50% - 0.5rem) !important; /* 2 per row on mobile */
+    max-width: calc(50% - 0.5rem) !important;
+    min-width: calc(50% - 0.5rem) !important;
+    width: calc(50% - 0.5rem) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .global-card {
+    flex: 1 1 100% !important; /* Stack on very small screens */
+    max-width: 100% !important;
+    min-width: 100% !important;
+    width: 100% !important;
+  }
+}
+
+.global-card p:last-child.positive {
+color: var(--positive) !important;
+}
+.global-card p:last-child.negative {
+color: var(--negative) !important;
+}
+
+.auth-tabs { display: flex; margin-bottom: 20px; border-bottom: 1px solid #e5e7eb; }
+.tab-button { flex: 1; padding: 12px; background: none; border: none; font-weight: 600; cursor: pointer; color: #6b7280; }
+.tab-button.active { color: #3b82f6; border-bottom: 2px solid #3b82f6; }
+.auth-form { display: none; }
+.auth-form.active { display: block; }
+.auth-subtitle { color: #6b7280; margin-bottom: 20px; text-align: center; }
+.input-group { position: relative; margin-bottom: 16px; }
+.input-group input { width: 100%; padding: 12px 40px 12px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 16px; }
+.input-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 18px; }
+.auth-submit { width: 100%; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+.auth-error { color: #ef4444; text-align: center; margin-top: 12px; }
+.auth-link { text-align: center; margin-top: 20px; color: #6b7280; }
+
+.options-section { display: none; margin: 20px 0; }
+.options-title { font-size: 24px; margin-bottom: 10px; }
+.options-tabs { display: flex; margin-bottom: 20px; }
+.options-tab-button { flex: 1; padding: 10px; background: none; border: none; cursor: pointer; }
+.options-tab-button.active { border-bottom: 2px solid #3b82f6; color: #3b82f6; }
+.option-card { background: #1f2937; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
+.option-info h3 { margin-bottom: 10px; }
