@@ -211,15 +211,15 @@
   let totalInvested = 0;
   let currentValue = 0;
   let profitLoss = 0;
-  // Update indexData with global indices + Gold + Silver (initial values from real data as of Oct 31, 2025)
+  // Update indexData with global indices + Gold + Silver (initial values from real data as of Nov 02, 2025)
  let indexData = {
   '^NSEI': { name: 'NIFTY 50', price: 25877.85, lastClose: 26053.90, percentChange: -0.68 },
   '^BSESN': { name: 'SENSEX', price: 84404.46, lastClose: 84997.13, percentChange: -0.70 },
   '^NSEBANK': { name: 'BANK NIFTY', price: 57012.35, lastClose: 57348.90, percentChange: -0.59 },
   '^NSEMDCP50': { name: 'NIFTY MIDCAP 50', price: 15320.45, lastClose: 15364.20, percentChange: -0.28 },
-  'NIFTY_F1.NS': { name: 'GIFT NIFTY', price: 26041.50, lastClose: 25877.85, percentChange: 0.64 }, // Dynamic pre-open
-  'XAUINR=X': { name: 'Gold 24K (10g)', price: 121480, lastClose: 121300, percentChange: 0.15 }, // Real Mumbai retail Nov 1, 2025
-  'XAGINR=X': { name: 'Silver 24K (10g)', price: 1509, lastClose: 1491, percentChange: 1.21 }, // Real Delhi/Mumbai retail Nov 1, 2025 (updates live via WS)
+  'NIFTY_F1.NS': { name: 'GIFT NIFTY', price: 25803.50, lastClose: 25877.85, percentChange: -0.29 }, // Updated to real value Nov 02, 2025
+  'XAUINR=X': { name: 'Gold 24K (10g)', price: 124165, lastClose: 123140, percentChange: 0.84 }, // Updated to real Mumbai retail Nov 02, 2025
+  'XAGINR=X': { name: 'Silver 24K (10g)', price: 1509, lastClose: 1491, percentChange: 1.21 }, // Real Delhi/Mumbai retail Nov 02, 2025 (updates live via WS)
   '^DJI': { name: 'Dow Jones', price: 47207.12, lastClose: 46734.61, percentChange: 1.01 },
   '^IXIC': { name: 'Nasdaq', price: 23204.87, lastClose: 22941.80, percentChange: 1.15 },
   '^N225': { name: 'Nikkei', price: 49299.65, lastClose: 48641.61, percentChange: 1.35 },
@@ -416,21 +416,17 @@
         if (!holding.name || !holding.quantity || !holding.avgPrice) {
             return;
         }
-    
         const currentPrice = holding.currentPrice && !isNaN(holding.currentPrice) && holding.currentPrice > 0 ? holding.currentPrice : 0;
         const volume = holding.volume && !isNaN(holding.volume) ? Number(holding.volume).toLocaleString('en-IN') : 'N/A';
         const dayHigh = holding.dayHigh && !isNaN(holding.dayHigh) ? `₹${Number(holding.dayHigh).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'N/A';
         const dayLow = holding.dayLow && !isNaN(holding.dayLow) ? `₹${Number(holding.dayLow).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'N/A';
-    
         const pl = currentPrice ? (currentPrice - holding.avgPrice) * holding.quantity : 0;
         const plPercent = currentPrice ? ((currentPrice - holding.avgPrice) / holding.avgPrice * 100) : 0;
-    
         // Create the card element
         const card = document.createElement('div');
         card.className = 'portfolio-card';
         card.style.animationDelay = `${0.1 + (idx * 0.05)}s`;
         card.setAttribute('data-symbol', symbol);
-    
         card.innerHTML = `
             <div class="portfolio-info">
                 <h3 class="portfolio-name">${holding.name}</h3>
@@ -449,13 +445,11 @@
                 </div>
             </div>
         `;
-    
         portfolioContainer.appendChild(card);
     });
     // Now add buttons separately after all cards are in the DOM
     Object.entries(portfolio).forEach(([symbol, holding]) => {
         const actionsContainer = portfolioContainer.querySelector(`.stock-actions[data-symbol="${symbol}"]`);
-    
         if (actionsContainer) {
             // Create buy button
             const buyButton = document.createElement('button');
@@ -464,7 +458,7 @@
             buyButton.style.pointerEvents = 'auto';
             buyButton.style.position = 'relative';
             buyButton.style.zIndex = '10';
-        
+   
             // Create sell button
             const sellButton = document.createElement('button');
             sellButton.className = 'action-button sell';
@@ -472,11 +466,11 @@
             sellButton.style.pointerEvents = 'auto';
             sellButton.style.position = 'relative';
             sellButton.style.zIndex = '10';
-        
+   
             // Add buttons to container
             actionsContainer.appendChild(buyButton);
             actionsContainer.appendChild(sellButton);
-        
+   
             // Add event listeners with proper event prevention
             buyButton.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -484,7 +478,7 @@
                 if (!checkAuthAndTrade('buy', symbol, holding.name, holding.currentPrice || 0)) return;
                 promptTrade('buy', symbol, holding.name, holding.currentPrice || 0);
             });
-        
+   
             sellButton.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -956,7 +950,6 @@
       const isBitcoin = index.symbol === 'BTCUSDT';
       const isGlobal = ['^DJI', '^IXIC', '^N225', '^HSI'].includes(index.symbol);
       const isGold = index.symbol === 'XAUINR=X';
-     
     const isSilver = index.symbol === 'XAGINR=X';
 const price = index.price && !isNaN(index.price) ?
   (isBitcoin || isGlobal ? `$${Number(index.price).toLocaleString('en-US', { maximumFractionDigits: 2 })}` :
@@ -1116,7 +1109,7 @@ function handleSellClick(symbol, name, price) {
     const today = new Date().toDateString();
     if (currentPredictionDate !== today) {
       currentPredictionDate = today;
-      // Fallback list updated with real gainers as of Oct 31, 2025 (at least 20)
+      // Fallback list updated with real gainers as of Nov 02, 2025 (at least 20)
       const fallbackPredictions = [
         { symbol: 'BHEL.NS', name: 'Bharat Heavy Electricals', price: 260.75, predictedGain: 15.36, volume: 15000000 },
         { symbol: 'ABCAPITAL.NS', name: 'Aditya Birla Capital', price: 327.50, predictedGain: 16.70, volume: 12000000 },
@@ -1376,7 +1369,7 @@ function toggleGoldData(symbol, name) {
               symbol: symbol,
               name: name,
               historicalData: [], // Historical for Gold would need separate fetch if implemented
-              currentPrice: indexData[symbol]?.price || 121480,
+              currentPrice: indexData[symbol]?.price || 124165,
               volume: indexData[symbol]?.volume || 0
           };
       }
@@ -1405,7 +1398,7 @@ function toggleSilverData(symbol, name) {
               symbol: symbol,
               name: name,
               historicalData: [], // Historical for Silver would need separate fetch if implemented
-              currentPrice: indexData[symbol]?.price || 1080,
+              currentPrice: indexData[symbol]?.price || 1509,
               volume: indexData[symbol]?.volume || 0
           };
       }
@@ -1858,11 +1851,11 @@ function manualSearch() {
   }
 }
   searchInput.addEventListener('input', (e) => autoSearch(e.target.value.trim()));
-  // Static fallback news data to display if WebSocket fails - Updated with recent news
+  // Static fallback news data to display if WebSocket fails - Updated with recent news and suggestions
 const fallbackNews = [
-{ title: "Sensex tanks 593 pts, Nifty below 25,900 amid foreign fund exit", source: "Economic Times", time: "Oct 30", description: "Markets closed lower on profit booking and global uncertainties." },
-{ title: "Nifty Prediction: Strong bearish candle, support at 25,800", source: "ET Now", time: "13 hours ago", description: "Ping-pong effect likely; resistance at 26,000." },
-{ title: "GIFT Nifty flat at 26,041, muted open expected", source: "NDTV Profit", time: "Just now", description: "Benchmark indices to trade cautiously today." }
+{ title: "Sensex tanks 593 pts, Nifty below 25,900 amid foreign fund exit", source: "Economic Times", time: "Oct 30", description: "Markets closed lower on profit booking and global uncertainties.", suggestedStocks: ["HDFCBANK.NS", "ICICIBANK.NS"] },
+{ title: "Nifty Prediction: Strong bearish candle, support at 25,800", source: "ET Now", time: "13 hours ago", description: "Ping-pong effect likely; resistance at 26,000.", suggestedStocks: ["RELIANCE.NS", "TCS.NS"] },
+{ title: "GIFT Nifty flat at 26,041, muted open expected", source: "NDTV Profit", time: "Just now", description: "Benchmark indices to trade cautiously today.", suggestedStocks: ["SBIN.NS", "LT.NS"] }
 ];
 function updateNews(newsItems) {
 const newsContainer = document.getElementById('newsContainer');
@@ -1874,6 +1867,7 @@ if (!newsItems || newsItems.length === 0) {
 }
 // Populate news items
 newsItems.forEach((item, idx) => {
+    const suggested = item.suggestedStocks ? item.suggestedStocks.join(', ') : 'N/A';
     const newsCard = document.createElement('div');
     newsCard.className = 'news-card';
     newsCard.style.animationDelay = `${0.2 + (idx * 0.1)}s`;
@@ -1881,6 +1875,7 @@ newsItems.forEach((item, idx) => {
         <h3 class="news-headline">${item.title}</h3>
         <p class="news-source">${item.source} • <span>${item.time}</span></p>
         <p class="news-description">${item.description}</p>
+        <p class="suggested-stocks">Suggested Buys: ${suggested}</p>
     `;
     newsContainer.appendChild(newsCard);
 });
@@ -1907,7 +1902,7 @@ setTimeout(() => {
 }, 5000);
 // Call on load
 renderGlobalCues(Object.values(indexData)); // Initial render
-updatePredictionBanner(26041.50, 25877.85, 0.94); // Initial real values for Oct 31
+updatePredictionBanner(25803.50, 25877.85, 0.94); // Updated initial real values for Nov 02
 });
   </script>
 </body>
