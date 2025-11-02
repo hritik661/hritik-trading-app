@@ -490,25 +490,15 @@ function timeAgo(pubDate) {
 async function fetchNews() {
   try {
     const news = await yahooFinance.news("^NSEI", { count: 10 });
-    return news.items.slice(0, 5).map(item => {
-      // Simple keyword-based stock suggestions (expandable with NLP if needed)
-      let suggested = [];
-      const titleLower = item.title.toLowerCase();
-      if (titleLower.includes('bank') || titleLower.includes('finance')) suggested = ['HDFCBANK.NS', 'ICICIBANK.NS'];
-      else if (titleLower.includes('it') || titleLower.includes('tech')) suggested = ['TCS.NS', 'INFY.NS'];
-      else if (titleLower.includes('nifty') || titleLower.includes('sensex')) suggested = ['RELIANCE.NS', 'SBIN.NS'];
-      else suggested = ['RELIANCE.NS', 'TCS.NS']; // Default
-      return {
-        title: item.title,
-        source: item.publisher || 'Yahoo Finance',
-        time: timeAgo(item.pubDate),
-        description: item.excerpt || item.summary || item.description || 'No description available.',
-        suggestedStocks: suggested
-      };
-    }).concat([ // Fallback real ET headlines as of Nov 02, 2025 with suggestions
-      { title: "Sensex tanks 593 pts amid foreign fund exit", source: "Economic Times", time: "Nov 01", description: "Markets close lower on profit booking.", suggestedStocks: ["HDFCBANK.NS", "ICICIBANK.NS"] },
-      { title: "Nifty forms strong bearish candle; support at 25,800", source: "ET Now", time: "13 hours ago", description: "Ping-pong effect likely with resistance at 26,000.", suggestedStocks: ["RELIANCE.NS", "TCS.NS"] },
-      { title: "GIFT Nifty at 25,803, muted open expected for Nifty", source: "NDTV Profit", time: "Just now", description: "Benchmark to trade cautiously amid global cues.", suggestedStocks: ["SBIN.NS", "LT.NS"] }
+    return news.items.slice(0, 5).map(item => ({
+      title: item.title,
+      source: item.publisher || 'Yahoo Finance',
+      time: timeAgo(item.pubDate),
+      description: item.excerpt || item.summary || item.description || 'No description available.'
+    })).concat([ // Fallback real ET headlines as of Nov 02, 2025
+      { title: "Sensex tanks 593 pts amid foreign fund exit", source: "Economic Times", time: "Nov 01", description: "Markets close lower on profit booking." },
+      { title: "Nifty forms strong bearish candle; support at 25,800", source: "ET Now", time: "13 hours ago", description: "Ping-pong effect likely with resistance at 26,000." },
+      { title: "GIFT Nifty at 25,803, muted open expected for Nifty", source: "NDTV Profit", time: "Just now", description: "Benchmark to trade cautiously amid global cues." }
     ]).slice(0, 5);
   } catch (error) {
     console.error('Error fetching news:', error);
@@ -535,35 +525,30 @@ function generateDynamicNews(indicesData) {
           source: 'Economic Times',
           time: `${Math.floor(Math.random() * 5) + 1} minutes ago`,
           description: `The Nifty 50 index climbed ${changeMagnitude}% today, reaching ${currentPrice.toLocaleString('en-IN')}, driven by strong buying from FIIs and positive global cues.`,
-          suggestedStocks: ['HDFCBANK.NS', 'ICICIBANK.NS']
         },
         {
           title: `Bull Run Continues: FIIs Inject ₹${(Math.random() * 5000 + 5000).toFixed(0)} Crore`,
           source: 'Moneycontrol',
           time: `${Math.floor(Math.random() * 3) + 1} hours ago`,
           description: `Foreign investors poured in substantial funds, boosting banking and IT stocks as the market hit a new high at ${timeNow}.`,
-          suggestedStocks: ['TCS.NS', 'INFY.NS']
         },
         {
           title: `Sensex Gains Amid Optimistic Sentiment`,
           source: 'Business Standard',
           time: `${Math.floor(Math.random() * 2) + 1} hours ago`,
           description: `The BSE Sensex followed Nifty’s lead, gaining over ${Math.floor(changeMagnitude * 300)} points, with investors eyeing further upside.`,
-          suggestedStocks: ['RELIANCE.NS', 'SBIN.NS']
         },
         {
           title: `IT Sector Leads Market Rally`,
           source: 'Financial Express',
           time: `${Math.floor(Math.random() * 4) + 1} hours ago`,
           description: `Tech stocks drive Nifty higher on earnings optimism and global tech rebound.`,
-          suggestedStocks: ['TCS.NS', 'WIPRO.NS']
         },
         {
           title: `Banking Stocks Bounce Back`,
           source: 'Livemint',
           time: `${Math.floor(Math.random() * 1) + 1} hour ago`,
           description: `Major banks recover losses amid improved liquidity and rate cut hopes.`,
-          suggestedStocks: ['HDFCBANK.NS', 'KOTAKBANK.NS']
         },
       ]
     : [
@@ -572,35 +557,30 @@ function generateDynamicNews(indicesData) {
           source: 'Economic Times',
           time: `${Math.floor(Math.random() * 5) + 1} minutes ago`,
           description: `The Nifty 50 index fell ${changeMagnitude}% today, closing at ${currentPrice.toLocaleString('en-IN')}, as profit booking and global uncertainties weighed on sentiment.`,
-          suggestedStocks: ['RELIANCE.NS', 'TCS.NS']
         },
         {
           title: `DIIs Sell ₹${(Math.random() * 3000 + 1000).toFixed(0)} Crore Amid Market Dip`,
           source: 'Moneycontrol',
           time: `${Math.floor(Math.random() * 3) + 1} hours ago`,
           description: `Domestic institutions offloaded stocks worth ₹${(Math.random() * 3000 + 1000).toFixed(0)} crore as the market saw a broad sell-off at ${timeNow}.`,
-          suggestedStocks: ['SBIN.NS', 'LT.NS']
         },
         {
           title: `Bearish Trend Hits Banking Stocks`,
           source: 'Business Standard',
           time: `${Math.floor(Math.random() * 2) + 1} hours ago`,
           description: `Bank Nifty saw heavy selling pressure, dragging the broader market down by ${changeMagnitude}%.`,
-          suggestedStocks: ['HDFCBANK.NS', 'ICICIBANK.NS']
         },
         {
           title: `Auto Sector Faces Headwinds`,
           source: 'Financial Express',
           time: `${Math.floor(Math.random() * 4) + 1} hours ago`,
           description: `Rising input costs and weak demand pull auto stocks lower.`,
-          suggestedStocks: ['MARUTI.NS', 'TATAMOTORS.NS']
         },
         {
           title: `Metals Slide on Global Cues`,
           source: 'Livemint',
           time: `${Math.floor(Math.random() * 1) + 1} hour ago`,
           description: `Commodity prices dip amid China slowdown fears, hitting metal indices.`,
-          suggestedStocks: ['TATASTEEL.NS', 'HINDALCO.NS']
         },
       ];
   return newsTemplates.sort(() => 0.5 - Math.random()).slice(0, 5);
