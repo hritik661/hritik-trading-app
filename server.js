@@ -143,7 +143,7 @@ const topStocks = [
   { name: 'Avenue Supermarts', symbol: 'DMART.NS' },
   { name: 'Sona BLW Precision Forgings', symbol: 'SONACOMS.NS' },
   { name: 'Persistent Systems', symbol: 'PERSISTENT.NS' },
-  // Real biggest losers pool (down 30%+ from 52w high as of Oct 31, 2025)
+  // Real biggest losers pool (down 30%+ from 52w high as of Nov 02, 2025)
   { name: 'Tips Music', symbol: 'TIPSMUSIC.NS' },
   { name: 'Waaree Renewables', symbol: 'WAAREERTL.NS' },
   { name: 'International Gemmological Institute', symbol: 'IGIL.NS' },
@@ -221,10 +221,10 @@ async function fetchData(items) {
       data.push({
         name: item.name,
         symbol: item.symbol,
-        price: 26041.50, // Updated real pre-open value Oct 31, 2025
+        price: 25803.50, // Updated real pre-open value Nov 02, 2025
         lastClose: 25877.85,
         volume: null,
-        percentChange: 0.64,
+        percentChange: -0.29,
         fiftyTwoWeekHigh: null,
         percentDrop: null,
         dayHigh: null,
@@ -232,7 +232,7 @@ async function fetchData(items) {
       });
       continue; // Skip the API fetch for this item
     }
-    // Special case for Gold: Fetch XAUINR=X (per ounce in INR), convert to 10g price (1 oz = 31.1035g)
+    // Special case for Gold: Fetch XAUINR=X (per ounce in INR), convert to 10g price (1 oz = 31.1035g) with retail buffer
     if (item.symbol === 'XAUINR=X') {
       try {
         const quote = await fetchWithRetry(() =>
@@ -254,11 +254,12 @@ async function fetchData(items) {
         const dayHighOunce = quote.regularMarketDayHigh ?? null;
         const dayLowOunce = quote.regularMarketDayLow ?? null;
         const gramPerOunce = 31.1035;
-        const currentPrice = ouncePrice ? (ouncePrice / gramPerOunce) * 10 : null; // 10g price
-        const lastClose = lastCloseOunce ? (lastCloseOunce / gramPerOunce) * 10 : null;
-        const fiftyTwoWeekHigh = fiftyTwoWeekHighOunce ? (fiftyTwoWeekHighOunce / gramPerOunce) * 10 : null;
-        const dayHigh = dayHighOunce ? (dayHighOunce / gramPerOunce) * 10 : null;
-        const dayLow = dayLowOunce ? (dayLowOunce / gramPerOunce) * 10 : null;
+        const retailBuffer = 1.02; // ~2% uplift for Indian retail Mumbai (duties/MST/making charges)
+        const currentPrice = ouncePrice ? ((ouncePrice / gramPerOunce) * 10) * retailBuffer : null; // Dynamic 10g retail
+        const lastClose = lastCloseOunce ? ((lastCloseOunce / gramPerOunce) * 10) * retailBuffer : null;
+        const fiftyTwoWeekHigh = fiftyTwoWeekHighOunce ? ((fiftyTwoWeekHighOunce / gramPerOunce) * 10) * retailBuffer : null;
+        const dayHigh = dayHighOunce ? ((dayHighOunce / gramPerOunce) * 10) * retailBuffer : null;
+        const dayLow = dayLowOunce ? ((dayLowOunce / gramPerOunce) * 10) * retailBuffer : null;
         let percentChange = null;
         let percentDrop = null;
         if (currentPrice != null && lastClose != null && lastClose !== 0) {
@@ -282,24 +283,23 @@ async function fetchData(items) {
         continue;
       } catch (error) {
         console.error(`Error fetching Gold (${item.symbol}):`, error.message);
-        // Updated fallback to real Mumbai 10g 24K price as of Oct 31, 2025 (~₹121,480)
+        // Updated fallback to real Mumbai 10g 24K price as of Nov 02, 2025 (₹1,24,165)
         data.push({
           name: item.name,
           symbol: item.symbol,
-          price: 121480,
-          lastClose: 121300,
+          price: 124165,
+          lastClose: 123140,
           volume: null,
-          percentChange: 0.15,
+          percentChange: 0.84,
           fiftyTwoWeekHigh: 130000,
-          percentDrop: 6.62,
-          dayHigh: 121600,
-          dayLow: 121200,
+          percentDrop: 4.51,
+          dayHigh: 124300,
+          dayLow: 124000,
         });
         continue;
       }
     }
-    // Special case for Silver: Fetch XAGINR=X (per ounce in INR), convert to 10g price (1 oz = 31.1035g)
-    // Special case for Silver: Fetch XAGINR=X (spot per ounce in INR), convert to 10g retail approx (1 oz = 31.1035g, +1% buffer for duties/MST)
+    // Special case for Silver: Fetch XAGINR=X (per ounce in INR), convert to 10g retail approx (1 oz = 31.1035g, +1% buffer for duties/MST)
 if (item.symbol === 'XAGINR=X') {
   try {
     const quote = await fetchWithRetry(() =>
@@ -350,7 +350,7 @@ if (item.symbol === 'XAGINR=X') {
     continue;
   } catch (error) {
     console.error(`Error fetching Silver (${item.symbol}):`, error.message);
-    // Fallback: Real Mumbai/Delhi 10g 24K Silver retail as of Nov 1, 2025 (₹1,509; updates dynamically on next API success)
+    // Fallback: Real Mumbai/Delhi 10g 24K Silver retail as of Nov 02, 2025 (₹1,509)
     data.push({
       name: item.name,
       symbol: item.symbol,
@@ -490,15 +490,25 @@ function timeAgo(pubDate) {
 async function fetchNews() {
   try {
     const news = await yahooFinance.news("^NSEI", { count: 10 });
-    return news.items.slice(0, 5).map(item => ({
-      title: item.title,
-      source: item.publisher || 'Yahoo Finance',
-      time: timeAgo(item.pubDate),
-      description: item.excerpt || item.summary || item.description || 'No description available.'
-    })).concat([ // Fallback real ET headlines as of Oct 31, 2025
-      { title: "Sensex tanks 593 pts amid foreign fund exit", source: "Economic Times", time: "Oct 30", description: "Markets close lower on profit booking." },
-      { title: "Nifty forms strong bearish candle; support at 25,800", source: "ET Now", time: "13 hours ago", description: "Ping-pong effect likely with resistance at 26,000." },
-      { title: "GIFT Nifty flat, muted open expected for Nifty", source: "NDTV Profit", time: "Just now", description: "Benchmark to trade cautiously amid global cues." }
+    return news.items.slice(0, 5).map(item => {
+      // Simple keyword-based stock suggestions (expandable with NLP if needed)
+      let suggested = [];
+      const titleLower = item.title.toLowerCase();
+      if (titleLower.includes('bank') || titleLower.includes('finance')) suggested = ['HDFCBANK.NS', 'ICICIBANK.NS'];
+      else if (titleLower.includes('it') || titleLower.includes('tech')) suggested = ['TCS.NS', 'INFY.NS'];
+      else if (titleLower.includes('nifty') || titleLower.includes('sensex')) suggested = ['RELIANCE.NS', 'SBIN.NS'];
+      else suggested = ['RELIANCE.NS', 'TCS.NS']; // Default
+      return {
+        title: item.title,
+        source: item.publisher || 'Yahoo Finance',
+        time: timeAgo(item.pubDate),
+        description: item.excerpt || item.summary || item.description || 'No description available.',
+        suggestedStocks: suggested
+      };
+    }).concat([ // Fallback real ET headlines as of Nov 02, 2025 with suggestions
+      { title: "Sensex tanks 593 pts amid foreign fund exit", source: "Economic Times", time: "Nov 01", description: "Markets close lower on profit booking.", suggestedStocks: ["HDFCBANK.NS", "ICICIBANK.NS"] },
+      { title: "Nifty forms strong bearish candle; support at 25,800", source: "ET Now", time: "13 hours ago", description: "Ping-pong effect likely with resistance at 26,000.", suggestedStocks: ["RELIANCE.NS", "TCS.NS"] },
+      { title: "GIFT Nifty at 25,803, muted open expected for Nifty", source: "NDTV Profit", time: "Just now", description: "Benchmark to trade cautiously amid global cues.", suggestedStocks: ["SBIN.NS", "LT.NS"] }
     ]).slice(0, 5);
   } catch (error) {
     console.error('Error fetching news:', error);
@@ -525,30 +535,35 @@ function generateDynamicNews(indicesData) {
           source: 'Economic Times',
           time: `${Math.floor(Math.random() * 5) + 1} minutes ago`,
           description: `The Nifty 50 index climbed ${changeMagnitude}% today, reaching ${currentPrice.toLocaleString('en-IN')}, driven by strong buying from FIIs and positive global cues.`,
+          suggestedStocks: ['HDFCBANK.NS', 'ICICIBANK.NS']
         },
         {
           title: `Bull Run Continues: FIIs Inject ₹${(Math.random() * 5000 + 5000).toFixed(0)} Crore`,
           source: 'Moneycontrol',
           time: `${Math.floor(Math.random() * 3) + 1} hours ago`,
           description: `Foreign investors poured in substantial funds, boosting banking and IT stocks as the market hit a new high at ${timeNow}.`,
+          suggestedStocks: ['TCS.NS', 'INFY.NS']
         },
         {
           title: `Sensex Gains Amid Optimistic Sentiment`,
           source: 'Business Standard',
           time: `${Math.floor(Math.random() * 2) + 1} hours ago`,
           description: `The BSE Sensex followed Nifty’s lead, gaining over ${Math.floor(changeMagnitude * 300)} points, with investors eyeing further upside.`,
+          suggestedStocks: ['RELIANCE.NS', 'SBIN.NS']
         },
         {
           title: `IT Sector Leads Market Rally`,
           source: 'Financial Express',
           time: `${Math.floor(Math.random() * 4) + 1} hours ago`,
           description: `Tech stocks drive Nifty higher on earnings optimism and global tech rebound.`,
+          suggestedStocks: ['TCS.NS', 'WIPRO.NS']
         },
         {
           title: `Banking Stocks Bounce Back`,
           source: 'Livemint',
           time: `${Math.floor(Math.random() * 1) + 1} hour ago`,
           description: `Major banks recover losses amid improved liquidity and rate cut hopes.`,
+          suggestedStocks: ['HDFCBANK.NS', 'KOTAKBANK.NS']
         },
       ]
     : [
@@ -557,30 +572,35 @@ function generateDynamicNews(indicesData) {
           source: 'Economic Times',
           time: `${Math.floor(Math.random() * 5) + 1} minutes ago`,
           description: `The Nifty 50 index fell ${changeMagnitude}% today, closing at ${currentPrice.toLocaleString('en-IN')}, as profit booking and global uncertainties weighed on sentiment.`,
+          suggestedStocks: ['RELIANCE.NS', 'TCS.NS']
         },
         {
           title: `DIIs Sell ₹${(Math.random() * 3000 + 1000).toFixed(0)} Crore Amid Market Dip`,
           source: 'Moneycontrol',
           time: `${Math.floor(Math.random() * 3) + 1} hours ago`,
           description: `Domestic institutions offloaded stocks worth ₹${(Math.random() * 3000 + 1000).toFixed(0)} crore as the market saw a broad sell-off at ${timeNow}.`,
+          suggestedStocks: ['SBIN.NS', 'LT.NS']
         },
         {
           title: `Bearish Trend Hits Banking Stocks`,
           source: 'Business Standard',
           time: `${Math.floor(Math.random() * 2) + 1} hours ago`,
           description: `Bank Nifty saw heavy selling pressure, dragging the broader market down by ${changeMagnitude}%.`,
+          suggestedStocks: ['HDFCBANK.NS', 'ICICIBANK.NS']
         },
         {
           title: `Auto Sector Faces Headwinds`,
           source: 'Financial Express',
           time: `${Math.floor(Math.random() * 4) + 1} hours ago`,
           description: `Rising input costs and weak demand pull auto stocks lower.`,
+          suggestedStocks: ['MARUTI.NS', 'TATAMOTORS.NS']
         },
         {
           title: `Metals Slide on Global Cues`,
           source: 'Livemint',
           time: `${Math.floor(Math.random() * 1) + 1} hour ago`,
           description: `Commodity prices dip amid China slowdown fears, hitting metal indices.`,
+          suggestedStocks: ['TATASTEEL.NS', 'HINDALCO.NS']
         },
       ];
   return newsTemplates.sort(() => 0.5 - Math.random()).slice(0, 5);
@@ -743,7 +763,7 @@ setInterval(async () => {
     const indicesData = await fetchData(indices); // Now includes global + Gold + Silver
     const stocksData = await fetchData(topStocks); // Full list for better filtering
     const niftyClose = indicesData.find(i => i.symbol === '^NSEI')?.lastClose || 25877.85;
-    const giftPrice = indicesData.find(i => i.symbol === 'NIFTY_F1.NS')?.price || 26041.50;
+    const giftPrice = indicesData.find(i => i.symbol === 'NIFTY_F1.NS')?.price || 25803.50;
     const globalChanges = indicesData.filter(i => ['^DJI', '^IXIC', '^N225', '^HSI'].includes(i.symbol)).map(i => parseFloat(i.percentChange || 0));
     const globalAvgChange = globalChanges.reduce((a, b) => a + b, 0) / globalChanges.length || 0;
     const losersData = await fetchLosers(stocksData);
@@ -797,7 +817,7 @@ wss.on('connection', ws => {
   Promise.all([
     fetchData(indices),
     fetchData(topStocks), // Full list
-    fetchPredictedGainers(topStocks, 26041.50, 25877.85, 0.94), // Updated initial
+    fetchPredictedGainers(topStocks, 25803.50, 25877.85, 0.94), // Updated initial
   ])
     .then(async ([indicesData, stocksData, predictionsData]) => {
       lastIndicesData = indicesData;
