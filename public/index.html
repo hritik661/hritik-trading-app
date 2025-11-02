@@ -416,17 +416,21 @@
         if (!holding.name || !holding.quantity || !holding.avgPrice) {
             return;
         }
+  
         const currentPrice = holding.currentPrice && !isNaN(holding.currentPrice) && holding.currentPrice > 0 ? holding.currentPrice : 0;
         const volume = holding.volume && !isNaN(holding.volume) ? Number(holding.volume).toLocaleString('en-IN') : 'N/A';
         const dayHigh = holding.dayHigh && !isNaN(holding.dayHigh) ? `₹${Number(holding.dayHigh).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'N/A';
         const dayLow = holding.dayLow && !isNaN(holding.dayLow) ? `₹${Number(holding.dayLow).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'N/A';
+  
         const pl = currentPrice ? (currentPrice - holding.avgPrice) * holding.quantity : 0;
         const plPercent = currentPrice ? ((currentPrice - holding.avgPrice) / holding.avgPrice * 100) : 0;
+  
         // Create the card element
         const card = document.createElement('div');
         card.className = 'portfolio-card';
         card.style.animationDelay = `${0.1 + (idx * 0.05)}s`;
         card.setAttribute('data-symbol', symbol);
+  
         card.innerHTML = `
             <div class="portfolio-info">
                 <h3 class="portfolio-name">${holding.name}</h3>
@@ -445,11 +449,13 @@
                 </div>
             </div>
         `;
+  
         portfolioContainer.appendChild(card);
     });
     // Now add buttons separately after all cards are in the DOM
     Object.entries(portfolio).forEach(([symbol, holding]) => {
         const actionsContainer = portfolioContainer.querySelector(`.stock-actions[data-symbol="${symbol}"]`);
+  
         if (actionsContainer) {
             // Create buy button
             const buyButton = document.createElement('button');
@@ -458,7 +464,7 @@
             buyButton.style.pointerEvents = 'auto';
             buyButton.style.position = 'relative';
             buyButton.style.zIndex = '10';
-   
+      
             // Create sell button
             const sellButton = document.createElement('button');
             sellButton.className = 'action-button sell';
@@ -466,11 +472,11 @@
             sellButton.style.pointerEvents = 'auto';
             sellButton.style.position = 'relative';
             sellButton.style.zIndex = '10';
-   
+      
             // Add buttons to container
             actionsContainer.appendChild(buyButton);
             actionsContainer.appendChild(sellButton);
-   
+      
             // Add event listeners with proper event prevention
             buyButton.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -478,7 +484,7 @@
                 if (!checkAuthAndTrade('buy', symbol, holding.name, holding.currentPrice || 0)) return;
                 promptTrade('buy', symbol, holding.name, holding.currentPrice || 0);
             });
-   
+      
             sellButton.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -950,6 +956,7 @@
       const isBitcoin = index.symbol === 'BTCUSDT';
       const isGlobal = ['^DJI', '^IXIC', '^N225', '^HSI'].includes(index.symbol);
       const isGold = index.symbol === 'XAUINR=X';
+   
     const isSilver = index.symbol === 'XAGINR=X';
 const price = index.price && !isNaN(index.price) ?
   (isBitcoin || isGlobal ? `$${Number(index.price).toLocaleString('en-US', { maximumFractionDigits: 2 })}` :
@@ -1851,11 +1858,11 @@ function manualSearch() {
   }
 }
   searchInput.addEventListener('input', (e) => autoSearch(e.target.value.trim()));
-  // Static fallback news data to display if WebSocket fails - Updated with recent news and suggestions
+  // Static fallback news data to display if WebSocket fails - Updated with recent news
 const fallbackNews = [
-{ title: "Sensex tanks 593 pts, Nifty below 25,900 amid foreign fund exit", source: "Economic Times", time: "Oct 30", description: "Markets closed lower on profit booking and global uncertainties.", suggestedStocks: ["HDFCBANK.NS", "ICICIBANK.NS"] },
-{ title: "Nifty Prediction: Strong bearish candle, support at 25,800", source: "ET Now", time: "13 hours ago", description: "Ping-pong effect likely; resistance at 26,000.", suggestedStocks: ["RELIANCE.NS", "TCS.NS"] },
-{ title: "GIFT Nifty flat at 26,041, muted open expected", source: "NDTV Profit", time: "Just now", description: "Benchmark indices to trade cautiously today.", suggestedStocks: ["SBIN.NS", "LT.NS"] }
+{ title: "Sensex tanks 593 pts, Nifty below 25,900 amid foreign fund exit", source: "Economic Times", time: "Oct 30", description: "Markets closed lower on profit booking and global uncertainties." },
+{ title: "Nifty Prediction: Strong bearish candle, support at 25,800", source: "ET Now", time: "13 hours ago", description: "Ping-pong effect likely; resistance at 26,000." },
+{ title: "GIFT Nifty flat at 26,041, muted open expected", source: "NDTV Profit", time: "Just now", description: "Benchmark indices to trade cautiously today." }
 ];
 function updateNews(newsItems) {
 const newsContainer = document.getElementById('newsContainer');
@@ -1867,7 +1874,6 @@ if (!newsItems || newsItems.length === 0) {
 }
 // Populate news items
 newsItems.forEach((item, idx) => {
-    const suggested = item.suggestedStocks ? item.suggestedStocks.join(', ') : 'N/A';
     const newsCard = document.createElement('div');
     newsCard.className = 'news-card';
     newsCard.style.animationDelay = `${0.2 + (idx * 0.1)}s`;
@@ -1875,7 +1881,6 @@ newsItems.forEach((item, idx) => {
         <h3 class="news-headline">${item.title}</h3>
         <p class="news-source">${item.source} • <span>${item.time}</span></p>
         <p class="news-description">${item.description}</p>
-        <p class="suggested-stocks">Suggested Buys: ${suggested}</p>
     `;
     newsContainer.appendChild(newsCard);
 });
