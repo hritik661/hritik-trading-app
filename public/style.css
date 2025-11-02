@@ -5776,3 +5776,97 @@ color: var(--negative) !important;
 .options-tab-button.active { border-bottom: 2px solid #3b82f6; color: #3b82f6; }
 .option-card { background: #1f2937; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
 .option-info h3 { margin-bottom: 10px; }
+
+/* Add this to your style.css file */
+
+.news-card {
+  background: rgba(255, 255, 255, 0.05); /* Semi-transparent for dark theme */
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border-left: 4px solid #3B82F6; /* Blue accent for news */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.news-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.news-headline {
+  font-size: 1.1em;
+  font-weight: 600;
+  color: #F3F4F6;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.news-source {
+  font-size: 0.85em;
+  color: #9CA3AF;
+  margin: 0 0 8px 0;
+}
+
+.news-description {
+  font-size: 0.95em;
+  color: #D1D5DB;
+  margin: 0 0 8px 0;
+  line-height: 1.5;
+}
+
+.suggested-stocks {
+  font-size: 0.9em;
+  color: #10B981; /* Green for positive suggestion */
+  font-weight: 500;
+  margin: 0;
+  padding: 8px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.suggested-stocks::before {
+  content: "💡 Suggested Buys: ";
+  font-size: 0.8em;
+}
+
+.news-container {
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 8px; /* For scrollbar space */
+}
+
+/* Light theme adjustments */
+body.light .news-card {
+  background: rgba(243, 244, 246, 0.8);
+  border-left-color: #3B82F6;
+}
+
+body.light .news-headline {
+  color: #1F2937;
+}
+
+body.light .news-source {
+  color: #6B7280;
+}
+
+body.light .news-description {
+  color: #4B5563;
+}
+
+body.light .suggested-stocks {
+  color: #059669;
+}
+
+/* Midnight theme adjustments */
+body.midnight .news-card {
+  background: rgba(26, 35, 68, 0.8);
+}
+
+body.midnight .suggested-stocks {
+  color: #34D399;
+}
+
+/* Make suggested stocks clickable if you want to add search on click later */
+.suggested-stocks:hover {
+  cursor: pointer;
+  text-decoration: underline;
+}
