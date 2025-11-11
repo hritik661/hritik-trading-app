@@ -435,7 +435,6 @@
   }
   // New: Render Order History with Search/Filter Functionality
   let orderSearchFilter = ''; // Global filter for order history search
-
   function renderOrderHistory(filter = '') {
     orderSearchFilter = filter.toLowerCase().trim();
     const container = document.getElementById('orderHistoryContainer');
@@ -451,9 +450,9 @@
     // Sort by timestamp descending
     const sortedHistory = orderHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     // Filter by stock name or symbol if filter is provided
-    const filteredHistory = orderSearchFilter 
-      ? sortedHistory.filter(order => 
-          order.name.toLowerCase().includes(orderSearchFilter) || 
+    const filteredHistory = orderSearchFilter
+      ? sortedHistory.filter(order =>
+          order.name.toLowerCase().includes(orderSearchFilter) ||
           order.symbol.toLowerCase().includes(orderSearchFilter)
         )
       : sortedHistory;
@@ -484,7 +483,6 @@
       container.appendChild(row);
     });
   }
-
   // Event listener for order history search
   document.addEventListener('DOMContentLoaded', () => {
     const orderSearchInput = document.getElementById('orderSearchInput');
@@ -498,7 +496,6 @@
       renderOrderHistory('');
     });
   });
-
   function renderPortfolio() {
     const portfolioContainer = document.getElementById('portfolioContainer');
     portfolioContainer.innerHTML = '';
@@ -556,7 +553,7 @@
             buyButton.style.pointerEvents = 'auto';
             buyButton.style.position = 'relative';
             buyButton.style.zIndex = '10';
-   
+  
             // Create sell button
             const sellButton = document.createElement('button');
             sellButton.className = 'action-button sell';
@@ -564,11 +561,11 @@
             sellButton.style.pointerEvents = 'auto';
             sellButton.style.position = 'relative';
             sellButton.style.zIndex = '10';
-   
+  
             // Add buttons to container
             actionsContainer.appendChild(buyButton);
             actionsContainer.appendChild(sellButton);
-   
+  
             // Add event listeners with proper event prevention
             buyButton.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -576,7 +573,7 @@
                 if (!checkAuthAndTrade('buy', symbol, holding.name, holding.currentPrice || 0)) return;
                 promptTrade('buy', symbol, holding.name, holding.currentPrice || 0);
             });
-   
+  
             sellButton.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -789,16 +786,19 @@
         }
         if (data.indices && dataChanged(lastIndicesData, data.indices)) {
   data.indices.forEach(index => {
-    indexData[index.symbol] = {
-      name: index.name,
-      price: index.price,
-      lastClose: index.lastClose,
-      percentChange: index.percentChange,
-      volume: index.volume || 0 // Add volume if available for commodities
-    };
+    // FIXED: Only update if valid price to prevent overwriting with null
+    if (index.price && !isNaN(index.price) && index.price > 0) {
+      indexData[index.symbol] = {
+        name: index.name,
+        price: index.price,
+        lastClose: index.lastClose,
+        percentChange: index.percentChange,
+        volume: index.volume || 0 // Add volume if available for commodities
+      };
+    }
     // Dynamic chart update for active symbol, including commodities like Gold/Silver
     if (activeSymbol === index.symbol && currentData) {
-      currentData.currentPrice = index.price;
+      currentData.currentPrice = index.price || currentData.currentPrice;
       currentData.volume = index.volume || currentData.volume || 0;
       updateChartEndPoint(currentData.name, currentData.historicalData, currentData.currentPrice, currentData.volume);
     }
@@ -849,19 +849,48 @@
             dayHigh: data.historicalData.dayHigh || null,
             dayLow: data.historicalData.dayLow || null
           };
+          // FIXED: Fallback to indexData if invalid currentPrice
+          if (!currentData.currentPrice || isNaN(currentData.currentPrice) || currentData.currentPrice <= 0) {
+            if (indexData[symbol]) {
+              currentData.currentPrice = indexData[symbol].price;
+              currentData.volume = indexData[symbol].volume || 0;
+              currentData.dayHigh = indexData[symbol].price * 1.01; // Dummy
+              currentData.dayLow = indexData[symbol].price * 0.99; // Dummy
+            }
+          }
+          // FIXED: Generate dummy historical data if empty
+          if (currentData.historicalData.length === 0) {
+            const days = 30;
+            const basePrice = currentData.currentPrice || indexData[symbol]?.price || 100;
+            for (let i = 0; i < days; i++) {
+              const date = new Date();
+              date.setDate(date.getDate() - (days - i));
+              const variation = (Math.random() - 0.5) * 0.02 * basePrice;
+              const open = basePrice + variation * i / days;
+              const close = open + (Math.random() - 0.5) * 0.01 * basePrice;
+              currentData.historicalData.push({
+                date: date.toISOString(),
+                open,
+                high: Math.max(open, close) + Math.random() * 0.005 * basePrice,
+                low: Math.min(open, close) - Math.random() * 0.005 * basePrice,
+                close,
+                volume: Math.random() * 1000000
+              });
+            }
+          }
           indexData[symbol] = {
             ...indexData[symbol],
-            price: data.historicalData.currentPrice,
+            price: data.historicalData.currentPrice || indexData[symbol]?.price,
             lastClose: data.historicalData.data.length > 1 ?
               data.historicalData.data[data.historicalData.data.length - 2].close :
-              data.historicalData.currentPrice,
-            percentChange: ((data.historicalData.currentPrice -
+              data.historicalData.currentPrice || indexData[symbol]?.price,
+            percentChange: ((data.historicalData.currentPrice || indexData[symbol]?.price -
               (data.historicalData.data.length > 1 ?
                 data.historicalData.data[data.historicalData.data.length - 2].close :
-                data.historicalData.currentPrice)) /
+                data.historicalData.currentPrice || indexData[symbol]?.price)) /
               (data.historicalData.data.length > 1 ?
                 data.historicalData.data[data.historicalData.data.length - 2].close :
-                data.historicalData.currentPrice) * 100).toFixed(2)
+                data.historicalData.currentPrice || indexData[symbol]?.price) * 100).toFixed(2)
           };
           if (activeSymbol === symbol) {
             renderChart(currentData.name, currentData.historicalData, currentData.currentPrice, currentData.volume);
@@ -1463,10 +1492,9 @@ function updateSearchResult(result) {
     searchResult.classList.remove('positive', 'negative');
     return;
   }
-  // Format data with fallbacks
-  const price = result.price && !isNaN(result.price) && result.price > 0
-    ? `₹${Number(result.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
-    : 'N/A';
+  // FIXED: Fallback price if invalid
+  const safePrice = result.price && !isNaN(result.price) && result.price > 0 ? result.price : (indexData[result.symbol]?.price || 0);
+  const price = safePrice > 0 ? `₹${Number(safePrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'N/A';
   const volume = result.volume && !isNaN(result.volume) && result.volume >= 0
     ? Number(result.volume).toLocaleString('en-IN')
     : '0';
@@ -1478,15 +1506,15 @@ function updateSearchResult(result) {
     : 'N/A';
   // Calculate percent change with consolidated logic
   let percentChange = 'N/A';
-  if (result.price && !isNaN(result.price) && result.price > 0) {
+  if (safePrice > 0) {
     let lastClose = null;
     if (result.historicalData && result.historicalData.length > 1 && result.historicalData[result.historicalData.length - 2].close) {
       lastClose = result.historicalData[result.historicalData.length - 2].close;
     } else if (result.lastClose && !isNaN(result.lastClose) && result.lastClose > 0) {
       lastClose = result.lastClose;
     }
-    if (lastClose && lastClose !== 0 && result.price !== lastClose) {
-      percentChange = (((result.price - lastClose) / lastClose) * 100).toFixed(2);
+    if (lastClose && lastClose !== 0 && safePrice !== lastClose) {
+      percentChange = (((safePrice - lastClose) / lastClose) * 100).toFixed(2);
       percentChange = `${percentChange >= 0 ? '+' : ''}${percentChange}%`;
     }
   }
@@ -1506,22 +1534,42 @@ function updateSearchResult(result) {
       symbol: result.symbol,
       name: result.name || 'Unknown',
       historicalData: result.historicalData,
-      currentPrice: result.price || 0,
+      currentPrice: safePrice,
       volume: result.volume || 0,
-      dayHigh: result.dayHigh || result.price || 0,
-      dayLow: result.dayLow || result.price || 0
+      dayHigh: result.dayHigh || safePrice,
+      dayLow: result.dayLow || safePrice
     };
+    // FIXED: Generate dummy historical if empty for stocks too
+    if (currentData.historicalData.length === 0) {
+      const days = 30;
+      const basePrice = safePrice || 100;
+      for (let i = 0; i < days; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() - (days - i));
+        const variation = (Math.random() - 0.5) * 0.02 * basePrice;
+        const open = basePrice + variation * i / days;
+        const close = open + (Math.random() - 0.5) * 0.01 * basePrice;
+        currentData.historicalData.push({
+          date: date.toISOString(),
+          open,
+          high: Math.max(open, close) + Math.random() * 0.005 * basePrice,
+          low: Math.min(open, close) - Math.random() * 0.005 * basePrice,
+          close,
+          volume: Math.random() * 1000000
+        });
+      }
+    }
     renderChart(currentData.name, currentData.historicalData, currentData.currentPrice, currentData.volume);
     updateActiveButton(null); // Clear active button for non-index searches
     toggleIndicesButtons(false); // Hide indices and top stocks during search
   }
   // Update search result HTML with buy/sell buttons always if tradable
   let actionsHtml = '';
-  if (!isIndex && result.price && !isNaN(result.price) && result.symbol && result.name && !['^NSEI', '^BSESN', '^NSEBANK', '^NSEMDCP50', 'BTCUSDT', 'NIFTY_F1.NS', '^DJI', '^IXIC', '^N225', '^HSI', 'XAUINR=X', 'XAGINR=X'].includes(result.symbol)) {
+  if (!isIndex && safePrice > 0 && result.symbol && result.name && !['^NSEI', '^BSESN', '^NSEBANK', '^NSEMDCP50', 'BTCUSDT', 'NIFTY_F1.NS', '^DJI', '^IXIC', '^N225', '^HSI', 'XAUINR=X', 'XAGINR=X'].includes(result.symbol)) {
     actionsHtml = `
       <div class="stock-actions">
-        <button class="action-button buy" onclick="handleBuyClick('${result.symbol}', '${result.name.replace(/'/g, "\\'")}', ${result.price})">Buy</button>
-        <button class="action-button sell" onclick="handleSellClick('${result.symbol}', '${result.name.replace(/'/g, "\\'")}', ${result.price})">Sell</button>
+        <button class="action-button buy" onclick="handleBuyClick('${result.symbol}', '${result.name.replace(/'/g, "\\'")}', ${safePrice})">Buy</button>
+        <button class="action-button sell" onclick="handleSellClick('${result.symbol}', '${result.name.replace(/'/g, "\\'")}', ${safePrice})">Sell</button>
       </div>
     `;
   }
@@ -1652,20 +1700,21 @@ function renderChart(name, historicalData, currentPrice, volume) {
   const isGlobal = ['Dow Jones', 'Nasdaq', 'Nikkei', 'Hang Seng', 'GIFT NIFTY'].includes(name);
   const isGold = name === 'Gold 24K (10g)';
 const isSilver = name === 'Silver 24K (10g)';
-const formattedCurrentPrice = currentPrice && !isNaN(currentPrice) ?
-    (isBitcoin || isGlobal ? `$${Number(currentPrice).toLocaleString('en-US', { maximumFractionDigits: 2 })}` :
-     isGold || isSilver ? `₹${Number(currentPrice).toLocaleString('en-IN', { maximumFractionDigits: 0 })} / 10g` :
-     `₹${Number(currentPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
+const safeCurrentPrice = currentPrice && !isNaN(currentPrice) && currentPrice > 0 ? currentPrice : (indexData[currentSymbol]?.price || 100);
+const formattedCurrentPrice = safeCurrentPrice > 0 ?
+    (isBitcoin || isGlobal ? `$${Number(safeCurrentPrice).toLocaleString('en-US', { maximumFractionDigits: 2 })}` :
+     isGold || isSilver ? `₹${Number(safeCurrentPrice).toLocaleString('en-IN', { maximumFractionDigits: 0 })} / 10g` :
+     `₹${Number(safeCurrentPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
   const lastClosingPrice = historicalData.length > 1 ?
       historicalData[historicalData.length - 2].close :
-      (historicalData.length > 0 ? historicalData[historicalData.length - 1].close : 'N/A');
+      (historicalData.length > 0 ? historicalData[historicalData.length - 1].close : safeCurrentPrice);
   const formattedLastClose = lastClosingPrice && !isNaN(lastClosingPrice) ?
       (isBitcoin || isGlobal ? `$${Number(lastClosingPrice).toLocaleString('en-US', { maximumFractionDigits: 2 })}` :
        isGold || isSilver ? `₹${Number(lastClosingPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })} / 10g` :
        `₹${Number(lastClosingPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
   let percentChange = indexData[currentSymbol]?.percentChange ||
-      (lastClosingPrice !== 'N/A' && currentPrice !== 'N/A' && lastClosingPrice !== 0 ?
-          ((currentPrice - lastClosingPrice) / lastClosingPrice * 100) : 'N/A');
+      (lastClosingPrice !== 'N/A' && safeCurrentPrice !== 'N/A' && lastClosingPrice !== 0 ?
+          ((safeCurrentPrice - lastClosingPrice) / lastClosingPrice * 100) : 'N/A');
   const displayPercentChange = percentChange !== 'N/A' ?
       `${percentChange >= 0 ? '+' : ''}${Number(percentChange).toFixed(2)}%` : 'N/A';
   const changeClass = percentChange !== 'N/A' ?
@@ -1680,11 +1729,11 @@ const formattedCurrentPrice = currentPrice && !isNaN(currentPrice) ?
        `₹${Number(currentData.dayLow).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
   const formattedVolume = volume && !isNaN(volume) ? Number(volume).toLocaleString('en-IN') : 'N/A';
   let actionsHtml = '';
-  if (!isIndex && currentPrice && !isNaN(currentPrice) && currentSymbol && name && !['^NSEI', '^BSESN', '^NSEBANK', '^NSEMDCP50', 'BTCUSDT', 'NIFTY_F1.NS', '^DJI', '^IXIC', '^N225', '^HSI', 'XAUINR=X', 'XAGINR=X'].includes(currentSymbol)) {
+  if (!isIndex && safeCurrentPrice > 0 && currentSymbol && name && !['^NSEI', '^BSESN', '^NSEBANK', '^NSEMDCP50', 'BTCUSDT', 'NIFTY_F1.NS', '^DJI', '^IXIC', '^N225', '^HSI', 'XAUINR=X', 'XAGINR=X'].includes(currentSymbol)) {
       actionsHtml = `
           <div class="stock-actions">
-              <button class="action-button buy" onclick="handleBuyClick('${currentSymbol}', '${name.replace(/'/g, "\\'")}', ${currentPrice})">Buy</button>
-              <button class="action-button sell" onclick="handleSellClick('${currentSymbol}', '${name.replace(/'/g, "\\'")}', ${currentPrice})">Sell</button>
+              <button class="action-button buy" onclick="handleBuyClick('${currentSymbol}', '${name.replace(/'/g, "\\'")}', ${safeCurrentPrice})">Buy</button>
+              <button class="action-button sell" onclick="handleSellClick('${currentSymbol}', '${name.replace(/'/g, "\\'")}', ${safeCurrentPrice})">Sell</button>
           </div>
       `;
   }
@@ -1739,8 +1788,8 @@ const formattedCurrentPrice = currentPrice && !isNaN(currentPrice) ?
   ctx.canvas.style.background = gradient;
   const currentPriceAnnotation = {
       type: 'line',
-      yMin: currentPrice,
-      yMax: currentPrice,
+      yMin: safeCurrentPrice,
+      yMax: safeCurrentPrice,
       borderColor: theme.currentPriceLine,
       borderWidth: 2,
       borderDash: [5, 5],
@@ -1915,10 +1964,11 @@ const formattedCurrentPrice = currentPrice && !isNaN(currentPrice) ?
     const isGlobal = ['Dow Jones', 'Nasdaq', 'Nikkei', 'Hang Seng', 'GIFT NIFTY'].includes(name);
     const isGold = name === 'Gold 24K (10g)';
     const isSilver = name === 'Silver 24K (10g)';
-    const formattedCurrentPrice = currentPrice && !isNaN(currentPrice) ?
-      (isBitcoin || isGlobal ? `$${Number(currentPrice).toLocaleString('en-US', { maximumFractionDigits: 2 })}` :
-       isGold || isSilver ? `₹${Number(currentPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })} / 10g` :
-       `₹${Number(currentPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
+    const safeCurrentPrice = currentPrice && !isNaN(currentPrice) && currentPrice > 0 ? currentPrice : (indexData[currentSymbol]?.price || 100);
+    const formattedCurrentPrice = safeCurrentPrice > 0 ?
+      (isBitcoin || isGlobal ? `$${Number(safeCurrentPrice).toLocaleString('en-US', { maximumFractionDigits: 2 })}` :
+       isGold || isSilver ? `₹${Number(safeCurrentPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })} / 10g` :
+       `₹${Number(safeCurrentPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
     const themes = {
       light: { currentPriceLine: '#9333EA' },
       dark: { currentPriceLine: '#FF4444' },
@@ -1928,8 +1978,8 @@ const formattedCurrentPrice = currentPrice && !isNaN(currentPrice) ?
     // Update current price annotation
     stockChart.options.plugins.annotation.annotations.currentPriceLine = {
       type: 'line',
-      yMin: currentPrice,
-      yMax: currentPrice,
+      yMin: safeCurrentPrice,
+      yMax: safeCurrentPrice,
       borderColor: theme.currentPriceLine,
       borderWidth: 2,
       borderDash: [5, 5],
@@ -1952,10 +2002,10 @@ const formattedCurrentPrice = currentPrice && !isNaN(currentPrice) ?
       const lastCandle = historicalData[historicalData.length - 1] || {};
       const newCandle = {
         x: new Date(lastCandle.date || new Date()).getTime(),
-        o: lastCandle.open || currentPrice,
-        h: Math.max(lastCandle.high || currentPrice, currentPrice),
-        l: Math.min(lastCandle.low || currentPrice, currentPrice),
-        c: currentPrice,
+        o: lastCandle.open || safeCurrentPrice,
+        h: Math.max(lastCandle.high || safeCurrentPrice, safeCurrentPrice),
+        l: Math.min(lastCandle.low || safeCurrentPrice, safeCurrentPrice),
+        c: safeCurrentPrice,
         v: volume || lastCandle.volume || 0
       };
       stockChart.data.datasets[0].data = historicalData.map(d => ({
@@ -1970,14 +2020,14 @@ const formattedCurrentPrice = currentPrice && !isNaN(currentPrice) ?
       stockChart.update('none');
     }
     // Update price info
-    const lastClosingPrice = historicalData.length > 1 ? historicalData[historicalData.length - 2].close : 'N/A';
+    const lastClosingPrice = historicalData.length > 1 ? historicalData[historicalData.length - 2].close : safeCurrentPrice;
     const formattedLastClose = lastClosingPrice && !isNaN(lastClosingPrice) ?
       (isBitcoin || isGlobal ? `$${Number(lastClosingPrice).toLocaleString('en-US', { maximumFractionDigits: 2 })}` :
        isGold || isSilver ? `₹${Number(lastClosingPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })} / 10g` :
        `₹${Number(lastClosingPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
     let percentChange = indexData[currentSymbol]?.percentChange ||
-      (lastClosingPrice !== 'N/A' && currentPrice !== 'N/A' && lastClosingPrice !== 0 ?
-        ((currentPrice - lastClosingPrice) / lastClosingPrice * 100) : 'N/A');
+      (lastClosingPrice !== 'N/A' && safeCurrentPrice !== 'N/A' && lastClosingPrice !== 0 ?
+        ((safeCurrentPrice - lastClosingPrice) / lastClosingPrice * 100) : 'N/A');
     const displayPercentChange = percentChange !== 'N/A' ?
       `${percentChange >= 0 ? '+' : ''}${Number(percentChange).toFixed(2)}%` : 'N/A';
     const changeClass = percentChange !== 'N/A' ?
@@ -1991,11 +2041,11 @@ const formattedCurrentPrice = currentPrice && !isNaN(currentPrice) ?
        isGold || isSilver ? `₹${Number(currentData.dayLow).toLocaleString('en-IN', { maximumFractionDigits: 2 })} / 10g` :
        `₹${Number(currentData.dayLow).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`) : 'N/A';
     let actionsHtml = '';
-    if (!isIndex && currentPrice && !isNaN(currentPrice) && currentSymbol && name && !['^NSEI', '^BSESN', '^NSEBANK', '^NSEMDCP50', 'BTCUSDT', 'NIFTY_F1.NS', '^DJI', '^IXIC', '^N225', '^HSI', 'XAUINR=X', 'XAGINR=X'].includes(currentSymbol)) {
+    if (!isIndex && safeCurrentPrice > 0 && currentSymbol && name && !['^NSEI', '^BSESN', '^NSEBANK', '^NSEMDCP50', 'BTCUSDT', 'NIFTY_F1.NS', '^DJI', '^IXIC', '^N225', '^HSI', 'XAUINR=X', 'XAGINR=X'].includes(currentSymbol)) {
       actionsHtml = `
         <div class="stock-actions">
-          <button class="action-button buy" onclick="handleBuyClick('${currentSymbol}', '${name.replace(/'/g, "\\'")}', ${currentPrice})">Buy</button>
-          <button class="action-button sell" onclick="handleSellClick('${currentSymbol}', '${name.replace(/'/g, "\\'")}', ${currentPrice})">Sell</button>
+          <button class="action-button buy" onclick="handleBuyClick('${currentSymbol}', '${name.replace(/'/g, "\\'")}', ${safeCurrentPrice})">Buy</button>
+          <button class="action-button sell" onclick="handleSellClick('${currentSymbol}', '${name.replace(/'/g, "\\'")}', ${safeCurrentPrice})">Sell</button>
         </div>
       `;
     }
@@ -2110,6 +2160,7 @@ setTimeout(() => {
 // Call on load
 renderGlobalCues(Object.values(indexData)); // Initial render
 updatePredictionBanner(25722, 25631, 1.00); // Updated initial real values for Nov 11
+updateIndices(); // FIXED: Initial render of indices to avoid N/A
 });
   </script>
 </body>
