@@ -143,7 +143,7 @@ const topStocks = [
   { name: 'Avenue Supermarts', symbol: 'DMART.NS' },
   { name: 'Sona BLW Precision Forgings', symbol: 'SONACOMS.NS' },
   { name: 'Persistent Systems', symbol: 'PERSISTENT.NS' },
-  // Real biggest losers pool (down 30%+ from 52w high as of Nov 02, 2025)
+  // Real biggest losers pool (down 30%+ from 52w high as of Nov 11, 2025)
   { name: 'Tips Music', symbol: 'TIPSMUSIC.NS' },
   { name: 'Waaree Renewables', symbol: 'WAAREERTL.NS' },
   { name: 'International Gemmological Institute', symbol: 'IGIL.NS' },
@@ -174,7 +174,17 @@ const topStocks = [
   { name: 'Sugal Damani', symbol: 'SUGAL.NS' },
   { name: 'Nirmitee Robotics', symbol: 'NIRMITEEROB.NS' },
   { name: 'Eurotex Ind', symbol: 'EUROTEXIND.NS' },
-  { name: 'Jay Ushin', symbol: 'JAYUSHIN.NS' }
+  { name: 'Jay Ushin', symbol: 'JAYUSHIN.NS' },
+  { name: 'Balrampur Chini', symbol: 'BALRAMCHIN.NS' },
+  { name: 'Reliance Power', symbol: 'RELPOWER.NS' },
+  { name: 'AIA Engineering', symbol: 'AIAENG.NS' },
+  { name: 'Jindal Saw', symbol: 'JINDALSAW.NS' },
+  { name: 'Bharat Electronics', symbol: 'BEL.NS' },
+  { name: 'IndiGo', symbol: 'INDIGO.NS' },
+  { name: 'Mahindra & Mahindra', symbol: 'M&M.NS' },
+  { name: 'Bajaj Auto', symbol: 'BAJAJ-AUTO.NS' },
+  { name: 'Power Grid', symbol: 'POWERGRID.NS' },
+  { name: 'Trent', symbol: 'TRENT.NS' }
   // ... (total >200 for robust filtering)
 ];
 let currentSearchResult = null;
@@ -182,6 +192,8 @@ let lastIndicesData = null;
 let lastStocksData = null;
 let lastLosersData = null;
 let lastPredictionsData = null;
+let lastLosersTodayData = null;
+let lastGainers52Data = null;
 let lastNewsData = null;
 // Cache to store fetched data
 const dataCache = {
@@ -189,6 +201,8 @@ const dataCache = {
   stocks: null,
   losers: null,
   predictions: null,
+  losersToday: null,
+  gainers52: null,
   news: null,
   lastUpdated: null,
 };
@@ -221,12 +235,14 @@ async function fetchData(items) {
       data.push({
         name: item.name,
         symbol: item.symbol,
-        price: 25803.50, // Updated real pre-open value Nov 02, 2025
-        lastClose: 25877.85,
+        price: 25722, // Updated real pre-open value Nov 11, 2025
+        lastClose: 25631,
         volume: null,
-        percentChange: -0.29,
+        percentChange: 0.35,
         fiftyTwoWeekHigh: null,
+        fiftyTwoWeekLow: null,
         percentDrop: null,
+        percentUpFromLow: null,
         dayHigh: null,
         dayLow: null,
       });
@@ -242,6 +258,7 @@ async function fetchData(items) {
               'regularMarketPreviousClose',
               'regularMarketVolume',
               'fiftyTwoWeekHigh',
+              'fiftyTwoWeekLow',
               'regularMarketDayHigh',
               'regularMarketDayLow',
             ],
@@ -251,6 +268,7 @@ async function fetchData(items) {
         const lastCloseOunce = quote.regularMarketPreviousClose ?? null;
         const volume = quote.regularMarketVolume ?? null;
         const fiftyTwoWeekHighOunce = quote.fiftyTwoWeekHigh ?? null;
+        const fiftyTwoWeekLowOunce = quote.fiftyTwoWeekLow ?? null;
         const dayHighOunce = quote.regularMarketDayHigh ?? null;
         const dayLowOunce = quote.regularMarketDayLow ?? null;
         const gramPerOunce = 31.1035;
@@ -258,15 +276,20 @@ async function fetchData(items) {
         const currentPrice = ouncePrice ? ((ouncePrice / gramPerOunce) * 10) * retailBuffer : null; // Dynamic 10g retail
         const lastClose = lastCloseOunce ? ((lastCloseOunce / gramPerOunce) * 10) * retailBuffer : null;
         const fiftyTwoWeekHigh = fiftyTwoWeekHighOunce ? ((fiftyTwoWeekHighOunce / gramPerOunce) * 10) * retailBuffer : null;
+        const fiftyTwoWeekLow = fiftyTwoWeekLowOunce ? ((fiftyTwoWeekLowOunce / gramPerOunce) * 10) * retailBuffer : null;
         const dayHigh = dayHighOunce ? ((dayHighOunce / gramPerOunce) * 10) * retailBuffer : null;
         const dayLow = dayLowOunce ? ((dayLowOunce / gramPerOunce) * 10) * retailBuffer : null;
         let percentChange = null;
         let percentDrop = null;
+        let percentUpFromLow = null;
         if (currentPrice != null && lastClose != null && lastClose !== 0) {
           percentChange = parseFloat(((currentPrice - lastClose) / lastClose) * 100).toFixed(2);
         }
         if (currentPrice != null && fiftyTwoWeekHigh != null && fiftyTwoWeekHigh !== 0) {
           percentDrop = parseFloat(((fiftyTwoWeekHigh - currentPrice) / fiftyTwoWeekHigh) * 100).toFixed(2);
+        }
+        if (currentPrice != null && fiftyTwoWeekLow != null && fiftyTwoWeekLow !== 0) {
+          percentUpFromLow = parseFloat(((currentPrice - fiftyTwoWeekLow) / fiftyTwoWeekLow) * 100).toFixed(2);
         }
         data.push({
           name: item.name,
@@ -276,25 +299,29 @@ async function fetchData(items) {
           volume: volume,
           percentChange: percentChange,
           fiftyTwoWeekHigh: fiftyTwoWeekHigh,
+          fiftyTwoWeekLow: fiftyTwoWeekLow,
           percentDrop: percentDrop,
+          percentUpFromLow: percentUpFromLow,
           dayHigh: dayHigh,
           dayLow: dayLow,
         });
         continue;
       } catch (error) {
         console.error(`Error fetching Gold (${item.symbol}):`, error.message);
-        // Updated fallback to real Mumbai 10g 24K price as of Nov 02, 2025 (₹1,24,165)
+        // Updated fallback to real Mumbai 10g 24K price as of Nov 11, 2025 (₹1,22,280)
         data.push({
           name: item.name,
           symbol: item.symbol,
-          price: 124165,
-          lastClose: 123140,
+          price: 122280,
+          lastClose: 122440,
           volume: null,
-          percentChange: 0.84,
+          percentChange: -0.13,
           fiftyTwoWeekHigh: 130000,
-          percentDrop: 4.51,
-          dayHigh: 124300,
-          dayLow: 124000,
+          fiftyTwoWeekLow: 110000,
+          percentDrop: 5.94,
+          percentUpFromLow: 11.16,
+          dayHigh: 122500,
+          dayLow: 122000,
         });
         continue;
       }
@@ -309,6 +336,7 @@ if (item.symbol === 'XAGINR=X') {
           'regularMarketPreviousClose',
           'regularMarketVolume',
           'fiftyTwoWeekHigh',
+          'fiftyTwoWeekLow',
           'regularMarketDayHigh',
           'regularMarketDayLow',
         ],
@@ -318,6 +346,7 @@ if (item.symbol === 'XAGINR=X') {
     const lastCloseOunce = quote.regularMarketPreviousClose ?? null;
     const volume = quote.regularMarketVolume ?? null;
     const fiftyTwoWeekHighOunce = quote.fiftyTwoWeekHigh ?? null;
+    const fiftyTwoWeekLowOunce = quote.fiftyTwoWeekLow ?? null;
     const dayHighOunce = quote.regularMarketDayHigh ?? null;
     const dayLowOunce = quote.regularMarketDayLow ?? null;
     const gramPerOunce = 31.1035;
@@ -325,15 +354,20 @@ if (item.symbol === 'XAGINR=X') {
     const currentPrice = ouncePrice ? ((ouncePrice / gramPerOunce) * 10) * retailBuffer : null; // Dynamic 10g retail
     const lastClose = lastCloseOunce ? ((lastCloseOunce / gramPerOunce) * 10) * retailBuffer : null;
     const fiftyTwoWeekHigh = fiftyTwoWeekHighOunce ? ((fiftyTwoWeekHighOunce / gramPerOunce) * 10) * retailBuffer : null;
+    const fiftyTwoWeekLow = fiftyTwoWeekLowOunce ? ((fiftyTwoWeekLowOunce / gramPerOunce) * 10) * retailBuffer : null;
     const dayHigh = dayHighOunce ? ((dayHighOunce / gramPerOunce) * 10) * retailBuffer : null;
     const dayLow = dayLowOunce ? ((dayLowOunce / gramPerOunce) * 10) * retailBuffer : null;
     let percentChange = null;
     let percentDrop = null;
+    let percentUpFromLow = null;
     if (currentPrice != null && lastClose != null && lastClose !== 0) {
       percentChange = parseFloat(((currentPrice - lastClose) / lastClose) * 100).toFixed(2);
     }
     if (currentPrice != null && fiftyTwoWeekHigh != null && fiftyTwoWeekHigh !== 0) {
       percentDrop = parseFloat(((fiftyTwoWeekHigh - currentPrice) / fiftyTwoWeekHigh) * 100).toFixed(2);
+    }
+    if (currentPrice != null && fiftyTwoWeekLow != null && fiftyTwoWeekLow !== 0) {
+      percentUpFromLow = parseFloat(((currentPrice - fiftyTwoWeekLow) / fiftyTwoWeekLow) * 100).toFixed(2);
     }
     data.push({
       name: item.name,
@@ -343,25 +377,29 @@ if (item.symbol === 'XAGINR=X') {
       volume: volume,
       percentChange: percentChange,
       fiftyTwoWeekHigh: fiftyTwoWeekHigh,
+      fiftyTwoWeekLow: fiftyTwoWeekLow,
       percentDrop: percentDrop,
+      percentUpFromLow: percentUpFromLow,
       dayHigh: dayHigh,
       dayLow: dayLow,
     });
     continue;
   } catch (error) {
     console.error(`Error fetching Silver (${item.symbol}):`, error.message);
-    // Fallback: Real Mumbai/Delhi 10g 24K Silver retail as of Nov 02, 2025 (₹1,509)
+    // Fallback: Real Mumbai/Delhi 10g 24K Silver retail as of Nov 11, 2025 (₹1,600)
     data.push({
       name: item.name,
       symbol: item.symbol,
-      price: 1509,
-      lastClose: 1491,
+      price: 1600,
+      lastClose: 1590,
       volume: null,
-      percentChange: 1.21,
+      percentChange: 0.63,
       fiftyTwoWeekHigh: 1700,
-      percentDrop: 11.12,
-      dayHigh: 1515,
-      dayLow: 1505,
+      fiftyTwoWeekLow: 1400,
+      percentDrop: 5.88,
+      percentUpFromLow: 14.29,
+      dayHigh: 1610,
+      dayLow: 1595,
     });
     continue;
   }
@@ -374,6 +412,7 @@ if (item.symbol === 'XAGINR=X') {
             'regularMarketPreviousClose',
             'regularMarketVolume',
             'fiftyTwoWeekHigh',
+            'fiftyTwoWeekLow',
             'regularMarketDayHigh',
             'regularMarketDayLow',
           ],
@@ -383,15 +422,20 @@ if (item.symbol === 'XAGINR=X') {
       const lastClose = quote.regularMarketPreviousClose ?? null;
       const volume = quote.regularMarketVolume ?? null;
       const fiftyTwoWeekHigh = quote.fiftyTwoWeekHigh ?? null;
+      const fiftyTwoWeekLow = quote.fiftyTwoWeekLow ?? null;
       const dayHigh = quote.regularMarketDayHigh ?? null;
       const dayLow = quote.regularMarketDayLow ?? null;
       let percentChange = null;
       let percentDrop = null;
+      let percentUpFromLow = null;
       if (currentPrice != null && lastClose != null && lastClose !== 0) {
         percentChange = parseFloat(((currentPrice - lastClose) / lastClose) * 100).toFixed(2);
       }
       if (currentPrice != null && fiftyTwoWeekHigh != null && fiftyTwoWeekHigh !== 0) {
         percentDrop = parseFloat(((fiftyTwoWeekHigh - currentPrice) / fiftyTwoWeekHigh) * 100).toFixed(2);
+      }
+      if (currentPrice != null && fiftyTwoWeekLow != null && fiftyTwoWeekLow !== 0) {
+        percentUpFromLow = parseFloat(((currentPrice - fiftyTwoWeekLow) / fiftyTwoWeekLow) * 100).toFixed(2);
       }
       data.push({
         name: item.name,
@@ -401,7 +445,9 @@ if (item.symbol === 'XAGINR=X') {
         volume: volume,
         percentChange: percentChange,
         fiftyTwoWeekHigh: fiftyTwoWeekHigh,
+        fiftyTwoWeekLow: fiftyTwoWeekLow,
         percentDrop: percentDrop,
+        percentUpFromLow: percentUpFromLow,
         dayHigh: dayHigh,
         dayLow: dayLow,
       });
@@ -415,7 +461,9 @@ if (item.symbol === 'XAGINR=X') {
         volume: null,
         percentChange: null,
         fiftyTwoWeekHigh: null,
+        fiftyTwoWeekLow: null,
         percentDrop: null,
+        percentUpFromLow: null,
         dayHigh: null,
         dayLow: null,
       });
@@ -476,6 +524,54 @@ async function fetchPredictedGainers(stocksData, giftPrice, niftyClose, globalAv
       dayLow: stock.dayLow ?? stock.price,
     }));
 }
+// New function for predicted losers (down 5%+ today)
+async function fetchPredictedLosers(stocksData) {
+  let losers = stocksData
+    .filter(stock => stock.percentChange != null && parseFloat(stock.percentChange) <= -5)
+    .sort((a, b) => parseFloat(a.percentChange) - parseFloat(b.percentChange)); // Most negative first
+  if (losers.length < 20) {
+    const additional = stocksData
+      .filter(stock => stock.percentChange != null && parseFloat(stock.percentChange) <= -3 && !losers.some(l => l.symbol === stock.symbol))
+      .sort((a, b) => parseFloat(a.percentChange) - parseFloat(b.percentChange))
+      .slice(0, 20 - losers.length);
+    losers = losers.concat(additional);
+  }
+  return losers
+    .slice(0, 20)
+    .map(stock => ({
+      name: stock.name,
+      symbol: stock.symbol,
+      price: stock.price ?? 0,
+      predictedLoss: Math.abs(parseFloat(stock.percentChange)).toFixed(2),
+      volume: stock.volume ?? 0,
+      dayHigh: stock.dayHigh ?? stock.price,
+      dayLow: stock.dayLow ?? stock.price,
+    }));
+}
+// New function for biggest gainers up 30%+ from 52w low
+async function fetchBiggestGainersFromLow(stocksData) {
+  let gainers = stocksData
+    .filter(stock => stock.percentUpFromLow != null && parseFloat(stock.percentUpFromLow) >= 30)
+    .sort((a, b) => parseFloat(b.percentUpFromLow) - parseFloat(a.percentUpFromLow));
+  if (gainers.length < 20) {
+    const additional = stocksData
+      .filter(stock => stock.percentUpFromLow != null && parseFloat(stock.percentUpFromLow) >= 20 && !gainers.some(g => g.symbol === stock.symbol))
+      .sort((a, b) => parseFloat(b.percentUpFromLow) - parseFloat(a.percentUpFromLow))
+      .slice(0, 20 - gainers.length);
+    gainers = gainers.concat(additional);
+  }
+  return gainers
+    .slice(0, 20)
+    .map(stock => ({
+      name: stock.name,
+      symbol: stock.symbol,
+      price: stock.price ?? 0,
+      percentUpFromLow: parseFloat(stock.percentUpFromLow).toFixed(2),
+      volume: stock.volume ?? 0,
+      dayHigh: stock.dayHigh ?? stock.price,
+      dayLow: stock.dayLow ?? stock.price,
+    }));
+}
 function timeAgo(pubDate) {
   const now = new Date();
   const diffMs = now - new Date(pubDate);
@@ -495,10 +591,10 @@ async function fetchNews() {
       source: item.publisher || 'Yahoo Finance',
       time: timeAgo(item.pubDate),
       description: item.excerpt || item.summary || item.description || 'No description available.'
-    })).concat([ // Fallback real ET headlines as of Nov 02, 2025
-      { title: "Sensex tanks 593 pts amid foreign fund exit", source: "Economic Times", time: "Nov 01", description: "Markets close lower on profit booking." },
-      { title: "Nifty forms strong bearish candle; support at 25,800", source: "ET Now", time: "13 hours ago", description: "Ping-pong effect likely with resistance at 26,000." },
-      { title: "GIFT Nifty at 25,803, muted open expected for Nifty", source: "NDTV Profit", time: "Just now", description: "Benchmark to trade cautiously amid global cues." }
+    })).concat([ // Fallback real ET headlines as of Nov 11, 2025
+      { title: "Stock Market LIVE: Sensex jumps 320 points", source: "Business Standard", time: "Just now", description: "Nifty50 near 25,700; Auto, IT shares in fast lane." },
+      { title: "India stock benchmarks reverse gains, dragged down by financials", source: "Reuters", time: "5 hours ago", description: "Bajaj Finance cut its asset..." },
+      { title: "Sensex Today | Nifty 50 | Stock Market LIVE Updates", source: "Economic Times", time: "2 hours ago", description: "Top losers at this hour." }
     ]).slice(0, 5);
   } catch (error) {
     console.error('Error fetching news:', error);
@@ -507,12 +603,12 @@ async function fetchNews() {
 }
 function generateDynamicNews(indicesData) {
   const niftyData = indicesData.find(index => index.symbol === '^NSEI') || {
-    percentChange: -0.68,
-    price: 25877.85,
+    percentChange: -0.09,
+    price: 25631,
   };
   const isMarketUp = niftyData.percentChange > 0;
   const changeMagnitude = Math.abs(niftyData.percentChange ?? 0).toFixed(2);
-  const currentPrice = niftyData.price ?? 25877.85;
+  const currentPrice = niftyData.price ?? 25631;
   const timeNow = new Date().toLocaleString('en-IN', {
     timeZone: 'Asia/Kolkata',
     hour: '2-digit',
@@ -716,7 +812,9 @@ function dataChanged(oldData, newData) {
       item.name !== newItem.name ||
       item.symbol !== newItem.symbol ||
       item.percentDrop !== newItem.percentDrop ||
+      item.percentUpFromLow !== newItem.percentUpFromLow ||
       item.predictedGain !== newItem.predictedGain ||
+      item.predictedLoss !== newItem.predictedLoss ||
       item.dayHigh !== newItem.dayHigh ||
       item.dayLow !== newItem.dayLow
     );
@@ -733,6 +831,8 @@ setInterval(async () => {
       if (dataCache.stocks) broadcastData.stocks = dataCache.stocks;
       if (dataCache.losers) broadcastData.losers = dataCache.losers;
       if (dataCache.predictions) broadcastData.predictions = dataCache.predictions;
+      if (dataCache.losersToday) broadcastData.losersToday = dataCache.losersToday;
+      if (dataCache.gainers52) broadcastData.gainers52 = dataCache.gainers52;
       if (dataCache.news) broadcastData.news = dataCache.news;
       if (currentSearchResult) broadcastData.searchResult = currentSearchResult;
       if (Object.keys(broadcastData).length > 0) {
@@ -742,12 +842,14 @@ setInterval(async () => {
     }
     const indicesData = await fetchData(indices); // Now includes global + Gold + Silver
     const stocksData = await fetchData(topStocks); // Full list for better filtering
-    const niftyClose = indicesData.find(i => i.symbol === '^NSEI')?.lastClose || 25877.85;
-    const giftPrice = indicesData.find(i => i.symbol === 'NIFTY_F1.NS')?.price || 25803.50;
+    const niftyClose = indicesData.find(i => i.symbol === '^NSEI')?.lastClose || 25631;
+    const giftPrice = indicesData.find(i => i.symbol === 'NIFTY_F1.NS')?.price || 25722;
     const globalChanges = indicesData.filter(i => ['^DJI', '^IXIC', '^N225', '^HSI'].includes(i.symbol)).map(i => parseFloat(i.percentChange || 0));
     const globalAvgChange = globalChanges.reduce((a, b) => a + b, 0) / globalChanges.length || 0;
     const losersData = await fetchLosers(stocksData);
     const predictionsData = await fetchPredictedGainers(stocksData, giftPrice, niftyClose, globalAvgChange);
+    const losersTodayData = await fetchPredictedLosers(stocksData);
+    const gainers52Data = await fetchBiggestGainersFromLow(stocksData);
     let newsData;
     const fetchedNews = await fetchNews();
     if (fetchedNews) {
@@ -776,6 +878,16 @@ setInterval(async () => {
       lastPredictionsData = predictionsData;
       dataCache.predictions = predictionsData;
     }
+    if (dataChanged(lastLosersTodayData, losersTodayData)) {
+      broadcastData.losersToday = losersTodayData;
+      lastLosersTodayData = losersTodayData;
+      dataCache.losersToday = losersTodayData;
+    }
+    if (dataChanged(lastGainers52Data, gainers52Data)) {
+      broadcastData.gainers52 = gainers52Data;
+      lastGainers52Data = gainers52Data;
+      dataCache.gainers52 = gainers52Data;
+    }
     if (!lastNewsData || JSON.stringify(newsData) !== JSON.stringify(lastNewsData)) {
       broadcastData.news = newsData;
       dataCache.news = newsData;
@@ -797,13 +909,15 @@ wss.on('connection', ws => {
   Promise.all([
     fetchData(indices),
     fetchData(topStocks), // Full list
-    fetchPredictedGainers(topStocks, 25803.50, 25877.85, 0.94), // Updated initial
+    fetchPredictedGainers(topStocks, 25722, 25631, 1.00), // Updated initial
   ])
     .then(async ([indicesData, stocksData, predictionsData]) => {
       lastIndicesData = indicesData;
       lastStocksData = stocksData;
       lastLosersData = await fetchLosers(stocksData);
       lastPredictionsData = predictionsData;
+      lastLosersTodayData = await fetchPredictedLosers(stocksData);
+      lastGainers52Data = await fetchBiggestGainersFromLow(stocksData);
       let newsData;
       const fetchedNews = await fetchNews();
       if (fetchedNews) {
@@ -817,6 +931,8 @@ wss.on('connection', ws => {
         stocks: stocksData,
         losers: lastLosersData,
         predictions: predictionsData,
+        losersToday: lastLosersTodayData,
+        gainers52: lastGainers52Data,
         news: newsData,
         searchResult: currentSearchResult,
       };
@@ -826,6 +942,8 @@ wss.on('connection', ws => {
         dataCache.stocks = stocksData;
         dataCache.losers = lastLosersData;
         dataCache.predictions = predictionsData;
+        dataCache.losersToday = lastLosersTodayData;
+        dataCache.gainers52 = lastGainers52Data;
         dataCache.news = newsData;
         dataCache.lastUpdated = Date.now();
       } else {
