@@ -109,6 +109,17 @@
       <p>Profit/Loss: <span id="profitLoss">₹0</span></p>
     </div>
     <div id="portfolioContainer" class="portfolio-grid"></div>
+    <!-- New Order History Section -->
+    <div class="order-history-section">
+      <h3 class="order-history-title">Order History</h3>
+      <!-- New Search Input for Order History -->
+      <div class="order-history-search">
+        <input type="text" id="orderSearchInput" placeholder="Search orders by stock name or symbol..." />
+        <div class="clear-search" id="clearOrderSearch" style="display: none;">Clear</div>
+      </div>
+      <div id="orderHistoryContainer" class="order-history-grid"></div>
+      <p class="no-orders" id="noOrdersMessage" style="display: none; text-align: center; color: #9CA3AF; font-style: italic;">No orders yet. Start trading to see your history!</p>
+    </div>
   </div>
   <div class="search-bar">
     <form id="searchForm">
@@ -170,6 +181,16 @@
     <h2 class="predictions-title">Predicted Stock Gainers (5%+ Up)</h2>
     <div class="predictions-container" id="predictionsContainer"></div>
   </div>
+  <!-- New Predicted Losers Section -->
+  <div class="losers-section-today">
+    <h2 class="losers-title">Predicted Stock Losers (5%+ Down)</h2>
+    <div class="losers-container" id="losersTodayContainer"></div>
+  </div>
+  <!-- New Biggest Gainers from 52w Low Section -->
+  <div class="gainers-section-52">
+    <h2 class="gainers-title">Biggest Gainers (Up 30%+ from 52-Week Low)</h2>
+    <div class="gainers-container" id="gainers52Container"></div>
+  </div>
   <div class="losers-section">
     <h2 class="losers-title">Biggest Losers (Down 30%+ from 52-Week High)</h2>
     <div class="losers-container" id="losersContainer"></div>
@@ -198,45 +219,66 @@
   let currentTheme = 'dark';
   let stockChart = null;
   let walletBalance = 10000000; // ₹1 crore initial balance
-  let portfolio = JSON.parse(localStorage.getItem('portfolio')) || {};
-  // Normalize existing portfolio symbols
-  Object.keys(portfolio).forEach(symbol => {
-    if (!symbol.endsWith('.NS')) {
-      const newSymbol = `${symbol}.NS`;
-      portfolio[newSymbol] = portfolio[symbol];
-      delete portfolio[symbol];
-    }
-  });
-  localStorage.setItem('portfolio', JSON.stringify(portfolio));
+  let portfolio = {}; // Will be loaded per user
   let totalInvested = 0;
   let currentValue = 0;
   let profitLoss = 0;
-  // Update indexData with global indices + Gold + Silver (initial values from real data as of Nov 02, 2025)
+  // Order History - New
+  let orderHistory = []; // Will be loaded per user
+  // Updated indexData with global indices + Gold + Silver (initial values from real data as of Nov 11, 2025)
  let indexData = {
-  '^NSEI': { name: 'NIFTY 50', price: 25877.85, lastClose: 26053.90, percentChange: -0.68 },
-  '^BSESN': { name: 'SENSEX', price: 84404.46, lastClose: 84997.13, percentChange: -0.70 },
-  '^NSEBANK': { name: 'BANK NIFTY', price: 57012.35, lastClose: 57348.90, percentChange: -0.59 },
-  '^NSEMDCP50': { name: 'NIFTY MIDCAP 50', price: 15320.45, lastClose: 15364.20, percentChange: -0.28 },
-  'NIFTY_F1.NS': { name: 'GIFT NIFTY', price: 25803.50, lastClose: 25877.85, percentChange: -0.29 }, // Updated to real value Nov 02, 2025
-  'XAUINR=X': { name: 'Gold 24K (10g)', price: 124165, lastClose: 123140, percentChange: 0.84 }, // Updated to real Mumbai retail Nov 02, 2025
-  'XAGINR=X': { name: 'Silver 24K (10g)', price: 1509, lastClose: 1491, percentChange: 1.21 }, // Real Delhi/Mumbai retail Nov 02, 2025 (updates live via WS)
-  '^DJI': { name: 'Dow Jones', price: 47207.12, lastClose: 46734.61, percentChange: 1.01 },
-  '^IXIC': { name: 'Nasdaq', price: 23204.87, lastClose: 22941.80, percentChange: 1.15 },
-  '^N225': { name: 'Nikkei', price: 49299.65, lastClose: 48641.61, percentChange: 1.35 },
-  '^HSI': { name: 'Hang Seng', price: 26160.15, lastClose: 25968, percentChange: 0.74 },
-  'BTCUSDT': { name: 'Bitcoin (BTC/USDT)', price: 60000, lastClose: 59000, percentChange: 1.69, volume: 0 }
+  '^NSEI': { name: 'NIFTY 50', price: 25631, lastClose: 25653.90, percentChange: -0.09 },
+  '^BSESN': { name: 'SENSEX', price: 83369, lastClose: 83535.35, percentChange: -0.20 },
+  '^NSEBANK': { name: 'BANK NIFTY', price: 58026, lastClose: 57876.80, percentChange: 0.26 },
+  '^NSEMDCP50': { name: 'NIFTY MIDCAP 50', price: 17050, lastClose: 17051.80, percentChange: -0.01 },
+  'NIFTY_F1.NS': { name: 'GIFT NIFTY', price: 25722, lastClose: 25631, percentChange: 0.35 }, // Updated to real value Nov 11, 2025
+  'XAUINR=X': { name: 'Gold 24K (10g)', price: 122280, lastClose: 122440, percentChange: -0.13 }, // Updated to real Mumbai retail Nov 11, 2025
+  'XAGINR=X': { name: 'Silver 24K (10g)', price: 1600, lastClose: 1590, percentChange: 0.63 }, // Real Delhi/Mumbai retail Nov 11, 2025 (updates live via WS)
+  '^DJI': { name: 'Dow Jones', price: 47368.63, lastClose: 46987.10, percentChange: 0.81 },
+  '^IXIC': { name: 'Nasdaq', price: 23527.17, lastClose: 23004.54, percentChange: 2.27 },
+  '^N225': { name: 'Nikkei', price: 51314.04, lastClose: 51440, percentChange: -0.24 },
+  '^HSI': { name: 'Hang Seng', price: 26748.09, lastClose: 26319.40, percentChange: 1.62 },
+  'BTCUSDT': { name: 'Bitcoin (BTC/USDT)', price: 105354, lastClose: 102278, percentChange: 3.00, volume: 0 }
 };
   let lastNewsData = null;
   let lastIndicesData = null;
   let lastStocksData = null;
   let lastLosersData = null;
   let lastPredictionsData = null;
+  let lastLosersTodayData = null;
+  let lastGainers52Data = null;
   let currentPredictionDate = null;
   // Authentication variables - Enhanced with localStorage users for demo
   let isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
   let currentUser = localStorage.getItem('currentUser') || '';
-  let users = JSON.parse(localStorage.getItem('users')) || []; // Array of {name, email, password}
+  let users = JSON.parse(localStorage.getItem('users')) || {}; // Object keyed by email: {name, password, portfolio, orderHistory, walletBalance}
   document.getElementById('currentDate').textContent = new Date().toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  function loadUserData(email) {
+    const user = users[email];
+    if (user) {
+      walletBalance = user.walletBalance || 10000000;
+      portfolio = JSON.parse(user.portfolio) || {};
+      // Normalize existing portfolio symbols
+      Object.keys(portfolio).forEach(symbol => {
+        if (!symbol.endsWith('.NS')) {
+          const newSymbol = `${symbol}.NS`;
+          portfolio[newSymbol] = portfolio[symbol];
+          delete portfolio[symbol];
+        }
+      });
+      orderHistory = JSON.parse(user.orderHistory) || [];
+      updateWalletBalance();
+      renderPortfolio();
+    }
+  }
+  function saveUserData(email) {
+    if (users[email]) {
+      users[email].walletBalance = walletBalance;
+      users[email].portfolio = JSON.stringify(portfolio);
+      users[email].orderHistory = JSON.stringify(orderHistory);
+      localStorage.setItem('users', JSON.stringify(users));
+    }
+  }
   function updateWalletBalance() {
     document.getElementById('walletBalance').textContent =
       `₹${walletBalance.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
@@ -302,20 +344,23 @@
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
     // Demo: Check against stored users or default
-    const user = users.find(u => u.email === email && u.password === password); // In real: hash password
-    if (user || (email === 'test@example.com' && password === 'password123')) {
+    const user = users[email];
+    if (user && user.password === password) { // In real: hash password
       isLoggedIn = true;
-      currentUser = user ? user.name : email.split('@')[0];
+      currentUser = user.name;
       localStorage.setItem('isLoggedIn', 'true');
       localStorage.setItem('currentUser', currentUser);
       localStorage.setItem('authToken', btoa(email + ':' + password)); // Demo token
+      loadUserData(email);
       updateAuthUI();
       closeAuthModal();
       showNotification(`Welcome back, ${currentUser}!`, 'success');
       // Re-render sections
       if (lastStocksData) updateTopStocks(lastStocksData);
       if (lastPredictionsData) updatePredictions(lastPredictionsData);
+      if (lastLosersTodayData) updateLosersToday(lastLosersTodayData);
       if (lastLosersData) updateLosers(lastLosersData);
+      if (lastGainers52Data) updateGainers52(lastGainers52Data);
       renderPortfolio();
     } else {
       showError('loginError', 'Invalid email or password. Try test@example.com / password123');
@@ -336,12 +381,18 @@
       showError('signupError', 'Passwords do not match');
       return;
     }
-    if (users.find(u => u.email === email)) {
+    if (users[email]) {
       showError('signupError', 'Email already registered. Please login.');
       return;
     }
-    // Add user (demo: plain password; real: hash)
-    users.push({ name, email, password });
+    // Add user with initial data (demo: plain password; real: hash)
+    users[email] = {
+      name,
+      password,
+      portfolio: JSON.stringify({}),
+      orderHistory: JSON.stringify([]),
+      walletBalance: 10000000
+    };
     localStorage.setItem('users', JSON.stringify(users));
     // Auto-login after signup
     isLoggedIn = true;
@@ -349,18 +400,31 @@
     localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('currentUser', currentUser);
     localStorage.setItem('authToken', btoa(email + ':' + password));
+    loadUserData(email);
     updateAuthUI();
     closeAuthModal();
     showNotification(`Account created successfully, ${name}! Welcome aboard.`, 'success');
     // Re-render sections
     if (lastStocksData) updateTopStocks(lastStocksData);
     if (lastPredictionsData) updatePredictions(lastPredictionsData);
+    if (lastLosersTodayData) updateLosersToday(lastLosersTodayData);
     if (lastLosersData) updateLosers(lastLosersData);
+    if (lastGainers52Data) updateGainers52(lastGainers52Data);
     renderPortfolio();
   }
   function logout() {
+    // Save current user data before logout
+    if (isLoggedIn && currentUser) {
+      const email = Object.keys(users).find(key => users[key].name === currentUser);
+      if (email) saveUserData(email);
+    }
     isLoggedIn = false;
     currentUser = '';
+    // Reset globals
+    walletBalance = 10000000;
+    portfolio = {};
+    orderHistory = [];
+    updateWalletBalance();
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('currentUser');
     localStorage.removeItem('authToken');
@@ -368,7 +432,9 @@
     // Re-render sections
     if (lastStocksData) updateTopStocks(lastStocksData);
     if (lastPredictionsData) updatePredictions(lastPredictionsData);
+    if (lastLosersTodayData) updateLosersToday(lastLosersTodayData);
     if (lastLosersData) updateLosers(lastLosersData);
+    if (lastGainers52Data) updateGainers52(lastGainers52Data);
     renderPortfolio();
     showNotification('Logged out successfully.', 'success');
   }
@@ -384,7 +450,7 @@
     }
     return true;
   }
-  // ... (Rest of the script remains unchanged from the original)
+  // ... (Rest of the script remains unchanged from the original up to updatePortfolioStats)
   function updatePortfolioStats() {
     totalInvested = 0;
     currentValue = 0;
@@ -400,8 +466,75 @@
     document.getElementById('profitLoss').textContent =
       `${profitLoss >= 0 ? '+' : '-'}₹${Math.abs(profitLoss).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
     document.getElementById('profitLoss').className = profitLoss >= 0 ? 'positive' : 'negative';
-    localStorage.setItem('portfolio', JSON.stringify(portfolio));
+    // Save user data after stats update
+    if (isLoggedIn && currentUser) {
+      const email = Object.keys(users).find(key => users[key].name === currentUser);
+      if (email) saveUserData(email);
+    }
   }
+  // New: Render Order History with Search/Filter Functionality
+  let orderSearchFilter = ''; // Global filter for order history search
+  function renderOrderHistory(filter = '') {
+    orderSearchFilter = filter.toLowerCase().trim();
+    const container = document.getElementById('orderHistoryContainer');
+    const noOrdersMessage = document.getElementById('noOrdersMessage');
+    const clearSearchBtn = document.getElementById('clearOrderSearch');
+    container.innerHTML = '';
+    if (orderHistory.length === 0) {
+      noOrdersMessage.style.display = 'block';
+      clearSearchBtn.style.display = 'none';
+      return;
+    }
+    noOrdersMessage.style.display = 'none';
+    // Sort by timestamp descending
+    const sortedHistory = orderHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    // Filter by stock name or symbol if filter is provided
+    const filteredHistory = orderSearchFilter
+      ? sortedHistory.filter(order =>
+          order.name.toLowerCase().includes(orderSearchFilter) ||
+          order.symbol.toLowerCase().includes(orderSearchFilter)
+        )
+      : sortedHistory;
+    if (filteredHistory.length === 0 && orderSearchFilter) {
+      container.innerHTML = '<p class="no-orders" style="text-align: center; color: #9CA3AF; font-style: italic;">No orders found matching your search.</p>';
+      clearSearchBtn.style.display = 'inline-block';
+      return;
+    }
+    clearSearchBtn.style.display = orderSearchFilter ? 'inline-block' : 'none';
+    filteredHistory.forEach((order, idx) => {
+      const row = document.createElement('div');
+      row.className = 'order-history-row';
+      row.style.animationDelay = `${0.1 + (idx * 0.05)}s`;
+      const typeClass = order.type === 'buy' ? 'positive' : 'negative';
+      const formattedDate = new Date(order.timestamp).toLocaleString('en-IN', {
+        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+   row.innerHTML = `
+  <div class="order-type ${typeClass}">${order.type.toUpperCase()}</div>
+  <div class="order-symbol-name">
+    <div class="order-symbol">${order.symbol}</div>
+    <div class="order-name">${order.name}</div>
+  </div>
+  <div class="order-qty">${order.quantity}</div>
+  <div class="order-price">₹${Number(order.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
+  <div class="order-date">${formattedDate}</div>
+`;
+      container.appendChild(row);
+    });
+  }
+  // Event listener for order history search
+  document.addEventListener('DOMContentLoaded', () => {
+    const orderSearchInput = document.getElementById('orderSearchInput');
+    const clearOrderSearch = document.getElementById('clearOrderSearch');
+    orderSearchInput.addEventListener('input', (e) => {
+      const filter = e.target.value;
+      renderOrderHistory(filter);
+    });
+    clearOrderSearch.addEventListener('click', () => {
+      orderSearchInput.value = '';
+      renderOrderHistory('');
+    });
+  });
   function renderPortfolio() {
     const portfolioContainer = document.getElementById('portfolioContainer');
     portfolioContainer.innerHTML = '';
@@ -409,6 +542,7 @@
     if (Object.keys(portfolio).length === 0) {
         portfolioContainer.innerHTML = '<p class="no-holdings">No holdings yet. Start trading to add stocks!</p>';
         updatePortfolioStats();
+        renderOrderHistory(); // Also render history
         return;
     }
     // First create and add all cards to the DOM
@@ -416,21 +550,17 @@
         if (!holding.name || !holding.quantity || !holding.avgPrice) {
             return;
         }
-  
         const currentPrice = holding.currentPrice && !isNaN(holding.currentPrice) && holding.currentPrice > 0 ? holding.currentPrice : 0;
         const volume = holding.volume && !isNaN(holding.volume) ? Number(holding.volume).toLocaleString('en-IN') : 'N/A';
         const dayHigh = holding.dayHigh && !isNaN(holding.dayHigh) ? `₹${Number(holding.dayHigh).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'N/A';
         const dayLow = holding.dayLow && !isNaN(holding.dayLow) ? `₹${Number(holding.dayLow).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'N/A';
-  
         const pl = currentPrice ? (currentPrice - holding.avgPrice) * holding.quantity : 0;
         const plPercent = currentPrice ? ((currentPrice - holding.avgPrice) / holding.avgPrice * 100) : 0;
-  
         // Create the card element
         const card = document.createElement('div');
         card.className = 'portfolio-card';
         card.style.animationDelay = `${0.1 + (idx * 0.05)}s`;
         card.setAttribute('data-symbol', symbol);
-  
         card.innerHTML = `
             <div class="portfolio-info">
                 <h3 class="portfolio-name">${holding.name}</h3>
@@ -449,13 +579,11 @@
                 </div>
             </div>
         `;
-  
         portfolioContainer.appendChild(card);
     });
     // Now add buttons separately after all cards are in the DOM
     Object.entries(portfolio).forEach(([symbol, holding]) => {
         const actionsContainer = portfolioContainer.querySelector(`.stock-actions[data-symbol="${symbol}"]`);
-  
         if (actionsContainer) {
             // Create buy button
             const buyButton = document.createElement('button');
@@ -464,7 +592,7 @@
             buyButton.style.pointerEvents = 'auto';
             buyButton.style.position = 'relative';
             buyButton.style.zIndex = '10';
-      
+  
             // Create sell button
             const sellButton = document.createElement('button');
             sellButton.className = 'action-button sell';
@@ -472,11 +600,11 @@
             sellButton.style.pointerEvents = 'auto';
             sellButton.style.position = 'relative';
             sellButton.style.zIndex = '10';
-      
+  
             // Add buttons to container
             actionsContainer.appendChild(buyButton);
             actionsContainer.appendChild(sellButton);
-      
+  
             // Add event listeners with proper event prevention
             buyButton.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -484,7 +612,7 @@
                 if (!checkAuthAndTrade('buy', symbol, holding.name, holding.currentPrice || 0)) return;
                 promptTrade('buy', symbol, holding.name, holding.currentPrice || 0);
             });
-      
+  
             sellButton.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -507,6 +635,7 @@
       });
     });
     updatePortfolioStats();
+    renderOrderHistory(); // Render order history below holdings
   }
   function buyStock(symbol, name, price, quantity) {
     if (isNaN(price) || price <= 0) {
@@ -544,10 +673,23 @@
         dayLow: price
       };
     }
+    // Add to order history
+    orderHistory.push({
+      type: 'buy',
+      symbol: normalizedSymbol,
+      name,
+      quantity,
+      price,
+      timestamp: new Date().toISOString()
+    });
     updateWalletBalance();
     renderPortfolio();
     showNotification(`Bought ${quantity} shares of ${name} at ₹${price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`, 'success');
-    localStorage.setItem('portfolio', JSON.stringify(portfolio));
+    // Save user data after trade
+    if (isLoggedIn && currentUser) {
+      const email = Object.keys(users).find(key => users[key].name === currentUser);
+      if (email) saveUserData(email);
+    }
   }
   function sellStock(symbol, name, price, quantity) {
     if (isNaN(price) || price <= 0) {
@@ -567,10 +709,23 @@
     } else {
       portfolio[normalizedSymbol].currentPrice = price;
     }
+    // Add to order history
+    orderHistory.push({
+      type: 'sell',
+      symbol: normalizedSymbol,
+      name,
+      quantity,
+      price,
+      timestamp: new Date().toISOString()
+    });
     updateWalletBalance();
     renderPortfolio();
     showNotification(`Sold ${quantity} shares of ${name} at ₹${price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`, 'success');
-    localStorage.setItem('portfolio', JSON.stringify(portfolio));
+    // Save user data after trade
+    if (isLoggedIn && currentUser) {
+      const email = Object.keys(users).find(key => users[key].name === currentUser);
+      if (email) saveUserData(email);
+    }
   }
   function promptTrade(action, symbol, name, price) {
     const quantity = prompt(`Enter quantity to ${action} ${name}:`);
@@ -713,6 +868,14 @@
           updateTopStocks(data.stocks);
           renderPortfolio();
           lastStocksData = data.stocks;
+        }
+        if (data.losersToday && dataChanged(lastLosersTodayData, data.losersToday)) {
+          updateLosersToday(data.losersToday);
+          lastLosersTodayData = data.losersToday;
+        }
+        if (data.gainers52 && dataChanged(lastGainers52Data, data.gainers52)) {
+          updateGainers52(data.gainers52);
+          lastGainers52Data = data.gainers52;
         }
         if ('searchResult' in data) {
           updateSearchResult(data.searchResult);
@@ -860,7 +1023,9 @@
       item.name !== newData[idx].name ||
       item.symbol !== newData[idx].symbol ||
       (item.percentDrop !== undefined && item.percentDrop !== newData[idx].percentDrop) ||
-      (item.predictedGain !== undefined && item.predictedGain !== newData[idx].predictedGain)
+      (item.predictedGain !== undefined && item.predictedGain !== newData[idx].predictedGain) ||
+      (item.predictedLoss !== undefined && item.predictedLoss !== newData[idx].predictedLoss) ||
+      (item.percentUpFromLow !== undefined && item.percentUpFromLow !== newData[idx].percentUpFromLow)
     );
   }
   function connectBinanceWebSocket() {
@@ -956,7 +1121,6 @@
       const isBitcoin = index.symbol === 'BTCUSDT';
       const isGlobal = ['^DJI', '^IXIC', '^N225', '^HSI'].includes(index.symbol);
       const isGold = index.symbol === 'XAUINR=X';
-   
     const isSilver = index.symbol === 'XAGINR=X';
 const price = index.price && !isNaN(index.price) ?
   (isBitcoin || isGlobal ? `$${Number(index.price).toLocaleString('en-US', { maximumFractionDigits: 2 })}` :
@@ -1116,19 +1280,17 @@ function handleSellClick(symbol, name, price) {
     const today = new Date().toDateString();
     if (currentPredictionDate !== today) {
       currentPredictionDate = today;
-      // Fallback list updated with real gainers as of Nov 02, 2025 (at least 20)
+      // Fallback list updated with real gainers as of Nov 11, 2025 (at least 20)
       const fallbackPredictions = [
-        { symbol: 'BHEL.NS', name: 'Bharat Heavy Electricals', price: 260.75, predictedGain: 15.36, volume: 15000000 },
-        { symbol: 'ABCAPITAL.NS', name: 'Aditya Birla Capital', price: 327.50, predictedGain: 16.70, volume: 12000000 },
-        { symbol: 'NEULANDLAB.NS', name: 'Neuland Laboratories', price: 16182.00, predictedGain: 10.50, volume: 500000 },
-        { symbol: 'IDBI.NS', name: 'IDBI Bank', price: 102.18, predictedGain: 6.70, volume: 8000000 },
-        { symbol: 'SYRMA.NS', name: 'Syrma SGS Technology', price: 802.25, predictedGain: 6.27, volume: 2000000 },
-        { symbol: 'GRINDWELL.NS', name: 'Grindwell Norton', price: 1676.30, predictedGain: 6.53, volume: 300000 },
-        { symbol: 'ORIENTALTL.NS', name: 'Oriental Trimex', price: 10.28, predictedGain: 6.53, volume: 1000000 },
-        { symbol: 'SUGAL.NS', name: 'Sugal Damani', price: 109.44, predictedGain: 18.20, volume: 400000 },
-        { symbol: 'NIRMITEEROB.NS', name: 'Nirmitee Robotics', price: 94.80, predictedGain: 15.80, volume: 600000 },
-        { symbol: 'EUROTEXIND.NS', name: 'Eurotex Ind', price: 18.72, predictedGain: 20.00, volume: 500000 },
-        { symbol: 'JAYUSHIN.NS', name: 'Jay Ushin', price: 1051.00, predictedGain: 20.00, volume: 700000 },
+        { symbol: 'BALRAMCHIN.NS', name: 'Balrampur Chini', price: 457.90, predictedGain: 5.87, volume: 2500000 },
+        { symbol: 'RELPOWER.NS', name: 'Reliance Power', price: 41.39, predictedGain: 5.60, volume: 5000000 },
+        { symbol: 'AIAENG.NS', name: 'AIA Engineering', price: 3420, predictedGain: 5.00, volume: 100000 },
+        { symbol: 'JINDALSAW.NS', name: 'Jindal Saw', price: 171.80, predictedGain: 4.45, volume: 3000000 },
+        { symbol: 'BEL.NS', name: 'Bharat Electronics', price: 300, predictedGain: 5.20, volume: 4000000 },
+        { symbol: 'INDIGO.NS', name: 'IndiGo', price: 4500, predictedGain: 5.10, volume: 500000 },
+        { symbol: 'M&M.NS', name: 'Mahindra & Mahindra', price: 2800, predictedGain: 5.05, volume: 2000000 },
+        { symbol: 'BHARTIARTL.NS', name: 'Bharti Airtel', price: 1500, predictedGain: 4.80, volume: 3500000 },
+        { symbol: 'BAJAJ-AUTO.NS', name: 'Bajaj Auto', price: 10000, predictedGain: 4.50, volume: 1000000 },
         { symbol: 'RELIANCE.NS', name: 'Reliance Industries', price: 2500.00, predictedGain: 5.10, volume: 5000000 },
         { symbol: 'TCS.NS', name: 'Tata Consultancy Services', price: 4200.00, predictedGain: 5.20, volume: 2000000 },
         { symbol: 'HDFCBANK.NS', name: 'HDFC Bank', price: 1600.00, predictedGain: 5.05, volume: 3000000 },
@@ -1137,7 +1299,9 @@ function handleSellClick(symbol, name, price) {
         { symbol: 'BHARTIARTL.NS', name: 'Bharti Airtel', price: 1500.00, predictedGain: 6.10, volume: 3500000 },
         { symbol: 'SUNPHARMA.NS', name: 'Sun Pharmaceutical', price: 1800.00, predictedGain: 5.50, volume: 1500000 },
         { symbol: 'SBIN.NS', name: 'State Bank of India', price: 800.00, predictedGain: 5.00, volume: 10000000 },
-        { symbol: 'LT.NS', name: 'Larsen & Toubro', price: 3500.00, predictedGain: 5.20, volume: 1000000 }
+        { symbol: 'LT.NS', name: 'Larsen & Toubro', price: 3500.00, predictedGain: 5.20, volume: 1000000 },
+        { symbol: 'POWERGRID.NS', name: 'Power Grid', price: 300, predictedGain: 5.50, volume: 5000000 },
+        { symbol: 'TRENT.NS', name: 'Trent', price: 4315.40, predictedGain: 5.30, volume: 800000 }
       ];
       lastPredictionsData = fallbackPredictions;
       updatePredictions(fallbackPredictions);
@@ -1185,6 +1349,86 @@ function handleSellClick(symbol, name, price) {
       predictionsContainer.appendChild(card);
     });
 }
+  // New function for updateLosersToday
+  function updateLosersToday(losers) {
+    if (!Array.isArray(losers)) return;
+    const losersTodayContainer = document.getElementById('losersTodayContainer');
+    losersTodayContainer.innerHTML = '';
+    losers.forEach((stock, idx) => {
+      if (!stock || !stock.symbol || !stock.name || !stock.price) return;
+      const price = stock.price && !isNaN(stock.price) ?
+        `₹${Number(stock.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'N/A';
+      const predictedLoss = stock.predictedLoss && !isNaN(stock.predictedLoss) ?
+        `-${Number(stock.predictedLoss).toFixed(2)}%` : 'N/A';
+      const volume = stock.volume && !isNaN(stock.volume) ?
+        Number(stock.volume).toLocaleString('en-IN') : '0';
+      const card = document.createElement('div');
+      card.id = `loser-today-${stock.symbol}`;
+      card.className = 'loser-card';
+      card.style.animationDelay = `${0.1 + (idx * 0.05)}s`;
+      card.innerHTML = `
+        <div class="loser-info">
+          <h3 class="loser-name">${stock.name}</h3>
+          <p class="loser-price">Price: ${price}</p>
+          <p class="volume">Volume: ${volume}</p>
+          <p class="loser-drop">Predicted Loss: ${predictedLoss}</p>
+          <div class="stock-actions">
+            <button class="action-button buy" onclick="handleBuyClick('${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Buy</button>
+            <button class="action-button sell" onclick="handleSellClick('${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Sell</button>
+          </div>
+        </div>
+      `;
+      card.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!e.target.classList.contains('action-button')) {
+          searchInput.value = stock.symbol;
+          manualSearch();
+        }
+      });
+      losersTodayContainer.appendChild(card);
+    });
+  }
+  // New function for updateGainers52
+  function updateGainers52(gainers) {
+    if (!Array.isArray(gainers)) return;
+    const gainers52Container = document.getElementById('gainers52Container');
+    gainers52Container.innerHTML = '';
+    gainers.forEach((stock, idx) => {
+      if (!stock || !stock.symbol || !stock.name || !stock.price) return;
+      const price = stock.price && !isNaN(stock.price) ?
+        `₹${Number(stock.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'N/A';
+      const percentUpFromLow = stock.percentUpFromLow && !isNaN(stock.percentUpFromLow) ?
+        `+${Number(stock.percentUpFromLow).toFixed(2)}%` : 'N/A';
+      const volume = stock.volume && !isNaN(stock.volume) ?
+        Number(stock.volume).toLocaleString('en-IN') : '0';
+      const card = document.createElement('div');
+      card.id = `gainer-52-${stock.symbol}`;
+      card.className = 'gainer-card';
+      card.style.animationDelay = `${0.1 + (idx * 0.05)}s`;
+      card.innerHTML = `
+        <div class="gainer-info">
+          <h3 class="gainer-name">${stock.name}</h3>
+          <p class="gainer-price">Price: ${price}</p>
+          <p class="volume">Volume: ${volume}</p>
+          <p class="gainer-up">Up from 52w Low: ${percentUpFromLow}</p>
+          <div class="stock-actions">
+            <button class="action-button buy" onclick="handleBuyClick('${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Buy</button>
+            <button class="action-button sell" onclick="handleSellClick('${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Sell</button>
+          </div>
+        </div>
+      `;
+      card.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!e.target.classList.contains('action-button')) {
+          searchInput.value = stock.symbol;
+          manualSearch();
+        }
+      });
+      gainers52Container.appendChild(card);
+    });
+  }
   function updateLosers(losers) {
     if (!Array.isArray(losers)) return;
     const losersContainer = document.getElementById('losersContainer');
@@ -1376,7 +1620,7 @@ function toggleGoldData(symbol, name) {
               symbol: symbol,
               name: name,
               historicalData: [], // Historical for Gold would need separate fetch if implemented
-              currentPrice: indexData[symbol]?.price || 124165,
+              currentPrice: indexData[symbol]?.price || 122280,
               volume: indexData[symbol]?.volume || 0
           };
       }
@@ -1405,7 +1649,7 @@ function toggleSilverData(symbol, name) {
               symbol: symbol,
               name: name,
               historicalData: [], // Historical for Silver would need separate fetch if implemented
-              currentPrice: indexData[symbol]?.price || 1509,
+              currentPrice: indexData[symbol]?.price || 1600,
               volume: indexData[symbol]?.volume || 0
           };
       }
@@ -1860,9 +2104,9 @@ function manualSearch() {
   searchInput.addEventListener('input', (e) => autoSearch(e.target.value.trim()));
   // Static fallback news data to display if WebSocket fails - Updated with recent news
 const fallbackNews = [
-{ title: "Sensex tanks 593 pts, Nifty below 25,900 amid foreign fund exit", source: "Economic Times", time: "Oct 30", description: "Markets closed lower on profit booking and global uncertainties." },
-{ title: "Nifty Prediction: Strong bearish candle, support at 25,800", source: "ET Now", time: "13 hours ago", description: "Ping-pong effect likely; resistance at 26,000." },
-{ title: "GIFT Nifty flat at 26,041, muted open expected", source: "NDTV Profit", time: "Just now", description: "Benchmark indices to trade cautiously today." }
+{ title: "Stock Market LIVE: Sensex jumps 320 points", source: "Business Standard", time: "Just now", description: "Nifty50 near 25,700; Auto, IT shares in fast lane." },
+{ title: "India stock benchmarks reverse gains, dragged down by financials", source: "Reuters", time: "5 hours ago", description: "Bajaj Finance cut its asset..." },
+{ title: "Sensex Today | Nifty 50 | Stock Market LIVE Updates", source: "Economic Times", time: "2 hours ago", description: "Top losers at this hour." }
 ];
 function updateNews(newsItems) {
 const newsContainer = document.getElementById('newsContainer');
@@ -1907,7 +2151,7 @@ setTimeout(() => {
 }, 5000);
 // Call on load
 renderGlobalCues(Object.values(indexData)); // Initial render
-updatePredictionBanner(25803.50, 25877.85, 0.94); // Updated initial real values for Nov 02
+updatePredictionBanner(25722, 25631, 1.00); // Updated initial real values for Nov 11
 });
   </script>
 </body>
