@@ -219,21 +219,12 @@
   let currentTheme = 'dark';
   let stockChart = null;
   let walletBalance = 10000000; // ₹1 crore initial balance
-  let portfolio = JSON.parse(localStorage.getItem('portfolio')) || {};
-  // Normalize existing portfolio symbols
-  Object.keys(portfolio).forEach(symbol => {
-    if (!symbol.endsWith('.NS')) {
-      const newSymbol = `${symbol}.NS`;
-      portfolio[newSymbol] = portfolio[symbol];
-      delete portfolio[symbol];
-    }
-  });
-  localStorage.setItem('portfolio', JSON.stringify(portfolio));
+  let portfolio = {}; // Will be loaded per user
   let totalInvested = 0;
   let currentValue = 0;
   let profitLoss = 0;
   // Order History - New
-  let orderHistory = JSON.parse(localStorage.getItem('orderHistory')) || [];
+  let orderHistory = []; // Will be loaded per user
   // Updated indexData with global indices + Gold + Silver (initial values from real data as of Nov 11, 2025)
  let indexData = {
   '^NSEI': { name: 'NIFTY 50', price: 25631, lastClose: 25653.90, percentChange: -0.09 },
@@ -260,8 +251,34 @@
   // Authentication variables - Enhanced with localStorage users for demo
   let isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
   let currentUser = localStorage.getItem('currentUser') || '';
-  let users = JSON.parse(localStorage.getItem('users')) || []; // Array of {name, email, password}
+  let users = JSON.parse(localStorage.getItem('users')) || {}; // Object keyed by email: {name, password, portfolio, orderHistory, walletBalance}
   document.getElementById('currentDate').textContent = new Date().toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  function loadUserData(email) {
+    const user = users[email];
+    if (user) {
+      walletBalance = user.walletBalance || 10000000;
+      portfolio = JSON.parse(user.portfolio) || {};
+      // Normalize existing portfolio symbols
+      Object.keys(portfolio).forEach(symbol => {
+        if (!symbol.endsWith('.NS')) {
+          const newSymbol = `${symbol}.NS`;
+          portfolio[newSymbol] = portfolio[symbol];
+          delete portfolio[symbol];
+        }
+      });
+      orderHistory = JSON.parse(user.orderHistory) || [];
+      updateWalletBalance();
+      renderPortfolio();
+    }
+  }
+  function saveUserData(email) {
+    if (users[email]) {
+      users[email].walletBalance = walletBalance;
+      users[email].portfolio = JSON.stringify(portfolio);
+      users[email].orderHistory = JSON.stringify(orderHistory);
+      localStorage.setItem('users', JSON.stringify(users));
+    }
+  }
   function updateWalletBalance() {
     document.getElementById('walletBalance').textContent =
       `₹${walletBalance.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
@@ -327,13 +344,14 @@
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
     // Demo: Check against stored users or default
-    const user = users.find(u => u.email === email && u.password === password); // In real: hash password
-    if (user || (email === 'test@example.com' && password === 'password123')) {
+    const user = users[email];
+    if (user && user.password === password) { // In real: hash password
       isLoggedIn = true;
-      currentUser = user ? user.name : email.split('@')[0];
+      currentUser = user.name;
       localStorage.setItem('isLoggedIn', 'true');
       localStorage.setItem('currentUser', currentUser);
       localStorage.setItem('authToken', btoa(email + ':' + password)); // Demo token
+      loadUserData(email);
       updateAuthUI();
       closeAuthModal();
       showNotification(`Welcome back, ${currentUser}!`, 'success');
@@ -363,12 +381,18 @@
       showError('signupError', 'Passwords do not match');
       return;
     }
-    if (users.find(u => u.email === email)) {
+    if (users[email]) {
       showError('signupError', 'Email already registered. Please login.');
       return;
     }
-    // Add user (demo: plain password; real: hash)
-    users.push({ name, email, password });
+    // Add user with initial data (demo: plain password; real: hash)
+    users[email] = {
+      name,
+      password,
+      portfolio: JSON.stringify({}),
+      orderHistory: JSON.stringify([]),
+      walletBalance: 10000000
+    };
     localStorage.setItem('users', JSON.stringify(users));
     // Auto-login after signup
     isLoggedIn = true;
@@ -376,6 +400,7 @@
     localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('currentUser', currentUser);
     localStorage.setItem('authToken', btoa(email + ':' + password));
+    loadUserData(email);
     updateAuthUI();
     closeAuthModal();
     showNotification(`Account created successfully, ${name}! Welcome aboard.`, 'success');
@@ -388,8 +413,18 @@
     renderPortfolio();
   }
   function logout() {
+    // Save current user data before logout
+    if (isLoggedIn && currentUser) {
+      const email = Object.keys(users).find(key => users[key].name === currentUser);
+      if (email) saveUserData(email);
+    }
     isLoggedIn = false;
     currentUser = '';
+    // Reset globals
+    walletBalance = 10000000;
+    portfolio = {};
+    orderHistory = [];
+    updateWalletBalance();
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('currentUser');
     localStorage.removeItem('authToken');
@@ -431,11 +466,14 @@
     document.getElementById('profitLoss').textContent =
       `${profitLoss >= 0 ? '+' : '-'}₹${Math.abs(profitLoss).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
     document.getElementById('profitLoss').className = profitLoss >= 0 ? 'positive' : 'negative';
-    localStorage.setItem('portfolio', JSON.stringify(portfolio));
+    // Save user data after stats update
+    if (isLoggedIn && currentUser) {
+      const email = Object.keys(users).find(key => users[key].name === currentUser);
+      if (email) saveUserData(email);
+    }
   }
   // New: Render Order History with Search/Filter Functionality
   let orderSearchFilter = ''; // Global filter for order history search
-
   function renderOrderHistory(filter = '') {
     orderSearchFilter = filter.toLowerCase().trim();
     const container = document.getElementById('orderHistoryContainer');
@@ -451,9 +489,9 @@
     // Sort by timestamp descending
     const sortedHistory = orderHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     // Filter by stock name or symbol if filter is provided
-    const filteredHistory = orderSearchFilter 
-      ? sortedHistory.filter(order => 
-          order.name.toLowerCase().includes(orderSearchFilter) || 
+    const filteredHistory = orderSearchFilter
+      ? sortedHistory.filter(order =>
+          order.name.toLowerCase().includes(orderSearchFilter) ||
           order.symbol.toLowerCase().includes(orderSearchFilter)
         )
       : sortedHistory;
@@ -484,7 +522,6 @@
       container.appendChild(row);
     });
   }
-
   // Event listener for order history search
   document.addEventListener('DOMContentLoaded', () => {
     const orderSearchInput = document.getElementById('orderSearchInput');
@@ -498,7 +535,6 @@
       renderOrderHistory('');
     });
   });
-
   function renderPortfolio() {
     const portfolioContainer = document.getElementById('portfolioContainer');
     portfolioContainer.innerHTML = '';
@@ -556,7 +592,7 @@
             buyButton.style.pointerEvents = 'auto';
             buyButton.style.position = 'relative';
             buyButton.style.zIndex = '10';
-   
+  
             // Create sell button
             const sellButton = document.createElement('button');
             sellButton.className = 'action-button sell';
@@ -564,11 +600,11 @@
             sellButton.style.pointerEvents = 'auto';
             sellButton.style.position = 'relative';
             sellButton.style.zIndex = '10';
-   
+  
             // Add buttons to container
             actionsContainer.appendChild(buyButton);
             actionsContainer.appendChild(sellButton);
-   
+  
             // Add event listeners with proper event prevention
             buyButton.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -576,7 +612,7 @@
                 if (!checkAuthAndTrade('buy', symbol, holding.name, holding.currentPrice || 0)) return;
                 promptTrade('buy', symbol, holding.name, holding.currentPrice || 0);
             });
-   
+  
             sellButton.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -646,11 +682,14 @@
       price,
       timestamp: new Date().toISOString()
     });
-    localStorage.setItem('orderHistory', JSON.stringify(orderHistory));
     updateWalletBalance();
     renderPortfolio();
     showNotification(`Bought ${quantity} shares of ${name} at ₹${price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`, 'success');
-    localStorage.setItem('portfolio', JSON.stringify(portfolio));
+    // Save user data after trade
+    if (isLoggedIn && currentUser) {
+      const email = Object.keys(users).find(key => users[key].name === currentUser);
+      if (email) saveUserData(email);
+    }
   }
   function sellStock(symbol, name, price, quantity) {
     if (isNaN(price) || price <= 0) {
@@ -679,11 +718,14 @@
       price,
       timestamp: new Date().toISOString()
     });
-    localStorage.setItem('orderHistory', JSON.stringify(orderHistory));
     updateWalletBalance();
     renderPortfolio();
     showNotification(`Sold ${quantity} shares of ${name} at ₹${price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`, 'success');
-    localStorage.setItem('portfolio', JSON.stringify(portfolio));
+    // Save user data after trade
+    if (isLoggedIn && currentUser) {
+      const email = Object.keys(users).find(key => users[key].name === currentUser);
+      if (email) saveUserData(email);
+    }
   }
   function promptTrade(action, symbol, name, price) {
     const quantity = prompt(`Enter quantity to ${action} ${name}:`);
