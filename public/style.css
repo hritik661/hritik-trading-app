@@ -6269,3 +6269,15 @@ body.midnight .order-history-row {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+.prediction-note {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #9CA3AF;
+  text-align: center;
+  margin: 0.5rem 0;
+  padding: 0.25rem;
+  background: rgba(59, 130, 246, 0.05);
+  border-radius: 4px;
+  border-left: 3px solid #3B82F6;
+}
