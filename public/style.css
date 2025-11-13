@@ -6918,3 +6918,82 @@ body.light .losers-section-today{
   --los-text:    #111827;
   --los-muted:   #6B7280;
 }
+.gainers-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: flex-start;
+      align-items: flex-start;
+      overflow-x: auto;
+      padding: 16px 0;
+    }
+    .gainer-card {
+      min-width: 280px;
+      max-width: 320px;
+      flex: 1 1 auto;
+      background: linear-gradient(135deg, #1F2A44 0%, #2D3748 100%);
+      border: 1px solid #4A5568;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .gainer-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+    .gainer-info h3 {
+      margin: 0 0 12px 0;
+      color: #F3F4F6;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .gainer-info p {
+      margin: 6px 0;
+      color: #9CA3AF;
+      font-size: 14px;
+    }
+    .gainer-up {
+      color: #3B82F6 !important;
+      font-weight: 600;
+    }
+    .gainer-reason {
+      font-style: italic;
+      color: #A0AEC0;
+    }
+    .stock-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .action-button {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    .action-button.buy {
+      background-color: #10B981;
+      color: white;
+    }
+    .action-button.buy:hover {
+      background-color: #059669;
+    }
+    .action-button.sell {
+      background-color: #EF4444;
+      color: white;
+    }
+    .action-button.sell:hover {
+      background-color: #DC2626;
+    }
+    .confidence-badge {
+      background: #3B82F6;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
