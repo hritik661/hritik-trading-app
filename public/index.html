@@ -10,7 +10,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="dark">
@@ -98,6 +97,7 @@
   </div>
   <div class="portfolio-section" id="portfolioSection" style="display: none; position: relative;">
     <h2 class="portfolio-title">Portfolio (Holdings)</h2>
+    <button class="sell-all-button" onclick="sellAllStocks()" title="Sell All Holdings" aria-label="Sell All Holdings" style="background: #EF4444; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; margin-bottom: 10px;">Sell All Stocks</button>
     <button class="portfolio-close" onclick="toggleHoldings()" title="Close Portfolio" aria-label="Close Portfolio">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F3F4F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="18" y1="6" x2="6" y2="18" />
@@ -112,7 +112,10 @@
     <div id="portfolioContainer" class="portfolio-grid"></div>
     <!-- Order History Section -->
     <div class="order-history-section">
-      <h3 class="order-history-title">Order History</h3>
+      <div class="order-history-header">
+        <h3 class="order-history-title">Order History</h3>
+        <button class="clear-all-orders-button" onclick="clearAllOrders()" title="Clear All Order History" aria-label="Clear All Order History" style="background: #EF4444; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; margin-left: 10px;">Clear All Orders</button>
+      </div>
       <div class="order-history-search">
         <input type="text" id="orderSearchInput" placeholder="Search orders by stock name or symbol..." />
         <div class="clear-search" id="clearOrderSearch" style="display: none;">Clear</div>
@@ -478,6 +481,71 @@
         localStorage.setItem(`portfolio_${currentEmail}`, JSON.stringify(portfolio));
       }
     }
+    function sellAllStocks() {
+      if (!isLoggedIn) {
+        showNotification('Please login to trade stocks.', 'error');
+        showLogin();
+        return;
+      }
+      if (Object.keys(portfolio).length === 0) {
+        showNotification('No holdings to sell.', 'error');
+        return;
+      }
+      if (!confirm('Are you sure you want to sell all stocks? This will realize your current P/L.')) {
+        return;
+      }
+      let totalProceeds = 0;
+      let totalPL = 0;
+      const sells = [];
+      Object.entries(portfolio).forEach(([symbol, holding]) => {
+        const quantity = holding.quantity;
+        const price = holding.currentPrice || 0;
+        if (quantity > 0 && price > 0) {
+          const proceeds = quantity * price;
+          totalProceeds += proceeds;
+          const invested = quantity * holding.avgPrice;
+          totalPL += (proceeds - invested);
+          sells.push({
+            type: 'sell',
+            symbol,
+            name: holding.name,
+            quantity,
+            price,
+            timestamp: new Date().toISOString()
+          });
+        }
+      });
+      walletBalance += totalProceeds;
+      orderHistory.push(...sells);
+      portfolio = {};
+      updateWalletBalance();
+      renderPortfolio();
+      const plMessage = totalPL >= 0 ? `+₹${totalPL.toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : `-₹${Math.abs(totalPL).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+      showNotification(`Sold all stocks. Realized P/L: ${plMessage}`, totalPL >= 0 ? 'success' : 'error');
+      if (isLoggedIn && currentEmail) {
+        saveUserData(currentEmail);
+      }
+    }
+    function clearAllOrders() {
+      if (!isLoggedIn) {
+        showNotification('Please login to manage order history.', 'error');
+        showLogin();
+        return;
+      }
+      if (orderHistory.length === 0) {
+        showNotification('No orders to clear.', 'error');
+        return;
+      }
+      if (!confirm('Are you sure you want to delete all order history? This action cannot be undone.')) {
+        return;
+      }
+      orderHistory = [];
+      if (isLoggedIn && currentEmail) {
+        localStorage.setItem(`orderHistory_${currentEmail}`, JSON.stringify(orderHistory));
+      }
+      renderOrderHistory();
+      showNotification('All order history cleared successfully.', 'success');
+    }
     // Render Order History with Search/Filter
     let orderSearchFilter = '';
     function renderOrderHistory(filter = '') {
@@ -767,51 +835,140 @@
     }
     // Fixed Market Status - Correct IST calculation and holidays for 2025
    // Add this function to determine market status
+/* ---------- DROP-IN PATCH: Correct NSE holiday calendar + robust IST handling ---------- */
+/* Official NSE trading holidays (Equity) for 2025 that fall on weekdays */
+const NSE_HOLIDAYS_2025 = new Set([
+  '2025-02-26', // Mahashivratri (Wed)
+  '2025-03-14', // Holi (Fri)
+  '2025-03-31', // Eid-ul-Fitr / Ramzan Id (Mon)
+  '2025-04-10', // Shri Mahavir Jayanti (Thu)
+  '2025-04-14', // Dr Babasaheb Ambedkar Jayanti (Mon)
+  '2025-04-18', // Good Friday (Fri)
+  '2025-05-01', // Maharashtra Day (Thu)
+  '2025-08-15', // Independence Day (Fri)
+  '2025-08-27', // Ganesh Chaturthi (Wed)
+  '2025-09-05', // Id-E-Milad (Fri)
+  '2025-10-02', // Mahatma Gandhi Jayanti / Dussehra (Thu)
+  '2025-10-21', // Diwali – Laxmi Pujan (Tue) — Muhurat trading only
+  '2025-10-22', // Diwali – Balipratipada (Wed)
+  '2025-11-05', // Guru Nanak Jayanti (Wed) — FIXED from 2025-11-14
+  '2025-12-25' // Christmas (Thu)
+]);
+/* Timezone-safe helpers (no double-offset bugs on IST machines/browsers) */
+const toIST = (d = new Date()) => new Date(
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false
+  }).format(d).replace(',', '')
+    .replace(
+      /(?<y>\d{4})-(?<m>\d{2})-(?<dd>\d{2}) (?<hh>\d{2}):(?<mm>\d{2}):(?<ss>\d{2})/,
+      '$1-$2-$3T$4:$5:$6'
+    )
+);
+const ymd = (dateIST) => {
+  const y = dateIST.getFullYear();
+  const m = String(dateIST.getMonth() + 1).padStart(2, '0');
+  const d = String(dateIST.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+const isTradingHoliday = (dateIST) =>
+  dateIST.getFullYear() === 2025 && NSE_HOLIDAYS_2025.has(ymd(dateIST));
+const isWeekdayIST = (dateIST) => {
+  const dow = dateIST.getDay(); // 0=Sun .. 6=Sat
+  return dow >= 1 && dow <= 5;
+};
+/* Returns { isOpen, statusText, nowIST } and never mislabels 2025-11-14 as holiday */
 function getMarketStatus() {
-  const now = Date.now(); // UTC ms
-  const istOffset = 5.5 * 60 * 60 * 1000; // IST offset in milliseconds
-  const istTime = new Date(now + istOffset);
-  const hours = istTime.getHours();
-  const minutes = istTime.getMinutes();
-  const day = istTime.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-  const dateStr = istTime.toISOString().slice(0, 10); // YYYY-MM-DD
-  // India 2025 stock market holidays (full list)
-  const holidays = [
-    '2025-01-26', // Republic Day
-    '2025-03-14', // Holi
-    '2025-03-31', // Mahavir Jayanti
-    '2025-04-10', // Ram Navami
-    '2025-04-18', // Good Friday
-    '2025-05-01', // Labour Day
-    '2025-05-12', // Bakri Id
-    '2025-07-07', // Muharram
-    '2025-08-15', // Independence Day
-    '2025-09-05', // Janmashtami
-    '2025-09-16', // Milad-un-Nabi
-    '2025-10-02', // Gandhi Jayanti
-    '2025-10-20', // Dussehra
-    '2025-10-21', // Diwali
-    '2025-11-14', // Gurunanak Jayanti
-    '2025-12-25' // Christmas
-  ];
-  const isHoliday = holidays.includes(dateStr);
-  const isWeekday = day >= 1 && day <= 5;
-  const marketOpenTime = 9 * 60 + 15; // 9:15 AM in minutes
-  const marketCloseTime = 15 * 60 + 30; // 3:30 PM in minutes
-  const currentTimeInMinutes = hours * 60 + minutes;
-  const isTimeOpen = currentTimeInMinutes >= marketOpenTime && currentTimeInMinutes <= marketCloseTime;
-  const isOpen = isWeekday && !isHoliday && isTimeOpen;
-  let statusText = isOpen ? 'market is open 9.15 to 3.30 market are open' : 'Market is Close';
-  if (!isWeekday) {
-    statusText += ' - Weekend';
-  } else if (isHoliday) {
-    statusText += ` - Holiday (${dateStr})`;
-  } else if (!isTimeOpen) {
-    statusText += '';
+  const nowIST = toIST();
+  const minutes = nowIST.getHours() * 60 + nowIST.getMinutes();
+  const OPEN_MIN = 9 * 60 + 15; // 09:15
+  const CLOSE_MIN = 15 * 60 + 30; // 15:30
+  const weekday = isWeekdayIST(nowIST);
+  const holiday = isTradingHoliday(nowIST);
+  const tradingDay = weekday && !holiday;
+  const openNow = tradingDay && minutes >= OPEN_MIN && minutes < CLOSE_MIN;
+  const longDate = nowIST.toLocaleDateString('en-IN', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+  let reason = '';
+  if (!weekday) reason = 'Weekend';
+  else if (holiday) reason = `Holiday (${ymd(nowIST)})`;
+  let statusText;
+  if (openNow) {
+    statusText = `Market is Open • ${longDate}`;
+  } else if (tradingDay && minutes < OPEN_MIN) {
+    statusText = `Market is Close - Pre-open 9:00–9:15 • ${longDate}`;
+  } else if (tradingDay && minutes >= CLOSE_MIN) {
+    statusText = `Market is Close • ${longDate}`;
+  } else {
+    statusText = `Market is Close - ${reason} • ${longDate}`;
   }
-  return { isOpen, statusText };
+  return { isOpen: openNow, statusText, nowIST };
 }
-
+/* Next trading day that skips weekends + NSE_HOLIDAYS_2025 */
+function getNextTradingDay(fromDate) {
+  // If not provided, start from current IST day
+  let d = toIST(fromDate || new Date());
+  d.setDate(d.getDate() + 1);
+  // Loop until a valid trading day
+  for (;;) {
+    const ist = toIST(d);
+    if (isWeekdayIST(ist) && !isTradingHoliday(ist)) {
+      return ist.toLocaleDateString('en-IN', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+      });
+    }
+    d.setDate(d.getDate() + 1);
+  }
+}
+/* Safe UI updater that also fixes #currentDate text in IST */
+function updateMarketStatus() {
+  const { isOpen, statusText, nowIST } = getMarketStatus();
+  const marketStatusEl = document.getElementById('marketStatus');
+  if (marketStatusEl) {
+    marketStatusEl.textContent = statusText;
+    marketStatusEl.className = isOpen ? 'market-open' : 'market-closed';
+  }
+  const currentDateEl = document.getElementById('currentDate');
+  if (currentDateEl) {
+    currentDateEl.textContent = nowIST.toLocaleDateString('en-IN', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+  }
+  const logo = document.querySelector('.logo');
+  if (logo) {
+    logo.textContent = isOpen
+      ? 'Hritik Indian Stock Market Live'
+      : 'Hritik Indian Stock Market';
+  }
+  // Show/hide prediction sections based on open/close state
+  const predSec = document.querySelector('.predictions-section');
+  const losersTodaySec = document.querySelector('.losers-section-today');
+  if (predSec) predSec.style.display = isOpen ? 'none' : 'block';
+  if (losersTodaySec) losersTodaySec.style.display = isOpen ? 'none' : 'block';
+  // Update prediction headers with the real next trading day
+  if (!isOpen) {
+    const nextDay = getNextTradingDay(nowIST);
+    const pt = document.getElementById('predictionsTitle');
+    const pn = document.getElementById('predictionsNote');
+    const lt = document.getElementById('losersTitle');
+    const ln = document.getElementById('losersNote');
+    if (pt) pt.textContent = `Predicted Stock Gainers ▲5% Up - Forecast for ${nextDay}`;
+    if (lt) lt.textContent = `Predicted Stock Losers ▼5% Down - Forecast for ${nextDay}`;
+    if (pn) pn.textContent =
+      `Predictions based on momentum analysis from previous close. Only high-confidence picks shown.`;
+    if (ln) ln.textContent =
+      `Predictions based on momentum analysis from previous close. Only high-confidence picks shown.`;
+  }
+}
+/* Ensure the status is correct immediately and every minute */
+document.addEventListener('DOMContentLoaded', updateMarketStatus);
+clearInterval(window.__marketStatusTimer__);
+window.__marketStatusTimer__ = setInterval(updateMarketStatus, 60_000);
+/* Optional compat helper: simple boolean for legacy checks */
+const isMarketOpen = () => getMarketStatus().isOpen;
 // Add this function to update the market status display
 function updateMarketStatus() {
   const { isOpen, statusText } = getMarketStatus();
@@ -833,10 +990,8 @@ function updateMarketStatus() {
     generateDailyPredictions();
   }
 }
-
 // Poll market status every minute
 setInterval(updateMarketStatus, 60000);
-
 // Call initially in DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
   updateMarketStatus(); // Initial call
