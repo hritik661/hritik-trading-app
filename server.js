@@ -458,59 +458,105 @@ async function fetchBiggestGainers(stocksData) {
 async function fetchPredictedGainers(stocksData) {
   const gainers = stocksData
     .filter(stock => stock.percentChange && parseFloat(stock.percentChange) >= 5 && (stock.volume || 0) > 500000)
-    .map(stock => ({
-      symbol: stock.symbol,
-      name: stock.name,
-      price: stock.price,
-      predictedGain: parseFloat(stock.percentChange), // Momentum continuation
-      volume: stock.volume,
-      confidence: 'High',
-      reason: `Continued momentum from yesterday's ${stock.percentChange}% gain with high volume.`,
-      dayHigh: stock.dayHigh,
-      dayLow: stock.dayLow
-    }))
-    .slice(0, 10); // Top 10 real
-  return gainers.length > 0 ? gainers : [
+    .map(async (stock) => {
+      // Fetch 6-day historical for 1d and 5d ago prices
+      const endDate = new Date();
+      const startDate = new Date(endDate.getTime() - 6 * 24 * 60 * 60 * 1000);
+      let historical = [];
+      try {
+        historical = await yahooFinance.historical(stock.symbol, {
+          period1: Math.floor(startDate.getTime() / 1000),
+          period2: Math.floor(endDate.getTime() / 1000),
+          interval: '1d',
+        });
+      } catch (err) {
+        console.error(`Error fetching historical for ${stock.symbol}:`, err);
+      }
+      const price1dAgo = historical.length > 1 ? historical[historical.length - 2].close : stock.lastClose || stock.price;
+      const price5dAgo = historical.length > 5 ? historical[0].close : stock.price;
+      const gain1d = ((stock.price - price1dAgo) / price1dAgo * 100);
+      const gain5d = ((stock.price - price5dAgo) / price5dAgo * 100);
+      return {
+        symbol: stock.symbol,
+        name: stock.name,
+        price: stock.price,
+        predictedGain: parseFloat(gain1d.toFixed(2)), // Momentum continuation from 1d
+        gain5d: parseFloat(gain5d.toFixed(2)),
+        price1dAgo,
+        price5dAgo,
+        volume: stock.volume,
+        confidence: 'High',
+        reason: `Continued momentum from yesterday's ${gain1d.toFixed(2)}% gain with high volume.`,
+        dayHigh: stock.dayHigh,
+        dayLow: stock.dayLow
+      };
+    });
+  const resolvedGainers = await Promise.all(gainers);
+  const validGainers = resolvedGainers.filter(g => g.predictedGain >= 5);
+  return validGainers.length > 0 ? validGainers.slice(0, 10) : [
     // Fallback real from recent data (Nov 2025) - High volumes
-    { symbol: 'HINDALCO.NS', name: 'Hindalco Industries', price: 650, predictedGain: 5.2, volume: 1500000, confidence: 'High', reason: 'Continued momentum from yesterday\'s 5.2% gain with high volume.' },
-    { symbol: 'ICICIBANK.NS', name: 'ICICI Bank', price: 1200, predictedGain: 4.8, volume: 1500000, confidence: 'High', reason: 'Strong banking sector momentum from 4.8% yesterday.' },
-    { symbol: 'BHARTIARTL.NS', name: 'Bharti Airtel', price: 1500, predictedGain: 6.1, volume: 1500000, confidence: 'High', reason: 'Telecom rally continuation from 6.1% gain yesterday.' },
-    { symbol: 'SUNPHARMA.NS', name: 'Sun Pharma', price: 1800, predictedGain: 5.5, volume: 1500000, confidence: 'High', reason: 'Pharma sector uptrend from 5.5% yesterday.' },
-    { symbol: 'RELIANCE.NS', name: 'Reliance Industries', price: 2500, predictedGain: 5.3, volume: 2000000, confidence: 'High', reason: 'Energy giant momentum from 5.3% gain with massive volume.' },
-    { symbol: 'TATAMOTORS.NS', name: 'Tata Motors', price: 900, predictedGain: 5.7, volume: 1500000, confidence: 'High', reason: 'Auto sector rebound from 5.7% yesterday.' },
-    { symbol: 'LT.NS', name: 'Larsen & Toubro', price: 3500, predictedGain: 5.1, volume: 1500000, confidence: 'High', reason: 'Infrastructure push from 5.1% gain.' },
-    { symbol: 'ASIANPAINT.NS', name: 'Asian Paints', price: 2900, predictedGain: 5.4, volume: 1500000, confidence: 'High', reason: 'Consumer goods strength from 5.4% yesterday.' },
-    { symbol: 'MARUTI.NS', name: 'Maruti Suzuki', price: 12000, predictedGain: 5.6, volume: 1500000, confidence: 'High', reason: 'EV hype continuation from 5.6% gain.' },
-    { symbol: 'POWERGRID.NS', name: 'Power Grid', price: 300, predictedGain: 5.0, volume: 1500000, confidence: 'High', reason: 'Renewable energy momentum from 5.0% yesterday.' }
+    { symbol: 'HINDALCO.NS', name: 'Hindalco Industries', price: 650, predictedGain: 5.2, gain5d: 12.5, price1dAgo: 618, price5dAgo: 578, volume: 1500000, confidence: 'High', reason: 'Continued momentum from yesterday\'s 5.2% gain with high volume.' },
+    { symbol: 'ICICIBANK.NS', name: 'ICICI Bank', price: 1200, predictedGain: 4.8, gain5d: 10.2, price1dAgo: 1146, price5dAgo: 1090, volume: 1500000, confidence: 'High', reason: 'Strong banking sector momentum from 4.8% yesterday.' },
+    { symbol: 'BHARTIARTL.NS', name: 'Bharti Airtel', price: 1500, predictedGain: 6.1, gain5d: 15.3, price1dAgo: 1414, price5dAgo: 1302, volume: 1500000, confidence: 'High', reason: 'Telecom rally continuation from 6.1% gain yesterday.' },
+    { symbol: 'SUNPHARMA.NS', name: 'Sun Pharma', price: 1800, predictedGain: 5.5, gain5d: 11.8, price1dAgo: 1705, price5dAgo: 1610, volume: 1500000, confidence: 'High', reason: 'Pharma sector uptrend from 5.5% yesterday.' },
+    { symbol: 'RELIANCE.NS', name: 'Reliance Industries', price: 2500, predictedGain: 5.3, gain5d: 13.7, price1dAgo: 2375, price5dAgo: 2200, volume: 2000000, confidence: 'High', reason: 'Energy giant momentum from 5.3% gain with massive volume.' },
+    { symbol: 'TATAMOTORS.NS', name: 'Tata Motors', price: 900, predictedGain: 5.7, gain5d: 14.1, price1dAgo: 851, price5dAgo: 788, volume: 1500000, confidence: 'High', reason: 'Auto sector rebound from 5.7% yesterday.' },
+    { symbol: 'LT.NS', name: 'Larsen & Toubro', price: 3500, predictedGain: 5.1, gain5d: 9.8, price1dAgo: 3328, price5dAgo: 3190, volume: 1500000, confidence: 'High', reason: 'Infrastructure push from 5.1% gain.' },
+    { symbol: 'ASIANPAINT.NS', name: 'Asian Paints', price: 2900, predictedGain: 5.4, gain5d: 12.0, price1dAgo: 2753, price5dAgo: 2590, volume: 1500000, confidence: 'High', reason: 'Consumer goods strength from 5.4% yesterday.' },
+    { symbol: 'MARUTI.NS', name: 'Maruti Suzuki', price: 12000, predictedGain: 5.6, gain5d: 16.2, price1dAgo: 11360, price5dAgo: 10320, volume: 1500000, confidence: 'High', reason: 'EV hype continuation from 5.6% gain.' },
+    { symbol: 'POWERGRID.NS', name: 'Power Grid', price: 300, predictedGain: 5.0, gain5d: 8.5, price1dAgo: 285.7, price5dAgo: 276.5, volume: 1500000, confidence: 'High', reason: 'Renewable energy momentum from 5.0% yesterday.' }
   ].filter(p => p.predictedGain >= 5);
 }
 async function fetchPredictedLosers(stocksData) {
   const losers = stocksData
     .filter(stock => stock.percentChange && parseFloat(stock.percentChange) <= -5 && (stock.volume || 0) > 500000)
-    .map(stock => ({
-      symbol: stock.symbol,
-      name: stock.name,
-      price: stock.price,
-      predictedLoss: Math.abs(parseFloat(stock.percentChange)),
-      volume: stock.volume,
-      confidence: 'High',
-      reason: `Continued downside from yesterday's -${stock.percentChange}% drop with high volume.`,
-      dayHigh: stock.dayHigh,
-      dayLow: stock.dayLow
-    }))
-    .slice(0, 10);
-  return losers.length > 0 ? losers : [
+    .map(async (stock) => {
+      // Fetch 6-day historical for 1d and 5d ago prices
+      const endDate = new Date();
+      const startDate = new Date(endDate.getTime() - 6 * 24 * 60 * 60 * 1000);
+      let historical = [];
+      try {
+        historical = await yahooFinance.historical(stock.symbol, {
+          period1: Math.floor(startDate.getTime() / 1000),
+          period2: Math.floor(endDate.getTime() / 1000),
+          interval: '1d',
+        });
+      } catch (err) {
+        console.error(`Error fetching historical for ${stock.symbol}:`, err);
+      }
+      const price1dAgo = historical.length > 1 ? historical[historical.length - 2].close : stock.lastClose || stock.price;
+      const price5dAgo = historical.length > 5 ? historical[0].close : stock.price;
+      const loss1d = Math.abs(((stock.price - price1dAgo) / price1dAgo * 100));
+      const loss5d = Math.abs(((stock.price - price5dAgo) / price5dAgo * 100));
+      return {
+        symbol: stock.symbol,
+        name: stock.name,
+        price: stock.price,
+        predictedLoss: parseFloat(loss1d.toFixed(2)),
+        loss5d: parseFloat(loss5d.toFixed(2)),
+        price1dAgo,
+        price5dAgo,
+        volume: stock.volume,
+        confidence: 'High',
+        reason: `Continued downside from yesterday's -${loss1d.toFixed(2)}% drop with high volume.`,
+        dayHigh: stock.dayHigh,
+        dayLow: stock.dayLow
+      };
+    });
+  const resolvedLosers = await Promise.all(losers);
+  const validLosers = resolvedLosers.filter(l => l.predictedLoss >= 5);
+  return validLosers.length > 0 ? validLosers.slice(0, 10) : [
     // Fallback - High volumes
-    { symbol: 'TCS.NS', name: 'TCS', price: 4000, predictedLoss: 5.1, volume: 1500000, confidence: 'High', reason: 'Continued downside from yesterday\'s -5.1% drop with high volume.' },
-    { symbol: 'INFY.NS', name: 'Infosys', price: 1800, predictedLoss: 4.7, volume: 1500000, confidence: 'High', reason: 'IT sector correction from -4.7% yesterday.' },
-    { symbol: 'WIPRO.NS', name: 'Wipro', price: 500, predictedLoss: 5.8, volume: 1500000, confidence: 'High', reason: 'Earnings miss momentum from -5.8% drop.' },
-    { symbol: 'HCLTECH.NS', name: 'HCL Tech', price: 1600, predictedLoss: 5.3, volume: 1500000, confidence: 'High', reason: 'Tech slowdown from -5.3% yesterday.' },
-    { symbol: 'TECHM.NS', name: 'Tech Mahindra', price: 1400, predictedLoss: 5.6, volume: 1500000, confidence: 'High', reason: 'Continued pressure from -5.6% drop.' },
-    { symbol: 'HINDUNILVR.NS', name: 'HUL', price: 2500, predictedLoss: 5.2, volume: 1500000, confidence: 'High', reason: 'FMCG weakness from -5.2% yesterday.' },
-    { symbol: 'ITC.NS', name: 'ITC', price: 450, predictedLoss: 5.0, volume: 1500000, confidence: 'High', reason: 'Tobacco regulations impact from -5.0% drop.' },
-    { symbol: 'NESTLEIND.NS', name: 'Nestle India', price: 2500, predictedLoss: 5.4, volume: 1500000, confidence: 'High', reason: 'Consumer slowdown from -5.4% yesterday.' },
-    { symbol: 'BRITANNIA.NS', name: 'Britannia', price: 5200, predictedLoss: 5.1, volume: 1500000, confidence: 'High', reason: 'Inflation hit from -5.1% drop.' },
-    { symbol: 'DABUR.NS', name: 'Dabur', price: 600, predictedLoss: 5.3, volume: 1500000, confidence: 'High', reason: 'Ayurveda sector dip from -5.3% yesterday.' }
+    { symbol: 'TCS.NS', name: 'TCS', price: 4000, predictedLoss: 5.1, loss5d: 11.2, price1dAgo: 4214, price5dAgo: 4500, volume: 1500000, confidence: 'High', reason: 'Continued downside from yesterday\'s -5.1% drop with high volume.' },
+    { symbol: 'INFY.NS', name: 'Infosys', price: 1800, predictedLoss: 4.7, loss5d: 9.5, price1dAgo: 1888, price5dAgo: 1987, volume: 1500000, confidence: 'High', reason: 'IT sector correction from -4.7% yesterday.' },
+    { symbol: 'WIPRO.NS', name: 'Wipro', price: 500, predictedLoss: 5.8, loss5d: 13.4, price1dAgo: 531, price5dAgo: 578, volume: 1500000, confidence: 'High', reason: 'Earnings miss momentum from -5.8% drop.' },
+    { symbol: 'HCLTECH.NS', name: 'HCL Tech', price: 1600, predictedLoss: 5.3, loss5d: 10.8, price1dAgo: 1690, price5dAgo: 1795, volume: 1500000, confidence: 'High', reason: 'Tech slowdown from -5.3% yesterday.' },
+    { symbol: 'TECHM.NS', name: 'Tech Mahindra', price: 1400, predictedLoss: 5.6, loss5d: 12.1, price1dAgo: 1483, price5dAgo: 1592, volume: 1500000, confidence: 'High', reason: 'Continued pressure from -5.6% drop.' },
+    { symbol: 'HINDUNILVR.NS', name: 'HUL', price: 2500, predictedLoss: 5.2, loss5d: 9.9, price1dAgo: 2638, price5dAgo: 2770, volume: 1500000, confidence: 'High', reason: 'FMCG weakness from -5.2% yesterday.' },
+    { symbol: 'ITC.NS', name: 'ITC', price: 450, predictedLoss: 5.0, loss5d: 8.7, price1dAgo: 473.7, price5dAgo: 492, volume: 1500000, confidence: 'High', reason: 'Tobacco regulations impact from -5.0% drop.' },
+    { symbol: 'NESTLEIND.NS', name: 'Nestle India', price: 2500, predictedLoss: 5.4, loss5d: 11.5, price1dAgo: 2643, price5dAgo: 2825, volume: 1500000, confidence: 'High', reason: 'Consumer slowdown from -5.4% yesterday.' },
+    { symbol: 'BRITANNIA.NS', name: 'Britannia', price: 5200, predictedLoss: 5.1, loss5d: 10.3, price1dAgo: 5487, price5dAgo: 5800, volume: 1500000, confidence: 'High', reason: 'Inflation hit from -5.1% drop.' },
+    { symbol: 'DABUR.NS', name: 'Dabur', price: 600, predictedLoss: 5.3, loss5d: 12.0, price1dAgo: 633.7, price5dAgo: 682, volume: 1500000, confidence: 'High', reason: 'Ayurveda sector dip from -5.3% yesterday.' }
   ].filter(p => p.predictedLoss >= 5);
 }
 function timeAgo(pubDate) {
@@ -681,20 +727,38 @@ async function searchStock(query) {
     return { error: `Error fetching stock data: ${error.message}` };
   }
 }
-async function fetchHistoricalData(symbol, name) {
+async function fetchHistoricalData(symbol, name, period = '1mo') {
   try {
     const endDate = new Date();
-    const startDate = new Date();
-    startDate.setMonth(endDate.getMonth() - 1);
+    let startDate;
+    let interval = '1d';
+    switch(period) {
+      case '1d': 
+        startDate = new Date(endDate.getTime() - 1 * 24 * 60 * 60 * 1000); 
+        interval = '1h';
+        break;
+      case '5d': 
+        startDate = new Date(endDate.getTime() - 5 * 24 * 60 * 60 * 1000); 
+        interval = '1h';
+        break;
+      case '1mo': startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000); break;
+      case '6mo': startDate = new Date(endDate.getTime() - 180 * 24 * 60 * 60 * 1000); break;
+      case '1y': startDate = new Date(endDate.getTime() - 365 * 24 * 60 * 60 * 1000); break;
+      case '2y': startDate = new Date(endDate.getTime() - 730 * 24 * 60 * 60 * 1000); break;
+      case 'max': startDate = new Date(1900, 0, 1); break;
+      default: startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+    }
+    // Map BTCUSDT to BTC-USD for Yahoo
+    const fetchSymbol = symbol === 'BTCUSDT' ? 'BTC-USD' : symbol;
     const historical = await fetchWithRetry(() =>
-      yahooFinance.historical(symbol, {
-        period1: startDate,
-        period2: endDate,
-        interval: '1d',
+      yahooFinance.historical(fetchSymbol, {
+        period1: Math.floor(startDate.getTime() / 1000),
+        period2: Math.floor(endDate.getTime() / 1000),
+        interval: interval,
       })
     );
     const quote = await fetchWithRetry(() =>
-      yahooFinance.quote(symbol, {
+      yahooFinance.quote(fetchSymbol, {
         fields: [
           'regularMarketPrice',
           'regularMarketVolume',
@@ -723,6 +787,41 @@ async function fetchHistoricalData(symbol, name) {
     console.error(`Error fetching historical data for ${symbol}:`, error.message);
     return { symbol, name, data: [], currentPrice: 0, volume: 0, dayHigh: 0, dayLow: 0 };
   }
+}
+// New: Function to fetch prices for specific portfolio symbols
+async function fetchPortfolioPrices(symbols) {
+  const data = [];
+  for (const symbol of symbols) {
+    try {
+      const quote = await fetchWithRetry(() =>
+        yahooFinance.quote(symbol, {
+          fields: [
+            'regularMarketPrice',
+            'regularMarketVolume',
+            'regularMarketDayHigh',
+            'regularMarketDayLow',
+          ],
+        })
+      );
+      data.push({
+        symbol,
+        price: quote.regularMarketPrice ?? 0,
+        volume: quote.regularMarketVolume ?? 0,
+        dayHigh: quote.regularMarketDayHigh ?? 0,
+        dayLow: quote.regularMarketDayLow ?? 0,
+      });
+    } catch (error) {
+      console.error(`Error fetching price for ${symbol}:`, error.message);
+      data.push({
+        symbol,
+        price: 0,
+        volume: 0,
+        dayHigh: 0,
+        dayLow: 0,
+      });
+    }
+  }
+  return data;
 }
 function broadcast(data) {
   if (!isValidJson(data)) {
@@ -756,7 +855,11 @@ function dataChanged(oldData, newData) {
       item.predictedLoss !== newItem.predictedLoss ||
       item.reason !== newItem.reason ||
       item.dayHigh !== newItem.dayHigh ||
-      item.dayLow !== newItem.dayLow
+      item.dayLow !== newItem.dayLow ||
+      item.gain5d !== newItem.gain5d ||
+      item.loss5d !== newItem.loss5d ||
+      item.price1dAgo !== newItem.price1dAgo ||
+      item.price5dAgo !== newItem.price5dAgo
     );
   });
 }
@@ -921,7 +1024,7 @@ wss.on('connection', ws => {
         currentSearchResult = null;
         broadcastData.searchResult = null;
       } else if (data.historical) {
-        const historicalData = await fetchHistoricalData(data.historical, data.name);
+        const historicalData = await fetchHistoricalData(data.historical, data.name, data.period || '1mo');
         broadcastData.historicalData = historicalData;
       } else if (data.requestPredictions) {
         // Handle prediction request if needed
@@ -935,6 +1038,10 @@ wss.on('connection', ws => {
         lastPredictionsData = predictions;
         lastLosersTodayData = losersToday;
         lastBiggestGainersData = biggestGainers;
+      } else if (data.updatePortfolio && Array.isArray(data.updatePortfolio)) {
+        // New: Handle portfolio price update request
+        const portfolioPrices = await fetchPortfolioPrices(data.updatePortfolio);
+        broadcastData.updatePortfolio = portfolioPrices;
       }
       if (Object.keys(broadcastData).length > 0) {
         if (isValidJson(broadcastData)) {
