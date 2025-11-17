@@ -6997,3 +6997,41 @@ body.light .losers-section-today{
       font-size: 12px;
       font-weight: 500;
     }
+    /* Add this to your style.css file */
+
+.sell-all-button {
+  background-color: #EF4444;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  margin: 10px 0;
+  transition: background-color 0.3s ease;
+  font-size: 14px;
+}
+
+.sell-all-button:hover {
+  background-color: #DC2626;
+}
+
+.sell-all-button:active {
+  transform: scale(0.98);
+}
+
+/* Delete order button */
+.delete-order-btn {
+  background-color: #6B7280;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s ease;
+}
+
+.delete-order-btn:hover {
+  background-color: #4B5563;
+}
