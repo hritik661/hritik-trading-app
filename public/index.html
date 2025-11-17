@@ -11,6 +11,89 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <style>
+    .period-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .period-btn {
+      padding: 4px 8px;
+      font-size: 11px;
+      border: 1px solid #64748B;
+      background: #1F2A44;
+      color: #F3F4F6;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.2s, transform 0.1s ease;
+    }
+    .period-btn:hover {
+      background: #3B82F6;
+      transform: scale(1.05);
+    }
+    .period-btn.active {
+      background: #3B82F6;
+      color: white;
+    }
+    /* Light theme adjustments */
+    body.light .period-btn {
+      background: #F3F4F6;
+      color: #1F2A44;
+      border-color: #D1D5DB;
+    }
+    body.light .period-btn:hover,
+    body.light .period-btn.active {
+      background: #3B82F6;
+      color: white;
+    }
+    /* Midnight theme */
+    body.midnight .period-btn {
+      background: #151A2E;
+      border-color: #475569;
+    }
+    body.midnight .period-btn:hover {
+      background: #3B82F6;
+    }
+    /* Smooth price updates */
+    .price-update {
+      transition: color 0.3s ease, transform 0.2s ease-in-out;
+    }
+    .price-update.positive {
+      color: #3B82F6;
+      transform: scale(1.02);
+    }
+    .price-update.negative {
+      color: #FF3333;
+      transform: scale(0.98);
+    }
+    /* Delete All Button Styles */
+    .delete-all-orders {
+      background: #EF4444;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 10px;
+      transition: background 0.2s, transform 0.1s ease;
+    }
+    .delete-all-orders:hover {
+      background: #DC2626;
+      transform: scale(1.05);
+    }
+    body.light .delete-all-orders {
+      background: #EF4444;
+      color: white;
+    }
+    body.midnight .delete-all-orders {
+      background: #EF4444;
+      color: white;
+    }
+  </style>
 </head>
 <body class="dark">
   <div class="header">
@@ -97,7 +180,6 @@
   </div>
   <div class="portfolio-section" id="portfolioSection" style="display: none; position: relative;">
     <h2 class="portfolio-title">Portfolio (Holdings)</h2>
-    <button class="sell-all-button" onclick="sellAllStocks()" title="Sell All Holdings" aria-label="Sell All Holdings" style="background: #EF4444; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; margin-bottom: 10px;">Sell All Stocks</button>
     <button class="portfolio-close" onclick="toggleHoldings()" title="Close Portfolio" aria-label="Close Portfolio">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F3F4F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="18" y1="6" x2="6" y2="18" />
@@ -109,13 +191,13 @@
       <p>Current Value: <span id="currentValue">₹0</span></p>
       <p>Profit/Loss: <span id="profitLoss">₹0</span></p>
     </div>
+    <!-- Sell All Button -->
+    <button id="sellAllButton" class="sell-all-button" onclick="sellAllStocks()" style="display: none;">Sell All Stocks</button>
     <div id="portfolioContainer" class="portfolio-grid"></div>
     <!-- Order History Section -->
     <div class="order-history-section">
-      <div class="order-history-header">
-        <h3 class="order-history-title">Order History</h3>
-        <button class="clear-all-orders-button" onclick="clearAllOrders()" title="Clear All Order History" aria-label="Clear All Order History" style="background: #EF4444; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; margin-left: 10px;">Clear All Orders</button>
-      </div>
+      <h3 class="order-history-title">Order History</h3>
+      <button class="delete-all-orders" onclick="deleteAllOrders()" id="deleteAllOrdersBtn" style="display: none;">Delete All Orders</button>
       <div class="order-history-search">
         <input type="text" id="orderSearchInput" placeholder="Search orders by stock name or symbol..." />
         <div class="clear-search" id="clearOrderSearch" style="display: none;">Clear</div>
@@ -171,6 +253,15 @@
       <div id="chartContainer">
         <button id="toggleChartType" onclick="toggleChartType()" aria-label="Switch Chart Type">Switch to Candlestick</button>
         <canvas id="stockChart" aria-label="Stock Chart"></canvas>
+        <div class="period-buttons" id="periodButtons" style="display: none;">
+          <button class="period-btn" data-period="1d">1D</button>
+          <button class="period-btn" data-period="5d">5D</button>
+          <button class="period-btn active" data-period="1mo">1M</button>
+          <button class="period-btn" data-period="6mo">6M</button>
+          <button class="period-btn" data-period="1y">1Y</button>
+          <button class="period-btn" data-period="2y">2Y</button>
+          <button class="period-btn" data-period="max">MAX</button>
+        </div>
       </div>
       <div id="priceInfo"></div>
     </div>
@@ -214,7 +305,9 @@
     const toggleChartTypeButton = document.getElementById('toggleChartType');
     const priceInfo = document.getElementById('priceInfo');
     const portfolioSection = document.getElementById('portfolioSection');
+    const periodButtonsContainer = document.getElementById('periodButtons');
     let currentChartType = 'line';
+    let currentPeriod = '1mo';
     let currentData = null;
     let currentSymbol = '^NSEI';
     let activeSymbol = '^NSEI';
@@ -262,14 +355,14 @@
         { name: 'Jane Smith', email: 'jane@example.com', password: 'password123' } // Will have -₹20,000 P/L
       ];
       localStorage.setItem('users', JSON.stringify(users));
-      // Initialize data for john
-      localStorage.setItem(`wallet_john@example.com`, '9500000');
-      localStorage.setItem(`portfolio_john@example.com`, JSON.stringify({ 'RELIANCE.NS': { name: 'Reliance Industries', quantity: 10, avgPrice: 2500, currentPrice: 2550, volume: 1000000, dayHigh: 2560, dayLow: 2490 } }));
-      localStorage.setItem(`orderHistory_john@example.com`, JSON.stringify([{ type: 'buy', symbol: 'RELIANCE.NS', name: 'Reliance Industries', quantity: 10, price: 2500, timestamp: new Date().toISOString() }]));
-      // Initialize data for jane
-      localStorage.setItem(`wallet_jane@example.com`, '10200000');
-      localStorage.setItem(`portfolio_jane@example.com`, JSON.stringify({ 'TCS.NS': { name: 'Tata Consultancy Services', quantity: 5, avgPrice: 4000, currentPrice: 3900, volume: 500000, dayHigh: 3950, dayLow: 3850 } }));
-      localStorage.setItem(`orderHistory_jane@example.com`, JSON.stringify([{ type: 'buy', symbol: 'TCS.NS', name: 'Tata Consultancy Services', quantity: 5, price: 4000, timestamp: new Date().toISOString() }]));
+      // Initialize data for john - Empty portfolio to avoid mock negative P/L
+      localStorage.setItem(`wallet_john@example.com`, '10000000');
+      localStorage.setItem(`portfolio_john@example.com`, JSON.stringify({}));
+      localStorage.setItem(`orderHistory_john@example.com`, JSON.stringify([]));
+      // Initialize data for jane - Empty portfolio to avoid mock negative P/L
+      localStorage.setItem(`wallet_jane@example.com`, '10000000');
+      localStorage.setItem(`portfolio_jane@example.com`, JSON.stringify({}));
+      localStorage.setItem(`orderHistory_jane@example.com`, JSON.stringify([]));
     }
     document.getElementById('currentDate').textContent = new Date().toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
     function loadUserData(email) {
@@ -477,10 +570,13 @@
       document.getElementById('currentValue').textContent = `₹${currentValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
       document.getElementById('profitLoss').textContent = `${profitLoss >= 0 ? '+' : '-'}₹${Math.abs(profitLoss).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
       document.getElementById('profitLoss').className = profitLoss >= 0 ? 'positive' : 'negative';
+      // Show/hide Sell All button
+      document.getElementById('sellAllButton').style.display = Object.keys(portfolio).length > 0 ? 'block' : 'none';
       if (isLoggedIn && currentEmail) {
         localStorage.setItem(`portfolio_${currentEmail}`, JSON.stringify(portfolio));
       }
     }
+    // Sell All Stocks Function
     function sellAllStocks() {
       if (!isLoggedIn) {
         showNotification('Please login to trade stocks.', 'error');
@@ -491,75 +587,67 @@
         showNotification('No holdings to sell.', 'error');
         return;
       }
-      if (!confirm('Are you sure you want to sell all stocks? This will realize your current P/L.')) {
+      if (!confirm('Are you sure you want to sell ALL stocks? This action cannot be undone.')) {
         return;
       }
-      let totalProceeds = 0;
-      let totalPL = 0;
-      const sells = [];
+      let totalEarned = 0;
+      const sellOrders = [];
       Object.entries(portfolio).forEach(([symbol, holding]) => {
         const quantity = holding.quantity;
-        const price = holding.currentPrice || 0;
-        if (quantity > 0 && price > 0) {
-          const proceeds = quantity * price;
-          totalProceeds += proceeds;
-          const invested = quantity * holding.avgPrice;
-          totalPL += (proceeds - invested);
-          sells.push({
-            type: 'sell',
-            symbol,
-            name: holding.name,
-            quantity,
-            price,
-            timestamp: new Date().toISOString()
-          });
-        }
+        const price = holding.currentPrice || holding.avgPrice;
+        const earned = price * quantity;
+        totalEarned += earned;
+        sellOrders.push({ type: 'sell', symbol, name: holding.name, quantity, price, timestamp: new Date().toISOString() });
+        // Remove from portfolio
+        delete portfolio[symbol];
       });
-      walletBalance += totalProceeds;
-      orderHistory.push(...sells);
-      portfolio = {};
+      walletBalance += totalEarned;
+      orderHistory.push(...sellOrders);
       updateWalletBalance();
       renderPortfolio();
-      const plMessage = totalPL >= 0 ? `+₹${totalPL.toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : `-₹${Math.abs(totalPL).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
-      showNotification(`Sold all stocks. Realized P/L: ${plMessage}`, totalPL >= 0 ? 'success' : 'error');
+      showNotification(`Sold all stocks! Earned ₹${totalEarned.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`, 'success');
       if (isLoggedIn && currentEmail) {
         saveUserData(currentEmail);
       }
     }
-    function clearAllOrders() {
+    // Delete All Orders Function
+    function deleteAllOrders() {
       if (!isLoggedIn) {
         showNotification('Please login to manage order history.', 'error');
         showLogin();
         return;
       }
       if (orderHistory.length === 0) {
-        showNotification('No orders to clear.', 'error');
+        showNotification('No orders to delete.', 'error');
         return;
       }
-      if (!confirm('Are you sure you want to delete all order history? This action cannot be undone.')) {
+      if (!confirm('Are you sure you want to delete ALL orders from history? This action cannot be undone.')) {
         return;
       }
       orderHistory = [];
       if (isLoggedIn && currentEmail) {
         localStorage.setItem(`orderHistory_${currentEmail}`, JSON.stringify(orderHistory));
       }
-      renderOrderHistory();
-      showNotification('All order history cleared successfully.', 'success');
+      renderOrderHistory(orderSearchFilter);
+      showNotification('All orders deleted from history.', 'success');
     }
-    // Render Order History with Search/Filter
+    // Render Order History with Search/Filter and Delete Button
     let orderSearchFilter = '';
     function renderOrderHistory(filter = '') {
       orderSearchFilter = filter.toLowerCase().trim();
       const container = document.getElementById('orderHistoryContainer');
       const noOrdersMessage = document.getElementById('noOrdersMessage');
       const clearSearchBtn = document.getElementById('clearOrderSearch');
+      const deleteAllBtn = document.getElementById('deleteAllOrdersBtn');
       container.innerHTML = '';
       if (orderHistory.length === 0) {
         noOrdersMessage.style.display = 'block';
         clearSearchBtn.style.display = 'none';
+        deleteAllBtn.style.display = 'none';
         return;
       }
       noOrdersMessage.style.display = 'none';
+      deleteAllBtn.style.display = 'block';
       // Sort by timestamp descending
       const sortedHistory = orderHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
       // Filter by stock name or symbol
@@ -585,9 +673,25 @@
           <div class="order-qty">${order.quantity}</div>
           <div class="order-price">₹${Number(order.price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
           <div class="order-date">${formattedDate}</div>
+          <button class="delete-order-btn" onclick="deleteOrder('${order.timestamp}')" title="Delete Order">🗑️</button>
         `;
         container.appendChild(row);
       });
+    }
+    // Delete Order Function
+    function deleteOrder(timestamp) {
+      if (!confirm('Are you sure you want to delete this order from history?')) {
+        return;
+      }
+      const index = orderHistory.findIndex(order => order.timestamp === timestamp);
+      if (index > -1) {
+        orderHistory.splice(index, 1);
+        if (isLoggedIn && currentEmail) {
+          localStorage.setItem(`orderHistory_${currentEmail}`, JSON.stringify(orderHistory));
+        }
+        renderOrderHistory(orderSearchFilter);
+        showNotification('Order deleted from history.', 'success');
+      }
     }
     // Event listener for order history search
     document.addEventListener('DOMContentLoaded', () => {
@@ -602,6 +706,14 @@
         renderOrderHistory('');
       });
     });
+    // Function to update portfolio prices from server
+    function updatePortfolioPrices() {
+      if (ws && ws.readyState === WebSocket.OPEN && Object.keys(portfolio).length > 0) {
+        const symbols = Object.keys(portfolio);
+        ws.send(JSON.stringify({ updatePortfolio: symbols }));
+        showNotification('Updating portfolio prices...', 'info');
+      }
+    }
     function renderPortfolio() {
       const portfolioContainer = document.getElementById('portfolioContainer');
       portfolioContainer.innerHTML = '';
@@ -673,13 +785,17 @@
             e.preventDefault();
             e.stopPropagation();
             if (!checkAuthAndTrade('buy', symbol, holding.name, holding.currentPrice || 0)) return;
-            promptTrade('buy', symbol, holding.name, holding.currentPrice || 0);
+            // Ensure latest price before trade
+            updatePortfolioPrices();
+            setTimeout(() => promptTrade('buy', symbol, holding.name, holding.currentPrice || 0), 1000);
           });
           sellButton.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             if (!checkAuthAndTrade('sell', symbol, holding.name, holding.currentPrice || 0)) return;
-            promptTrade('sell', symbol, holding.name, holding.currentPrice || 0);
+            // Ensure latest price before trade
+            updatePortfolioPrices();
+            setTimeout(() => promptTrade('sell', symbol, holding.name, holding.currentPrice || 0), 1000);
           });
         }
       });
@@ -826,8 +942,12 @@
       if (portfolioSection.style.display === 'none' || portfolioSection.style.display === '') {
         portfolioSection.style.display = 'block';
         portfolioSection.classList.add('show');
-        renderPortfolio();
-        portfolioSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Update prices before rendering
+        updatePortfolioPrices();
+        setTimeout(() => {
+          renderPortfolio();
+          portfolioSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 1500); // Wait for server response
       } else {
         portfolioSection.style.display = 'none';
         portfolioSection.classList.remove('show');
@@ -835,140 +955,50 @@
     }
     // Fixed Market Status - Correct IST calculation and holidays for 2025
    // Add this function to determine market status
-/* ---------- DROP-IN PATCH: Correct NSE holiday calendar + robust IST handling ---------- */
-/* Official NSE trading holidays (Equity) for 2025 that fall on weekdays */
-const NSE_HOLIDAYS_2025 = new Set([
-  '2025-02-26', // Mahashivratri (Wed)
-  '2025-03-14', // Holi (Fri)
-  '2025-03-31', // Eid-ul-Fitr / Ramzan Id (Mon)
-  '2025-04-10', // Shri Mahavir Jayanti (Thu)
-  '2025-04-14', // Dr Babasaheb Ambedkar Jayanti (Mon)
-  '2025-04-18', // Good Friday (Fri)
-  '2025-05-01', // Maharashtra Day (Thu)
-  '2025-08-15', // Independence Day (Fri)
-  '2025-08-27', // Ganesh Chaturthi (Wed)
-  '2025-09-05', // Id-E-Milad (Fri)
-  '2025-10-02', // Mahatma Gandhi Jayanti / Dussehra (Thu)
-  '2025-10-21', // Diwali – Laxmi Pujan (Tue) — Muhurat trading only
-  '2025-10-22', // Diwali – Balipratipada (Wed)
-  '2025-11-05', // Guru Nanak Jayanti (Wed) — FIXED from 2025-11-14
-  '2025-12-25' // Christmas (Thu)
-]);
-/* Timezone-safe helpers (no double-offset bugs on IST machines/browsers) */
-const toIST = (d = new Date()) => new Date(
-  new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Kolkata',
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', second: '2-digit',
-    hour12: false
-  }).format(d).replace(',', '')
-    .replace(
-      /(?<y>\d{4})-(?<m>\d{2})-(?<dd>\d{2}) (?<hh>\d{2}):(?<mm>\d{2}):(?<ss>\d{2})/,
-      '$1-$2-$3T$4:$5:$6'
-    )
-);
-const ymd = (dateIST) => {
-  const y = dateIST.getFullYear();
-  const m = String(dateIST.getMonth() + 1).padStart(2, '0');
-  const d = String(dateIST.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-};
-const isTradingHoliday = (dateIST) =>
-  dateIST.getFullYear() === 2025 && NSE_HOLIDAYS_2025.has(ymd(dateIST));
-const isWeekdayIST = (dateIST) => {
-  const dow = dateIST.getDay(); // 0=Sun .. 6=Sat
-  return dow >= 1 && dow <= 5;
-};
-/* Returns { isOpen, statusText, nowIST } and never mislabels 2025-11-14 as holiday */
 function getMarketStatus() {
-  const nowIST = toIST();
-  const minutes = nowIST.getHours() * 60 + nowIST.getMinutes();
-  const OPEN_MIN = 9 * 60 + 15; // 09:15
-  const CLOSE_MIN = 15 * 60 + 30; // 15:30
-  const weekday = isWeekdayIST(nowIST);
-  const holiday = isTradingHoliday(nowIST);
-  const tradingDay = weekday && !holiday;
-  const openNow = tradingDay && minutes >= OPEN_MIN && minutes < CLOSE_MIN;
-  const longDate = nowIST.toLocaleDateString('en-IN', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-  });
-  let reason = '';
-  if (!weekday) reason = 'Weekend';
-  else if (holiday) reason = `Holiday (${ymd(nowIST)})`;
-  let statusText;
-  if (openNow) {
-    statusText = `Market is Open • ${longDate}`;
-  } else if (tradingDay && minutes < OPEN_MIN) {
-    statusText = `Market is Close - Pre-open 9:00–9:15 • ${longDate}`;
-  } else if (tradingDay && minutes >= CLOSE_MIN) {
-    statusText = `Market is Close • ${longDate}`;
-  } else {
-    statusText = `Market is Close - ${reason} • ${longDate}`;
+  const now = Date.now(); // UTC ms
+  const istOffset = 5.5 * 60 * 60 * 1000; // IST offset in milliseconds
+  const istTime = new Date(now + istOffset);
+  const hours = istTime.getHours();
+  const minutes = istTime.getMinutes();
+  const day = istTime.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  const dateStr = istTime.toISOString().slice(0, 10); // YYYY-MM-DD
+  // India 2025 stock market holidays (full list)
+  const holidays = [
+    '2025-01-26', // Republic Day
+    '2025-03-14', // Holi
+    '2025-03-31', // Mahavir Jayanti
+    '2025-04-10', // Ram Navami
+    '2025-04-18', // Good Friday
+    '2025-05-01', // Labour Day
+    '2025-05-12', // Bakri Id
+    '2025-07-07', // Muharram
+    '2025-08-15', // Independence Day
+    '2025-09-05', // Janmashtami
+    '2025-09-16', // Milad-un-Nabi
+    '2025-10-02', // Gandhi Jayanti
+    '2025-10-20', // Dussehra
+    '2025-10-21', // Diwali
+    '2025-11-14', // Gurunanak Jayanti
+    '2025-12-25' // Christmas
+  ];
+  const isHoliday = holidays.includes(dateStr);
+  const isWeekday = day >= 1 && day <= 5;
+  const marketOpenTime = 9 * 60 + 15; // 9:15 AM in minutes
+  const marketCloseTime = 15 * 60 + 30; // 3:30 PM in minutes
+  const currentTimeInMinutes = hours * 60 + minutes;
+  const isTimeOpen = currentTimeInMinutes >= marketOpenTime && currentTimeInMinutes <= marketCloseTime;
+  const isOpen = isWeekday && !isHoliday && isTimeOpen;
+  let statusText = isOpen ? 'Market is Open (9:15 AM - 3:30 PM)' : 'Market is Closed';
+  if (!isWeekday) {
+    statusText += ' - Weekend';
+  } else if (isHoliday) {
+    statusText += ` - Holiday (${dateStr})`;
+  } else if (!isTimeOpen) {
+    statusText += ' - Outside Trading Hours';
   }
-  return { isOpen: openNow, statusText, nowIST };
+  return { isOpen, statusText };
 }
-/* Next trading day that skips weekends + NSE_HOLIDAYS_2025 */
-function getNextTradingDay(fromDate) {
-  // If not provided, start from current IST day
-  let d = toIST(fromDate || new Date());
-  d.setDate(d.getDate() + 1);
-  // Loop until a valid trading day
-  for (;;) {
-    const ist = toIST(d);
-    if (isWeekdayIST(ist) && !isTradingHoliday(ist)) {
-      return ist.toLocaleDateString('en-IN', {
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-      });
-    }
-    d.setDate(d.getDate() + 1);
-  }
-}
-/* Safe UI updater that also fixes #currentDate text in IST */
-function updateMarketStatus() {
-  const { isOpen, statusText, nowIST } = getMarketStatus();
-  const marketStatusEl = document.getElementById('marketStatus');
-  if (marketStatusEl) {
-    marketStatusEl.textContent = statusText;
-    marketStatusEl.className = isOpen ? 'market-open' : 'market-closed';
-  }
-  const currentDateEl = document.getElementById('currentDate');
-  if (currentDateEl) {
-    currentDateEl.textContent = nowIST.toLocaleDateString('en-IN', {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-    });
-  }
-  const logo = document.querySelector('.logo');
-  if (logo) {
-    logo.textContent = isOpen
-      ? 'Hritik Indian Stock Market Live'
-      : 'Hritik Indian Stock Market';
-  }
-  // Show/hide prediction sections based on open/close state
-  const predSec = document.querySelector('.predictions-section');
-  const losersTodaySec = document.querySelector('.losers-section-today');
-  if (predSec) predSec.style.display = isOpen ? 'none' : 'block';
-  if (losersTodaySec) losersTodaySec.style.display = isOpen ? 'none' : 'block';
-  // Update prediction headers with the real next trading day
-  if (!isOpen) {
-    const nextDay = getNextTradingDay(nowIST);
-    const pt = document.getElementById('predictionsTitle');
-    const pn = document.getElementById('predictionsNote');
-    const lt = document.getElementById('losersTitle');
-    const ln = document.getElementById('losersNote');
-    if (pt) pt.textContent = `Predicted Stock Gainers ▲5% Up - Forecast for ${nextDay}`;
-    if (lt) lt.textContent = `Predicted Stock Losers ▼5% Down - Forecast for ${nextDay}`;
-    if (pn) pn.textContent =
-      `Predictions based on momentum analysis from previous close. Only high-confidence picks shown.`;
-    if (ln) ln.textContent =
-      `Predictions based on momentum analysis from previous close. Only high-confidence picks shown.`;
-  }
-}
-/* Ensure the status is correct immediately and every minute */
-document.addEventListener('DOMContentLoaded', updateMarketStatus);
-clearInterval(window.__marketStatusTimer__);
-window.__marketStatusTimer__ = setInterval(updateMarketStatus, 60_000);
-/* Optional compat helper: simple boolean for legacy checks */
-const isMarketOpen = () => getMarketStatus().isOpen;
 // Add this function to update the market status display
 function updateMarketStatus() {
   const { isOpen, statusText } = getMarketStatus();
@@ -984,9 +1014,9 @@ function updateMarketStatus() {
   } else {
     const nextDay = getNextTradingDay();
     document.getElementById('predictionsTitle').textContent = `Predicted Stock Gainers (5%+ Up from Yesterday) - Forecast for ${nextDay}`;
-    document.getElementById('predictionsNote').textContent = `Predictions based on momentum analysis from previous close (1 day ago: 13-11-2025). Only 100% confident picks shown (high-volume momentum continuers).`;
+    document.getElementById('predictionsNote').textContent = `Predictions based on momentum analysis from previous close (1 day ago: 17-11-2025). Only 100% confident picks shown (high-volume momentum continuers).`;
     document.getElementById('losersTitle').textContent = `Predicted Stock Losers (5%+ Down from Yesterday) - Forecast for ${nextDay}`;
-    document.getElementById('losersNote').textContent = `Predictions based on momentum analysis from previous close (1 day ago: 13-11-2025). Only 100% confident picks shown (high-volume momentum continuers).`;
+    document.getElementById('losersNote').textContent = `Predictions based on momentum analysis from previous close (1 day ago: 17-11-2025). Only 100% confident picks shown (high-volume momentum continuers).`;
     generateDailyPredictions();
   }
 }
@@ -1022,9 +1052,9 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         const nextDay = getNextTradingDay();
         document.getElementById('predictionsTitle').textContent = `Predicted Stock Gainers (5%+ Up from Yesterday) - Forecast for ${nextDay}`;
-        document.getElementById('predictionsNote').textContent = `Predictions based on momentum analysis from previous close (1 day ago: 13-11-2025). Only 100% confident picks shown (high-volume momentum continuers).`;
+        document.getElementById('predictionsNote').textContent = `Predictions based on momentum analysis from previous close (1 day ago: 17-11-2025). Only 100% confident picks shown (high-volume momentum continuers).`;
         document.getElementById('losersTitle').textContent = `Predicted Stock Losers (5%+ Down from Yesterday) - Forecast for ${nextDay}`;
-        document.getElementById('losersNote').textContent = `Predictions based on momentum analysis from previous close (1 day ago: 13-11-2025). Only 100% confident picks shown (high-volume momentum continuers).`;
+        document.getElementById('losersNote').textContent = `Predictions based on momentum analysis from previous close (1 day ago: 17-11-2025). Only 100% confident picks shown (high-volume momentum continuers).`;
         generateDailyPredictions();
       }
     }
@@ -1038,7 +1068,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isLoggedIn && localStorage.getItem('authToken')) {
           ws.send(JSON.stringify({ auth: { token: localStorage.getItem('authToken') } }));
         }
-        ws.send(JSON.stringify({ historical: '^NSEI', name: 'NIFTY 50' }));
+        ws.send(JSON.stringify({ historical: '^NSEI', name: 'NIFTY 50', period: currentPeriod }));
         // Request predictions for next day if market closed
         const { isOpen } = getMarketStatus();
         if (!isOpen) {
@@ -1094,6 +1124,20 @@ document.addEventListener('DOMContentLoaded', () => {
             updateTopStocks(data.stocks);
             renderPortfolio();
             lastStocksData = data.stocks;
+          }
+          // New: Handle portfolio price updates
+          if (data.updatePortfolio && Array.isArray(data.updatePortfolio)) {
+            data.updatePortfolio.forEach(stock => {
+              const normalizedSymbol = stock.symbol.endsWith('.NS') ? stock.symbol : `${stock.symbol}.NS`;
+              if (portfolio[normalizedSymbol] && stock.price && !isNaN(stock.price)) {
+                portfolio[normalizedSymbol].currentPrice = stock.price;
+                portfolio[normalizedSymbol].volume = stock.volume || 0;
+                portfolio[normalizedSymbol].dayHigh = stock.dayHigh || stock.price;
+                portfolio[normalizedSymbol].dayLow = stock.dayLow || stock.price;
+              }
+            });
+            renderPortfolio();
+            showNotification('Portfolio prices updated!', 'success');
           }
           if (data.losersToday && dataChanged(lastLosersTodayData, data.losersToday)) {
             updateLosersToday(data.losersToday);
@@ -1185,6 +1229,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (activeSymbol === symbol) {
               renderChart(currentData.name, currentData.historicalData, currentData.currentPrice, currentData.volume);
               updateActiveButton(symbol);
+              periodButtonsContainer.style.display = 'flex';
             }
             updateIndices();
           }
@@ -1371,8 +1416,8 @@ document.addEventListener('DOMContentLoaded', () => {
               <p class="last-close">Last Close: ${lastClose}</p>
             </div>
             <div class="price-display">
-              <p class="current-price ${price === 'N/A' ? 'unavailable' : 'available'}">Price: ${price}</p>
-              <p class="stock-change ${percentChange === 'N/A' ? '' : (index.percentChange >= 0 ? 'positive' : 'negative')}">${percentChange}</p>
+              <p class="current-price ${price === 'N/A' ? 'unavailable' : 'available'}">Price: <span class="price-value">${price}</span></p>
+              <p class="stock-change ${percentChange === 'N/A' ? '' : (index.percentChange >= 0 ? 'positive' : 'negative')}"><span class="change-value">${percentChange}</span></p>
             </div>
           `;
           card.addEventListener('click', (e) => {
@@ -1386,11 +1431,21 @@ document.addEventListener('DOMContentLoaded', () => {
           });
           stockCards.appendChild(card);
         } else {
-          const priceEl = card.querySelector('.current-price');
-          const changeEl = card.querySelector('.stock-change');
-          if (priceEl.textContent !== `Price: ${price}`) priceEl.textContent = `Price: ${price}`;
-          if (changeEl.textContent !== percentChange) changeEl.textContent = percentChange;
-          changeEl.className = `stock-change ${percentChange === 'N/A' ? '' : (index.percentChange >= 0 ? 'positive' : 'negative')}`;
+          const priceEl = card.querySelector('.price-value');
+          const changeEl = card.querySelector('.change-value');
+          const oldPrice = priceEl.textContent;
+          const oldChange = changeEl.textContent;
+          if (oldPrice !== price) {
+            priceEl.textContent = price;
+            priceEl.parentElement.classList.add('price-update', index.percentChange >= 0 ? 'positive' : 'negative');
+            setTimeout(() => priceEl.parentElement.classList.remove('price-update', 'positive', 'negative'), 300);
+          }
+          if (oldChange !== percentChange) {
+            changeEl.textContent = percentChange;
+            changeEl.parentElement.className = `stock-change ${percentChange === 'N/A' ? '' : (index.percentChange >= 0 ? 'positive' : 'negative')}`;
+            changeEl.parentElement.classList.add('price-update', index.percentChange >= 0 ? 'positive' : 'negative');
+            setTimeout(() => changeEl.parentElement.classList.remove('price-update', 'positive', 'negative'), 300);
+          }
         }
       });
     }
@@ -1412,11 +1467,11 @@ document.addEventListener('DOMContentLoaded', () => {
           card.innerHTML = `
             <div class="stock-info">
               <h3 class="stock-name">${stock.name}</h3>
-              <p class="stock-price">Price: <span>${price}</span></p>
-              <p class="day-low">Day Low: <span>${dayLow}</span></p>
-              <p class="day-high">Day High: <span>${dayHigh}</span></p>
-              <p class="volume">Volume: <span>${volume}</span></p>
-              <p class="stock-change ${percentChange === 'N/A' ? '' : (stock.percentChange >= 0 ? 'positive' : 'negative')}" style="${stock.percentChange >= 0 ? 'color: #3B82F6' : 'color: #FF3333'}"><span>${percentChange}</span></p>
+              <p class="stock-price">Price: <span class="price-value">${price}</span></p>
+              <p class="day-low">Day Low: <span class="day-low-value">${dayLow}</span></p>
+              <p class="day-high">Day High: <span class="day-high-value">${dayHigh}</span></p>
+              <p class="volume">Volume: <span class="volume-value">${volume}</span></p>
+              <p class="stock-change ${percentChange === 'N/A' ? '' : (stock.percentChange >= 0 ? 'positive' : 'negative')}" style="${stock.percentChange >= 0 ? 'color: #3B82F6' : 'color: #FF3333'}"><span class="change-value">${percentChange}</span></p>
               <div class="stock-actions">
                 <button class="action-button buy" onclick="handleBuyClick('${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Buy</button>
                 <button class="action-button sell" onclick="handleSellClick('${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Sell</button>
@@ -1436,18 +1491,31 @@ document.addEventListener('DOMContentLoaded', () => {
           });
           topStocksContainer.appendChild(card);
         } else {
-          const priceSpan = card.querySelector('.stock-price span');
-          const dayLowSpan = card.querySelector('.day-low span');
-          const dayHighSpan = card.querySelector('.day-high span');
-          const volumeSpan = card.querySelector('.volume span');
-          const changeSpan = card.querySelector('.stock-change span');
-          if (priceSpan.textContent !== price) priceSpan.textContent = price;
-          if (dayLowSpan.textContent !== dayLow) dayLowSpan.textContent = dayLow;
-          if (dayHighSpan.textContent !== dayHigh) dayHighSpan.textContent = dayHigh;
-          if (volumeSpan.textContent !== volume) volumeSpan.textContent = volume;
-          if (changeSpan.textContent !== percentChange) changeSpan.textContent = percentChange;
-          changeSpan.parentElement.className = `stock-change ${percentChange === 'N/A' ? '' : (stock.percentChange >= 0 ? 'positive' : 'negative')}`;
-          changeSpan.parentElement.style.color = stock.percentChange >= 0 ? '#3B82F6' : '#FF3333';
+          const priceSpan = card.querySelector('.price-value');
+          const dayLowSpan = card.querySelector('.day-low-value');
+          const dayHighSpan = card.querySelector('.day-high-value');
+          const volumeSpan = card.querySelector('.volume-value');
+          const changeSpan = card.querySelector('.change-value');
+          const oldPrice = priceSpan.textContent;
+          const oldDayLow = dayLowSpan.textContent;
+          const oldDayHigh = dayHighSpan.textContent;
+          const oldVolume = volumeSpan.textContent;
+          const oldChange = changeSpan.textContent;
+          if (oldPrice !== price) {
+            priceSpan.textContent = price;
+            priceSpan.parentElement.classList.add('price-update', stock.percentChange >= 0 ? 'positive' : 'negative');
+            setTimeout(() => priceSpan.parentElement.classList.remove('price-update', 'positive', 'negative'), 300);
+          }
+          if (oldDayLow !== dayLow) dayLowSpan.textContent = dayLow;
+          if (oldDayHigh !== dayHigh) dayHighSpan.textContent = dayHigh;
+          if (oldVolume !== volume) volumeSpan.textContent = volume;
+          if (oldChange !== percentChange) {
+            changeSpan.textContent = percentChange;
+            changeSpan.parentElement.className = `stock-change ${percentChange === 'N/A' ? '' : (stock.percentChange >= 0 ? 'positive' : 'negative')}`;
+            changeSpan.parentElement.style.color = stock.percentChange >= 0 ? '#3B82F6' : '#FF3333';
+            changeSpan.parentElement.classList.add('price-update', stock.percentChange >= 0 ? 'positive' : 'negative');
+            setTimeout(() => changeSpan.parentElement.classList.remove('price-update', 'positive', 'negative'), 300);
+          }
           // Update button onclicks
           const buyBtn = card.querySelector('.action-button.buy');
           const sellBtn = card.querySelector('.action-button.sell');
@@ -1483,8 +1551,8 @@ document.addEventListener('DOMContentLoaded', () => {
           const change = index.percentChange ? `${index.percentChange >= 0 ? '+' : ''}${index.percentChange}%` : 'N/A';
           card.innerHTML = `
             <h3>${index.name}</h3>
-            <p>Price: ${price}</p>
-            <p class="${index.percentChange >= 0 ? 'positive' : 'negative'}" style="${index.percentChange >= 0 ? 'color: #3B82F6' : 'color: #FF3333'}">${change}</p>
+            <p>Price: <span class="price-value">${price}</span></p>
+            <p class="${index.percentChange >= 0 ? 'positive' : 'negative'}" style="${index.percentChange >= 0 ? 'color: #3B82F6' : 'color: #FF3333'}"><span class="change-value">${change}</span></p>
           `;
           globalCards.appendChild(card);
         }
@@ -1577,8 +1645,8 @@ document.addEventListener('DOMContentLoaded', () => {
         card.innerHTML = `
           <div class="prediction-info">
             <h3 class="prediction-name">${stock.name} ${confidenceBadge}</h3>
-            <p class="prediction-price ${price === 'N/A' ? 'unavailable' : 'available'}">Current Price: ${price}</p>
-            <p class="prediction-gain" style="color: #3B82F6;">Predicted Gain (Next Day): ${predictedGain}</p>
+            <p class="prediction-price ${price === 'N/A' ? 'unavailable' : 'available'}">Current Price: <span class="price-value">${price}</span></p>
+            <p class="prediction-gain" style="color: #3B82F6;">Predicted Gain (Next Day): <span class="change-value">${predictedGain}</span></p>
             <p class="prediction-reason">${stock.reason || 'Based on yesterday\'s momentum.'}</p>
             <div class="stock-actions">
               <button class="action-button buy" onclick="handleBuyClick('${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Buy</button>
@@ -1623,9 +1691,9 @@ document.addEventListener('DOMContentLoaded', () => {
         card.innerHTML = `
           <div class="loser-info">
             <h3 class="loser-name">${stock.name} ${confidenceBadge}</h3>
-            <p class="loser-price">Price: ${price}</p>
-            <p class="volume">Volume: ${volume}</p>
-            <p class="loser-drop" style="color: #FF3333;">Predicted Loss (Next Day): ${predictedLoss}</p>
+            <p class="loser-price">Price: <span class="price-value">${price}</span></p>
+            <p class="volume">Volume: <span class="volume-value">${volume}</span></p>
+            <p class="loser-drop" style="color: #FF3333;">Predicted Loss (Next Day): <span class="change-value">${predictedLoss}</span></p>
             <p class="prediction-reason" style="color: #A0AEC0;">${stock.reason || 'Based on yesterday\'s downside.'}</p>
             <div class="stock-actions">
               <button class="action-button buy" onclick="handleBuyClick('${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Buy</button>
@@ -1668,9 +1736,9 @@ document.addEventListener('DOMContentLoaded', () => {
         card.innerHTML = `
           <div class="gainer-info">
             <h3 class="gainer-name">${stock.name} ${confidenceBadge}</h3>
-            <p class="gainer-price">Price: ${price}</p>
-            <p class="volume">Volume: ${volume}</p>
-            <p class="gainer-up">Up from 52W Low: ${percentUp}</p>
+            <p class="gainer-price">Price: <span class="price-value">${price}</span></p>
+            <p class="volume">Volume: <span class="volume-value">${volume}</span></p>
+            <p class="gainer-up">Up from 52W Low: <span class="change-value">${percentUp}</span></p>
             <p class="gainer-reason">${stock.reason || 'Strong rebound from lows.'}</p>
             <div class="stock-actions">
               <button class="action-button buy" onclick="handleBuyClick('${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Buy</button>
@@ -1705,9 +1773,9 @@ document.addEventListener('DOMContentLoaded', () => {
         card.innerHTML = `
           <div class="loser-info">
             <h3 class="loser-name">${stock.name}</h3>
-            <p class="loser-price">Price: ${price}</p>
-            <p class="volume">Volume: ${volume}</p>
-            <p class="loser-drop" style="color: #FF3333;">Drop: -${percentDrop}</p>
+            <p class="loser-price">Price: <span class="price-value">${price}</span></p>
+            <p class="volume">Volume: <span class="volume-value">${volume}</span></p>
+            <p class="loser-drop" style="color: #FF3333;">Drop: <span class="change-value">-${percentDrop}</span></p>
             <div class="stock-actions">
               <button class="action-button buy" onclick="handleBuyClick('${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Buy</button>
               <button class="action-button sell" onclick="handleSellClick('${stock.symbol}', '${stock.name.replace(/'/g, "\\'")}', ${stock.price || 0})">Sell</button>
@@ -1738,6 +1806,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (stockChart) stockChart.destroy();
       priceInfo.innerHTML = '';
       chartContainer.classList.remove('show');
+      periodButtonsContainer.style.display = 'none';
     }
     function updateSearchResult(result) {
       // Clear search result if result is null
@@ -1750,6 +1819,7 @@ document.addEventListener('DOMContentLoaded', () => {
             stockChart = null;
           }
           priceInfo.innerHTML = '';
+          periodButtonsContainer.style.display = 'none';
         }
         return;
       }
@@ -1824,6 +1894,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderChart(currentData.name, currentData.historicalData, currentData.currentPrice, currentData.volume);
         updateActiveButton(null);
         toggleIndicesButtons(false);
+        periodButtonsContainer.style.display = 'flex';
       }
       // Update search result HTML with buy/sell if tradable
       let actionsHtml = '';
@@ -1837,11 +1908,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       searchResult.innerHTML = `
         <h3>${result.name || 'Unknown'}</h3>
-        <p>Price: ${price}</p>
-        <p>Volume: ${volume}</p>
-        <p>Day High: ${dayHigh}</p>
-        <p>Day Low: ${dayLow}</p>
-        <p class="${percentChange === 'N/A' ? '' : (percentChange.includes('-') ? 'negative' : 'positive')}" style="${percentChange.includes('-') ? 'color: #FF3333' : 'color: #3B82F6'}">Change: ${percentChange}</p>
+        <p>Price: <span class="price-value">${price}</span></p>
+        <p>Volume: <span class="volume-value">${volume}</span></p>
+        <p>Day High: <span class="day-high-value">${dayHigh}</span></p>
+        <p>Day Low: <span class="day-low-value">${dayLow}</span></p>
+        <p class="${percentChange === 'N/A' ? '' : (percentChange.includes('-') ? 'negative' : 'positive')}" style="${percentChange.includes('-') ? 'color: #FF3333' : 'color: #3B82F6'}">Change: <span class="change-value">${percentChange}</span></p>
         ${actionsHtml}
         <button class="close-button" onclick="closeSearch()">✖</button>
       `;
@@ -1855,12 +1926,13 @@ document.addEventListener('DOMContentLoaded', () => {
         currentSymbol = null;
         currentData = null;
         updateActiveButton(null);
+        periodButtonsContainer.style.display = 'none';
       } else {
         activeSymbol = symbol;
         currentSymbol = symbol;
         isIndex = true;
         if (ws && ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ historical: symbol, name }));
+          ws.send(JSON.stringify({ historical: symbol, name, period: currentPeriod }));
         } else {
           showNotification('WebSocket is not connected. Please try again later.', 'error');
         }
@@ -1877,20 +1949,16 @@ document.addEventListener('DOMContentLoaded', () => {
         currentSymbol = null;
         currentData = null;
         updateActiveButton(null);
+        periodButtonsContainer.style.display = 'none';
       } else {
         activeSymbol = symbol;
         currentSymbol = symbol;
         isIndex = true;
-        if (!currentData || currentData.symbol !== 'BTCUSDT') {
-          currentData = {
-            symbol: 'BTCUSDT',
-            name: 'Bitcoin (BTC/USDT)',
-            historicalData: [],
-            currentPrice: null,
-            volume: 0
-          };
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ historical: symbol, name, period: currentPeriod }));
+        } else {
+          showNotification('WebSocket is not connected. Please try again later.', 'error');
         }
-        renderChart(currentData.name, currentData.historicalData, currentData.currentPrice, currentData.volume);
         updateActiveButton(symbol);
         toggleIndicesButtons(true);
       }
@@ -1899,11 +1967,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (stockChart) stockChart.destroy();
       chartContainer.classList.add('show');
       const ctx = document.getElementById('stockChart').getContext('2d');
-      const isBitcoin = name === 'Bitcoin (BTC/USDT)';
+      const isBTC = currentData.symbol === 'BTCUSDT';
       const isCommodityIndian = name === 'Gold' || name === 'Silver';
       const isGlobal = ['Dow Jones', 'Nasdaq', 'Nikkei', 'Hang Seng', 'GIFT NIFTY'].includes(name);
-      const currencySymbol = isBitcoin || (isGlobal && !isCommodityIndian) ? '$' : '₹';
-      const locale = isBitcoin || (isGlobal && !isCommodityIndian) ? 'en-US' : 'en-IN';
+      const currencySymbol = isBTC || (isGlobal && !isCommodityIndian) ? '$' : '₹';
+      const locale = isBTC || (isGlobal && !isCommodityIndian) ? 'en-US' : 'en-IN';
       const safeCurrentPrice = currentPrice && !isNaN(currentPrice) && currentPrice > 0 ? currentPrice : (indexData[currentSymbol]?.price || 100);
       const formattedCurrentPrice = safeCurrentPrice > 0 ? `${currencySymbol}${Number(safeCurrentPrice).toLocaleString(locale, { maximumFractionDigits: 2 })}` : 'N/A';
       const lastClosingPrice = historicalData.length > 1 ? historicalData[historicalData.length - 2].close : (historicalData.length > 0 ? historicalData[historicalData.length - 1].close : safeCurrentPrice);
@@ -1924,11 +1992,11 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
       }
       priceInfo.innerHTML = `
-        <p class="${formattedCurrentPrice === 'N/A' ? 'unavailable' : 'available'}">Price: ${formattedCurrentPrice}</p>
-        <p class="last-close">Last Close: ${formattedLastClose}</p>
-        <p class="${changeClass}" style="${percentChange >= 0 ? 'color: #3B82F6' : 'color: #FF3333'}">${displayPercentChange}</p>
-        <p class="day-high">Day High: ${formattedDayHigh}</p>
-        <p class="day-low">Day Low: ${formattedDayLow}</p>
+        <p class="${formattedCurrentPrice === 'N/A' ? 'unavailable' : 'available'}">Price: <span class="price-value">${formattedCurrentPrice}</span></p>
+        <p class="last-close">Last Close: <span class="last-close-value">${formattedLastClose}</span></p>
+        <p class="${changeClass}" style="${percentChange >= 0 ? 'color: #3B82F6' : 'color: #FF3333'}"><span class="change-value">${displayPercentChange}</span></p>
+        <p class="day-high">Day High: <span class="day-high-value">${formattedDayHigh}</span></p>
+        <p class="day-low">Day Low: <span class="day-low-value">${formattedDayLow}</span></p>
         ${actionsHtml}
       `;
       const percentElement = document.querySelector('#priceInfo .stock-change');
@@ -1963,18 +2031,25 @@ document.addEventListener('DOMContentLoaded', () => {
           cornerRadius: 6
         }
       };
+      const timeUnit = ['1d', '5d'].includes(currentPeriod) ? 'hour' : 'day';
+      const displayFormat = timeUnit === 'hour' ? { hour: 'HH:mm' } : { day: 'MMM DD' };
+      const xScaleCommon = {
+        type: 'time',
+        time: { unit: timeUnit, displayFormats: displayFormat },
+        ticks: { color: theme.textColor, maxRotation: 45 },
+        grid: { color: theme.gridColor },
+        display: true
+      };
       if (currentChartType === 'line') {
-        const prices = historicalData.map(d => d.close);
         const lineGradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
         lineGradient.addColorStop(0, theme.lineFill);
         lineGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
         stockChart = new Chart(ctx, {
           type: 'line',
           data: {
-            labels: Array(historicalData.length).fill(''),
             datasets: [{
               label: `${name} - Price`,
-              data: prices,
+              data: historicalData.map(d => ({x: new Date(d.date), y: d.close})),
               borderColor: theme.lineColor,
               borderWidth: 2.5,
               fill: true,
@@ -2019,7 +2094,7 @@ document.addEventListener('DOMContentLoaded', () => {
               }
             },
             scales: {
-              x: { display: false }, // Hide x-axis labels
+              x: xScaleCommon,
               y: {
                 title: { display: true, text: `Price (${currencySymbol})`, color: theme.textColor, font: { size: 14 } },
                 ticks: { color: theme.textColor, callback: (value) => `${currencySymbol}${value.toLocaleString(locale, { maximumFractionDigits: 2 })}` },
@@ -2092,13 +2167,7 @@ document.addEventListener('DOMContentLoaded', () => {
               }
             },
             scales: {
-              x: {
-                type: 'time',
-                time: { unit: 'minute', displayFormats: { minute: 'HH:mm' } },
-                ticks: { color: theme.textColor, source: 'data', maxRotation: 0 },
-                grid: { display: false },
-                display: false // Hide x-axis labels
-              },
+              x: xScaleCommon,
               y: {
                 title: { display: true, text: `Price (${currencySymbol})`, color: theme.textColor, font: { size: 14 } },
                 ticks: { color: theme.textColor, callback: (value) => `${currencySymbol}${value.toLocaleString(locale, { maximumFractionDigits: 2 })}` },
@@ -2111,11 +2180,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function updateChartEndPoint(name, historicalData, currentPrice, volume) {
       if (!stockChart || !currentData || !historicalData || historicalData.length === 0) return;
-      const isBitcoin = name === 'Bitcoin (BTC/USDT)';
+      const isBTC = currentData.symbol === 'BTCUSDT';
       const isCommodityIndian = name === 'Gold' || name === 'Silver';
       const isGlobal = ['Dow Jones', 'Nasdaq', 'Nikkei', 'Hang Seng', 'GIFT NIFTY'].includes(name);
-      const currencySymbol = isBitcoin || (isGlobal && !isCommodityIndian) ? '$' : '₹';
-      const locale = isBitcoin || (isGlobal && !isCommodityIndian) ? 'en-US' : 'en-IN';
+      const currencySymbol = isBTC || (isGlobal && !isCommodityIndian) ? '$' : '₹';
+      const locale = isBTC || (isGlobal && !isCommodityIndian) ? 'en-US' : 'en-IN';
       const safeCurrentPrice = currentPrice && !isNaN(currentPrice) && currentPrice > 0 ? currentPrice : (indexData[currentSymbol]?.price || 100);
       const formattedCurrentPrice = safeCurrentPrice > 0 ? `${currencySymbol}${Number(safeCurrentPrice).toLocaleString(locale, { maximumFractionDigits: 2 })}` : 'N/A';
       const themes = {
@@ -2143,29 +2212,35 @@ document.addEventListener('DOMContentLoaded', () => {
           cornerRadius: 6
         }
       };
+      const timeUnit = ['1d', '5d'].includes(currentPeriod) ? 'hour' : 'day';
+      const displayFormat = timeUnit === 'hour' ? { hour: 'HH:mm' } : { day: 'MMM DD' };
+      stockChart.options.scales.x.time.unit = timeUnit;
+      stockChart.options.scales.x.time.displayFormats = displayFormat;
       if (currentChartType === 'line') {
-        stockChart.data.datasets[0].data = historicalData.map(d => d.close);
-        stockChart.data.labels = Array(historicalData.length).fill('');
+        const lastPoint = stockChart.data.datasets[0].data[stockChart.data.datasets[0].data.length - 1];
+        const now = new Date();
+        const newPoint = { x: now, y: safeCurrentPrice };
+        if (stockChart.data.datasets[0].data.length === 0 || new Date(lastPoint.x).getTime() < now.getTime() - (isBTC ? 60*1000 : 24*60*60*1000)) {
+          stockChart.data.datasets[0].data.push(newPoint);
+        } else {
+          lastPoint.y = safeCurrentPrice;
+        }
         stockChart.update('none');
       } else {
-        const lastCandle = historicalData[historicalData.length - 1] || {};
-        const newCandle = {
-          x: new Date(lastCandle.date || new Date()).getTime(),
-          o: lastCandle.open || safeCurrentPrice,
-          h: Math.max(lastCandle.high || safeCurrentPrice, safeCurrentPrice),
-          l: Math.min(lastCandle.low || safeCurrentPrice, safeCurrentPrice),
-          c: safeCurrentPrice,
-          v: volume || lastCandle.volume || 0
-        };
-        stockChart.data.datasets[0].data = historicalData.map(d => ({
-          x: new Date(d.date).getTime(),
-          o: parseFloat(d.open),
-          h: parseFloat(d.high),
-          l: parseFloat(d.low),
-          c: parseFloat(d.close),
-          v: parseFloat(d.volume || 0)
-        }));
-        stockChart.data.datasets[0].data[stockChart.data.datasets[0].data.length - 1] = newCandle;
+        const lastCandleIndex = stockChart.data.datasets[0].data.length - 1;
+        if (lastCandleIndex >= 0) {
+          const lastCandle = stockChart.data.datasets[0].data[lastCandleIndex];
+          const now = new Date();
+          const newCandle = {
+            x: now.getTime(),
+            o: lastCandle.c || safeCurrentPrice,
+            h: Math.max(lastCandle.h || safeCurrentPrice, safeCurrentPrice),
+            l: Math.min(lastCandle.l || safeCurrentPrice, safeCurrentPrice),
+            c: safeCurrentPrice,
+            v: volume || lastCandle.v || 0
+          };
+          stockChart.data.datasets[0].data[lastCandleIndex] = newCandle;
+        }
         stockChart.update('none');
       }
       // Update price info
@@ -2186,11 +2261,11 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
       }
       priceInfo.innerHTML = `
-        <p class="${formattedCurrentPrice === 'N/A' ? 'unavailable' : 'available'}">Price: ${formattedCurrentPrice}</p>
-        <p class="last-close">Last Close: ${formattedLastClose}</p>
-        <p class="${changeClass}" style="${percentChange >= 0 ? 'color: #3B82F6' : 'color: #FF3333'}">${displayPercentChange}</p>
-        <p class="day-high">Day High: ${formattedDayHigh}</p>
-        <p class="day-low">Day Low: ${formattedDayLow}</p>
+        <p class="${formattedCurrentPrice === 'N/A' ? 'unavailable' : 'available'}">Price: <span class="price-value">${formattedCurrentPrice}</span></p>
+        <p class="last-close">Last Close: <span class="last-close-value">${formattedLastClose}</span></p>
+        <p class="${changeClass}" style="${percentChange >= 0 ? 'color: #3B82F6' : 'color: #FF3333'}"><span class="change-value">${displayPercentChange}</span></p>
+        <p class="day-high">Day High: <span class="day-high-value">${formattedDayHigh}</span></p>
+        <p class="day-low">Day Low: <span class="day-low-value">${formattedDayLow}</span></p>
         ${actionsHtml}
       `;
       const percentElement = document.querySelector('#priceInfo .stock-change');
@@ -2296,6 +2371,19 @@ document.addEventListener('DOMContentLoaded', () => {
       renderGlobalCues(Object.values(indexData));
       updatePredictionBanner(25934.50, 25879.15, 0.19); // Updated with real values
       updateIndices();
+      // Period buttons
+      const periodButtons = document.querySelectorAll('.period-btn');
+      periodButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          periodButtons.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentPeriod = btn.dataset.period;
+          if (currentData && ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ historical: currentData.symbol, name: currentData.name, period: currentPeriod }));
+          }
+        });
+      });
+      document.querySelector('[data-period="1mo"]').classList.add('active');
     });
   </script>
 </body>
